@@ -77,31 +77,34 @@ describe('NxPageSearchComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [PageSearchSimpleComponent, PageSearchHideButtonComponent],
-            imports: [NxPageSearchModule, NxAutocompleteModule],
+            imports: [NxPageSearchModule, NxAutocompleteModule, PageSearchSimpleComponent, PageSearchHideButtonComponent],
         }).compileComponents();
     }));
 });
 
-@Directive()
+@Directive({ standalone: true })
 class PageSearchTestComponent {
     @ViewChild(NxPageSearchComponent) pageSearch!: NxPageSearchComponent;
 }
 
 @Component({
     template: `
-        <nx-page-search nxButtonLabel="Search">
+        <nx-page-search buttonLabel="Search">
             <input />
         </nx-page-search>
     `,
+    standalone: true,
+    imports: [NxPageSearchModule, NxAutocompleteModule],
 })
 class PageSearchSimpleComponent extends PageSearchTestComponent {}
 
 @Component({
     template: `
-        <nx-page-search nxButtonLabel="Search" [nxHideSearchButton]="true">
+        <nx-page-search buttonLabel="Search" [hideSearchButton]="true">
             <input />
         </nx-page-search>
     `,
+    standalone: true,
+    imports: [NxPageSearchModule, NxAutocompleteModule],
 })
 class PageSearchHideButtonComponent extends PageSearchTestComponent {}

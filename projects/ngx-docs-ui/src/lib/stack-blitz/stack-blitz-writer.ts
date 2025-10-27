@@ -6,7 +6,7 @@ import { ExampleData } from './example-data';
 const STACKBLITZ_URL = 'https://run.stackblitz.com/api/angular/v1';
 
 const currentYear = new Date().getFullYear();
-const COPYRIGHT = `Copyright ALLIANZ ${currentYear}`;
+const COPYRIGHT = `Copyright ${currentYear} ALLIANZ`;
 
 /**
  * Path that refers to the docs-content from the "@angular/components-examples" package. The
@@ -16,23 +16,12 @@ const COPYRIGHT = `Copyright ALLIANZ ${currentYear}`;
 const DOCS_CONTENT_PATH = 'docs-content/examples-source';
 
 const TEMPLATE_PATH = 'assets/stack-blitz/';
-const TEMPLATE_FILES = [
-    'src/app/aquila.module.ts',
-    'src/index.html',
-    'src/main.ts',
-    'src/styles.scss',
-    'angular.json',
-    'package.json',
-    'tsconfig.json',
-    'tsconfig.app.json',
-    'tsconfig.spec.json',
-];
+const TEMPLATE_FILES = ['src/index.html', 'src/main.ts', 'src/styles.scss', 'angular.json', 'package.json', 'tsconfig.json', 'tsconfig.app.json'];
 
 const ASSETS_BASE_PATH = 'https://allianz.github.io/ng-aquila/';
 
 const TEST_TEMPLATE_PATH = 'assets/stack-blitz-tests/';
 const TEST_TEMPLATE_FILES = [
-    'src/app/aquila.module.ts',
     'src/index.html',
     'src/main.ts',
     'src/styles.scss',
@@ -47,8 +36,8 @@ const TEST_TEMPLATE_FILES = [
 
 const TAGS: string[] = ['allianz', 'aquila', 'example'];
 
-const angularVersion = '^15.0.0';
-const aquilaVersion = '^15.0.0';
+const angularVersion = '^18.0.0';
+const aquilaVersion = '^18.0.0';
 
 const dependencies = {
     '@angular/animations': angularVersion,
@@ -61,12 +50,16 @@ const dependencies = {
     '@angular/platform-browser-dynamic': angularVersion,
     '@angular/router': angularVersion,
     '@aposin/ng-aquila': aquilaVersion,
-    'i18n-iso-countries': '^7.4.0',
+    'ag-grid-angular': '^30.1.0',
+    'ag-grid-community': '^30.1.0',
+    dayjs: '^1.11.5',
+    'decimal.js': '^10.4.2',
+    'i18n-iso-countries': '^7.5.0',
     iban: '^0.0.14',
-    moment: '^2.29.3',
-    rxjs: '^6.6.7',
+    moment: '^2.29.4',
+    rxjs: '~6.6.7',
     tslib: '^2.3.0',
-    'zone.js': '~0.11.4',
+    'zone.js': '~0.14.2',
 };
 
 const testDependencies = {
@@ -82,13 +75,13 @@ const testDependencies = {
     '@aposin/ng-aquila': aquilaVersion,
     'i18n-iso-countries': '^7.4.0',
     iban: '^0.0.14',
-    jasmine: '^4.0.2',
-    'jasmine-core': '^4.0.1',
+    jasmine: '^5.1.0',
+    'jasmine-core': '^5.1.1',
     'jasmine-spec-reporter': '^7.0.0',
-    moment: '^2.29.3',
-    rxjs: '^6.6.7',
+    moment: '^2.29.4',
+    rxjs: '~6.6.7',
     tslib: '^2.3.0',
-    'zone.js': '~0.11.4',
+    'zone.js': '~0.14.2',
 };
 
 /**
@@ -233,26 +226,33 @@ export class StackBlitzWriter {
             fileContent = fileContent.replace(/aquila-docs-example/g, data.selectorName);
             fileContent = fileContent.replace(/\{\{version\}\}/g, aquilaVersion);
         } else if (fileName === 'src/main.ts') {
-            const joinedComponentNames = data.componentNames.join(', ');
-            // Replace the component name in `main.ts`.
-            // Replace `import { AquilaDocsExampleComponent } from 'aquila-docs-example'`
-            // will be replaced as `import { ButtonExampleComponent } from './button-example'`
-            fileContent = fileContent.replace(/\{ AquilaDocsExample \}/g, `{ ${joinedComponentNames} }`);
-
-            // Replace `declarations: [AquilaDocsExample]`
-            // will be replaced as `declarations: [ButtonExampleComponent]`
-            fileContent = fileContent.replace(/declarations: \[AquilaDocsExample\]/g, `declarations: [${joinedComponentNames}]`);
-
-            // Replace `bootstrap: [AquilaDocsExample]`
-            // will be replaced as `bootstrap: [ButtonExampleComponent]`
-            // This assumes the first component listed in the main component
-            fileContent = fileContent.replace(/bootstrap: \[AquilaDocsExample\]/g, `bootstrap: [${data.componentNames[0]}]`);
-
-            // Replace import ... from `aquila-docs-example`
-            // will be replaced as `button-example`
+            const exampleComponentName = data.componentNames[0];
             const dotIndex = data.indexFilename.lastIndexOf('.');
             const importFileName = data.indexFilename.slice(0, dotIndex === -1 ? undefined : dotIndex);
-            fileContent = fileContent.replace(/aquila-docs-example/g, importFileName);
+            const exampleImportPath = `./app/${importFileName}`;
+
+            fileContent = `
+                import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+                import { provideHttpClient, withInterceptorsFromDi, withJsonpSupport } from '@angular/common/http';
+                import { importProvidersFrom } from '@angular/core';
+                import { RouterModule } from '@angular/router';
+                import { NxDocumentationIconModule } from '@aposin/ng-aquila/documentation-icons';
+                import { NxMomentDateModule } from '@aposin/ng-aquila/moment-date-adapter';
+
+                import { bootstrapApplication } from '@angular/platform-browser';
+                import { ${exampleComponentName} } from '${exampleImportPath}';
+                import 'zone.js';
+
+                bootstrapApplication(${exampleComponentName}, {
+                providers: [
+                  provideAnimationsAsync(),
+                  provideHttpClient(withInterceptorsFromDi(), withJsonpSupport()),
+                  importProvidersFrom(RouterModule.forRoot([])),
+                  importProvidersFrom(NxDocumentationIconModule),
+                  importProvidersFrom(NxMomentDateModule)
+                ]
+                });
+            `;
         }
         return fileContent;
     }

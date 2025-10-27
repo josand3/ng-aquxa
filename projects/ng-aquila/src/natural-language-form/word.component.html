@@ -1,8 +1,11 @@
 <div>
+    <label class="cdk-visually-hidden" [attr.for]="_control.id">{{ label }}</label>
     <!-- We only allow formfield controls here -->
-    <div *ngIf="!hasDropdown" class="nx-word__inner-wrapper">
+    @if (!hasDropdown) {
+    <div class="nx-word__inner-wrapper">
         <ng-content select="[nxInput]"></ng-content>
     </div>
+    }
     <ng-content select="nx-dropdown"></ng-content>
 </div>
 

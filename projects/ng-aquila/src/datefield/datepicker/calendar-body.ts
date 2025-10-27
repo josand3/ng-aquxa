@@ -8,20 +8,24 @@
 
 import { FocusMonitor } from '@angular/cdk/a11y';
 import {
+    afterNextRender,
+    AfterRenderPhase,
+    AfterViewChecked,
     AfterViewInit,
     ChangeDetectionStrategy,
     Component,
     ElementRef,
     EventEmitter,
+    inject,
+    Injector,
     Input,
-    NgZone,
     OnDestroy,
     Output,
     QueryList,
     ViewChildren,
 } from '@angular/core';
 import { Subject } from 'rxjs';
-import { take, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
 /**
  * An internal class that represents the data corresponding to a single calendar cell.
@@ -48,8 +52,10 @@ export class NxCalendarCell {
     },
     exportAs: 'nxCalendarBody',
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [],
 })
-export class NxCalendarBodyComponent implements AfterViewInit, OnDestroy {
+export class NxCalendarBodyComponent implements AfterViewInit, OnDestroy, AfterViewChecked {
     /** The label for the table. (e.g. "Jan 2017"). */
     @Input() label!: string;
 
@@ -72,10 +78,10 @@ export class NxCalendarBodyComponent implements AfterViewInit, OnDestroy {
     @Input() activeCell = 0;
 
     /** The items to display in the first row in the offset space. */
-    @Input() previousItems: NxCalendarCell[] = [];
+    @Input() previousItems = 0;
 
     /** The items to display in the last row in the offset space. */
-    @Input() followingItems: NxCalendarCell[][] = [[]];
+    @Input() followingItems = 0;
 
     /** Emits when a new value out of rows is selected. */
     @Output() readonly selectedValueChange = new EventEmitter<number>();
@@ -88,12 +94,19 @@ export class NxCalendarBodyComponent implements AfterViewInit, OnDestroy {
 
     @ViewChildren('cell') _cells!: QueryList<ElementRef<HTMLElement>>;
 
+    private _injector = inject(Injector);
+
     /** Preserves the current value of the _cells ViewChildren in case _cells changes. */
     private _cellsPrevious!: QueryList<ElementRef<HTMLElement>>;
 
+    /**
+     * Used to focus the active cell after change detection has run.
+     */
+    private _focusActiveCellAfterViewChecked = false;
+
     private readonly _destroyed = new Subject<void>();
 
-    constructor(private readonly _elementRef: ElementRef, private readonly _ngZone: NgZone, private readonly _focusMonitor: FocusMonitor) {}
+    constructor(private readonly _elementRef: ElementRef, private readonly _focusMonitor: FocusMonitor) {}
 
     ngAfterViewInit(): void {
         this._cells.forEach(cell => this._focusMonitor.monitor(cell));
@@ -104,6 +117,13 @@ export class NxCalendarBodyComponent implements AfterViewInit, OnDestroy {
             this._cellsPrevious = this._cells;
             this._cells.forEach(cell => this._focusMonitor.monitor(cell));
         });
+    }
+
+    ngAfterViewChecked() {
+        if (this._focusActiveCellAfterViewChecked) {
+            this._focusActiveCell();
+            this._focusActiveCellAfterViewChecked = false;
+        }
     }
 
     ngOnDestroy(): void {
@@ -148,21 +168,6 @@ export class NxCalendarBodyComponent implements AfterViewInit, OnDestroy {
         return this.rows?.length ? this.rows.length - 1 : 0;
     }
 
-    /**
-     * The following full rows to display and fill up the calendar.
-     */
-    get _followingRows(): NxCalendarCell[][] {
-        if (this.followingItems?.length) {
-            // if first row is not a full row => display them in offset space
-            if (this.followingItems[0].length < this.numCols) {
-                return this.followingItems.slice(1, this.followingItems.length);
-            }
-            return this.followingItems;
-        }
-
-        return [];
-    }
-
     _isActiveCell(rowIndex: number, colIndex: number): boolean {
         let cellNumber = rowIndex * this.numCols + colIndex;
 
@@ -176,13 +181,19 @@ export class NxCalendarBodyComponent implements AfterViewInit, OnDestroy {
 
     /** Focuses the active cell after the microtask queue is empty. */
     _focusActiveCell() {
-        this._ngZone.runOutsideAngular(() => {
-            this._ngZone.onStable
-                .asObservable()
-                .pipe(take(1))
-                .subscribe(() => {
-                    this._elementRef.nativeElement.querySelector('.nx-calendar-body-active').focus();
-                });
-        });
+        afterNextRender(
+            () => {
+                this._elementRef.nativeElement.querySelector('.nx-calendar-body-active').focus();
+            },
+            {
+                injector: this._injector,
+                phase: AfterRenderPhase.Read,
+            },
+        );
+    }
+
+    /** Focuses the active cell after change detection has run and the microtask queue is empty. */
+    _scheduleFocusActiveCellAfterViewChecked() {
+        this._focusActiveCellAfterViewChecked = true;
     }
 }

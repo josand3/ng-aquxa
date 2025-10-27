@@ -1,6 +1,7 @@
 import { FocusMonitor } from '@angular/cdk/a11y';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import {
+    AfterViewInit,
     Component,
     ElementRef,
     Input,
@@ -10,8 +11,11 @@ import {
 } from '@angular/core';
 import {
     ControlValueAccessor,
+    FormBuilder,
+    FormGroup,
+    FormsModule,
     NgControl,
-    UntypedFormBuilder,
+    ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
 import { NxFormfieldControl } from '@aposin/ng-aquila/formfield';
@@ -47,39 +51,19 @@ export class MyTel {
         '[id]': 'id',
         '[attr.aria-describedby]': 'describedBy',
     },
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule],
 })
 export class FormfieldCustomTelInputExampleComponent
-    implements ControlValueAccessor, NxFormfieldControl<MyTel>, OnDestroy
+    implements
+        ControlValueAccessor,
+        NxFormfieldControl<MyTel>,
+        OnDestroy,
+        AfterViewInit
 {
     static nextId = 0;
 
-    readonly parts = this.fb.group({
-        area: [
-            null,
-            [
-                Validators.required,
-                Validators.minLength(3),
-                Validators.maxLength(3),
-            ],
-        ],
-        exchange: [
-            null,
-            [
-                Validators.required,
-                Validators.minLength(3),
-                Validators.maxLength(3),
-            ],
-        ],
-        subscriber: [
-            null,
-            [
-                Validators.required,
-                Validators.minLength(4),
-                Validators.maxLength(4),
-            ],
-        ],
-    });
-
+    readonly parts: FormGroup;
     readonly!: boolean;
     readonly stateChanges = new Subject<void>();
     focused = false;
@@ -148,21 +132,37 @@ export class FormfieldCustomTelInputExampleComponent
     onTouched = () => {};
 
     constructor(
-        private readonly fb: UntypedFormBuilder,
+        private readonly fb: FormBuilder,
         private readonly _focusMonitor: FocusMonitor,
         private readonly _elementRef: ElementRef<HTMLElement>,
         @Optional() @Self() readonly ngControl: NgControl | null,
     ) {
-        _focusMonitor
-            .monitor(_elementRef, true)
-            .pipe(takeUntil(this._destroyed))
-            .subscribe(origin => {
-                if (this.focused && !origin) {
-                    this.onTouched();
-                }
-                this.focused = !!origin;
-                this.stateChanges.next();
-            });
+        this.parts = this.fb.group({
+            area: [
+                null,
+                [
+                    Validators.required,
+                    Validators.minLength(3),
+                    Validators.maxLength(3),
+                ],
+            ],
+            exchange: [
+                null,
+                [
+                    Validators.required,
+                    Validators.minLength(3),
+                    Validators.maxLength(3),
+                ],
+            ],
+            subscriber: [
+                null,
+                [
+                    Validators.required,
+                    Validators.minLength(4),
+                    Validators.maxLength(4),
+                ],
+            ],
+        });
 
         if (this.ngControl != null) {
             this.ngControl.valueAccessor = this;
@@ -174,7 +174,20 @@ export class FormfieldCustomTelInputExampleComponent
     }
 
     get elementRef(): ElementRef {
-        throw new Error('Method not implemented.');
+        return this._elementRef;
+    }
+
+    ngAfterViewInit(): void {
+        this._focusMonitor
+            .monitor(this._elementRef, true)
+            .pipe(takeUntil(this._destroyed))
+            .subscribe(origin => {
+                if (this.focused && !origin) {
+                    this.onTouched();
+                }
+                this.focused = !!origin;
+                this.stateChanges.next();
+            });
     }
 
     ngOnDestroy(): void {

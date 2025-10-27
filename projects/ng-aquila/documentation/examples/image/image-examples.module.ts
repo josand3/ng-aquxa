@@ -1,3 +1,4 @@
+import { NgOptimizedImage } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { NxCopytextModule } from '@aposin/ng-aquila/copytext';
 import { NxGridModule } from '@aposin/ng-aquila/grid';
@@ -16,8 +17,13 @@ const EXAMPLES = [
 ];
 
 @NgModule({
-    imports: [NxImageModule, NxGridModule, NxCopytextModule],
-    declarations: [EXAMPLES],
+    imports: [
+        NxImageModule,
+        NxGridModule,
+        NxCopytextModule,
+        NgOptimizedImage,
+        EXAMPLES,
+    ],
     exports: [EXAMPLES],
 })
 export class ImageExamplesModule {

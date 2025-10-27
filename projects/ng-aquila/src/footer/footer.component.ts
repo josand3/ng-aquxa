@@ -1,5 +1,5 @@
 import { FocusMonitor } from '@angular/cdk/a11y';
-import { ChangeDetectionStrategy, Component, ContentChild, Directive, ElementRef, Input, OnDestroy } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ContentChild, Directive, ElementRef, Input, OnDestroy } from '@angular/core';
 
 @Directive({
     selector: 'nx-footer-copyright',
@@ -7,6 +7,7 @@ import { ChangeDetectionStrategy, Component, ContentChild, Directive, ElementRef
     host: {
         class: 'nx-footer__copyright',
     },
+    standalone: true,
 })
 export class NxFooterCopyrightDirective {}
 
@@ -17,6 +18,7 @@ export class NxFooterCopyrightDirective {}
         class: 'nx-footer__navigation',
         role: 'list',
     },
+    standalone: true,
 })
 export class NxFooterNavigationDirective {}
 
@@ -27,9 +29,12 @@ export class NxFooterNavigationDirective {}
         class: 'nx-footer__link',
         role: 'listitem',
     },
+    standalone: true,
 })
-export class NxFooterLinkDirective implements OnDestroy {
-    constructor(private readonly _elementRef: ElementRef, private readonly _focusMonitor: FocusMonitor) {
+export class NxFooterLinkDirective implements OnDestroy, AfterViewInit {
+    constructor(private readonly _elementRef: ElementRef, private readonly _focusMonitor: FocusMonitor) {}
+
+    ngAfterViewInit(): void {
         this._focusMonitor.monitor(this._elementRef, true);
     }
 
@@ -47,6 +52,8 @@ export class NxFooterLinkDirective implements OnDestroy {
         class: 'nx-footer',
         role: 'contentinfo',
     },
+    standalone: true,
+    imports: [NxFooterCopyrightDirective],
 })
 export class NxFooterComponent {
     @Input() copyright?: string | null;

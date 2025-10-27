@@ -1,18 +1,22 @@
-import { ChangeDetectionStrategy, Component, Directive, Type, ViewChild } from '@angular/core';
+import { SPACE } from '@angular/cdk/keycodes';
+import { ChangeDetectionStrategy, Component, Directive, Type, ViewChild, viewChild } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormControl, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { dispatchFakeEvent, dispatchTouchEvent } from '../../cdk-test-utils';
+import { dispatchFakeEvent, dispatchKeyboardEvent, dispatchTouchEvent } from '../../cdk-test-utils';
+import { NxAbstractControl } from '../../shared';
 import { NxCircleToggleModule } from '../circle-toggle.module';
 import { NxCircleToggleComponent } from './circle-toggle.component';
 
-describe('NxToggleButton', () => {
+describe('NxCircleToggle', () => {
     let fixture: ComponentFixture<AbstractButtonToggleComponent>;
     let toggleComponent: NxCircleToggleComponent;
     let nativeToggleComponent: HTMLElement;
     let input: HTMLInputElement;
     let label: HTMLLabelElement;
+    let iconToggleButtonElement: HTMLElement;
+    let mobileToggleButtonElement: HTMLElement;
 
     function createTestComponent(component: Type<AbstractButtonToggleComponent>) {
         fixture = TestBed.createComponent(component);
@@ -21,6 +25,8 @@ describe('NxToggleButton', () => {
         input = fixture.nativeElement.querySelector('input');
         label = fixture.nativeElement.querySelector('label');
         nativeToggleComponent = fixture.nativeElement.querySelector('nx-circle-toggle');
+        iconToggleButtonElement = fixture.nativeElement.querySelector('nx-icon-toggle-button');
+        mobileToggleButtonElement = fixture.nativeElement.querySelector('nx-mobile-toggle-button');
     }
 
     function click() {
@@ -30,7 +36,10 @@ describe('NxToggleButton', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
+            imports: [
+                NxCircleToggleModule,
+                FormsModule,
+                ReactiveFormsModule,
                 SimpleCircleToggleButtonComponent,
                 PreselectedCircleToggleButtoncComponent,
                 NgModelToggleButtonComponent,
@@ -39,8 +48,8 @@ describe('NxToggleButton', () => {
                 SvgCircleToggleButtonComponent,
                 CircleToggleButtonOnPushComponent,
                 TextCircleToggleButtonComponent,
+                ReadonlyToggleButtonComponent,
             ],
-            imports: [NxCircleToggleModule, FormsModule, ReactiveFormsModule],
         }).compileComponents();
     }));
 
@@ -67,6 +76,58 @@ describe('NxToggleButton', () => {
         expect(input.disabled).toBeTrue();
     });
 
+    it('can be set to readonly', () => {
+        createTestComponent(ReadonlyToggleButtonComponent);
+        expect(nativeToggleComponent.classList).toContain('is-readonly');
+        expect(iconToggleButtonElement.classList).toContain('is-readonly');
+        expect(mobileToggleButtonElement.classList).toContain('is-readonly');
+        expect(input.getAttribute('aria-disabled')).toBe('true');
+    });
+
+    it('cannot be toggled when readonly', () => {
+        createTestComponent(ReadonlyToggleButtonComponent);
+        label.click();
+        fixture.detectChanges();
+        expect(toggleComponent.checked).toBeFalse();
+        expect(input.checked).toBeFalse();
+
+        input.click();
+        fixture.detectChanges();
+        expect(toggleComponent.checked).toBeFalse();
+        expect(input.checked).toBeFalse();
+
+        dispatchKeyboardEvent(input, 'keydown', SPACE);
+        fixture.detectChanges();
+        expect(toggleComponent.checked).toBeFalse();
+        expect(input.checked).toBeFalse();
+    });
+
+    it('should prevent default on click when readonly', () => {
+        createTestComponent(ReadonlyToggleButtonComponent);
+        const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+        input.dispatchEvent(event);
+        fixture.detectChanges();
+        expect(input.checked).toBeFalse();
+        expect(event.defaultPrevented).toBeTrue();
+    });
+
+    it('implements NxAbstractControl', () => {
+        createTestComponent(ReadonlyToggleButtonComponent);
+        (fixture.componentInstance as ReadonlyToggleButtonComponent).abstractControl().setReadonly(false);
+        fixture.detectChanges();
+        expect(nativeToggleComponent.classList).not.toContain('is-readonly');
+        expect(iconToggleButtonElement.classList).not.toContain('is-readonly');
+        expect(mobileToggleButtonElement.classList).not.toContain('is-readonly');
+        expect(input.getAttribute('aria-disabled')).toBeFalsy();
+
+        (fixture.componentInstance as ReadonlyToggleButtonComponent).abstractControl().setReadonly(true);
+        fixture.detectChanges();
+        expect(nativeToggleComponent.classList).toContain('is-readonly');
+        expect(iconToggleButtonElement.classList).toContain('is-readonly');
+        expect(mobileToggleButtonElement.classList).toContain('is-readonly');
+        expect(input.getAttribute('aria-disabled')).toBe('true');
+    });
+
     it('should link the label with the input field', () => {
         createTestComponent(SimpleCircleToggleButtonComponent);
         expect(input.id).toBe(label.htmlFor);
@@ -76,6 +137,11 @@ describe('NxToggleButton', () => {
         createTestComponent(SimpleCircleToggleButtonComponent);
         const textElement = nativeToggleComponent.querySelector('.nx-toggle-circle__label-text');
         expect(textElement).toBeTruthy();
+    });
+
+    it('should show check icon', () => {
+        createTestComponent(PreselectedCircleToggleButtoncComponent);
+        expect(fixture.nativeElement.querySelector('.nx-toggle-circle__check-icon')).toBeTruthy();
     });
 
     it('should work in template driven forms using ngModel', fakeAsync(() => {
@@ -129,7 +195,7 @@ describe('NxToggleButton', () => {
         fixture.detectChanges();
         tick();
 
-        expect(toggleComponent.errorState).toBeTrue();
+        expect(toggleComponent.errorState()).toBeTrue();
     }));
 
     describe('programmatic change', () => {
@@ -308,10 +374,25 @@ describe('NxToggleButton', () => {
             createTestComponent(SimpleCircleToggleButtonComponent);
             await expectAsync(fixture.nativeElement).toBeAccessible();
         });
+
+        it('has no accessibility violations when readonly', async () => {
+            createTestComponent(ReadonlyToggleButtonComponent);
+            await expectAsync(fixture.nativeElement).toBeAccessible();
+        });
+
+        it('has no accessibility violations when disabled', async () => {
+            createTestComponent(DisabledToggleButtonComponent);
+            await expectAsync(fixture.nativeElement).toBeAccessible();
+        });
+
+        it('should set aria-required', () => {
+            createTestComponent(ReactiveToggleButtonComponent);
+            expect(input.getAttribute('aria-required')).toBe('true');
+        });
     });
 });
 
-@Directive()
+@Directive({ standalone: true })
 abstract class AbstractButtonToggleComponent {
     @ViewChild(NxCircleToggleComponent) buttonToggle!: NxCircleToggleComponent;
 
@@ -320,37 +401,60 @@ abstract class AbstractButtonToggleComponent {
 
 @Component({
     template: `<nx-circle-toggle value="A" icon="product-heart" label="text1" hint="hint1"></nx-circle-toggle>`,
+    standalone: true,
+    imports: [NxCircleToggleModule, FormsModule, ReactiveFormsModule],
 })
 class SimpleCircleToggleButtonComponent extends AbstractButtonToggleComponent {}
 
 @Component({
     template: `<nx-circle-toggle value="A" icon="product-heart" label="text1"></nx-circle-toggle>`,
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxCircleToggleModule, FormsModule, ReactiveFormsModule],
 })
 class CircleToggleButtonOnPushComponent extends AbstractButtonToggleComponent {}
 
 @Component({
     template: `<nx-circle-toggle value="A" svg="test.svg" svgChecked="testInverted.svg" label="text1"></nx-circle-toggle>`,
+    standalone: true,
+    imports: [NxCircleToggleModule, FormsModule, ReactiveFormsModule],
 })
 class SvgCircleToggleButtonComponent extends AbstractButtonToggleComponent {}
 
 @Component({
     template: `<nx-circle-toggle value="A" circleText="TEXT" label="text1"></nx-circle-toggle>`,
+    standalone: true,
+    imports: [NxCircleToggleModule, FormsModule, ReactiveFormsModule],
 })
 class TextCircleToggleButtonComponent extends AbstractButtonToggleComponent {}
 
 @Component({
     template: `<nx-circle-toggle [checked]="true" value="A" icon="product-heart" label="text1"></nx-circle-toggle>`,
+    standalone: true,
+    imports: [NxCircleToggleModule, FormsModule, ReactiveFormsModule],
 })
 class PreselectedCircleToggleButtoncComponent extends AbstractButtonToggleComponent {}
 
 @Component({
-    template: `<nx-circle-toggle disabled="true"></nx-circle-toggle>`,
+    template: `<nx-circle-toggle disabled="true" label="Label"></nx-circle-toggle>`,
+    standalone: true,
+    imports: [NxCircleToggleModule, FormsModule, ReactiveFormsModule],
 })
 class DisabledToggleButtonComponent extends AbstractButtonToggleComponent {}
 
 @Component({
+    template: `<nx-circle-toggle readonly label="Label"></nx-circle-toggle>`,
+    standalone: true,
+    imports: [NxCircleToggleModule],
+})
+class ReadonlyToggleButtonComponent extends AbstractButtonToggleComponent {
+    abstractControl = viewChild.required(NxAbstractControl);
+}
+
+@Component({
     template: `<nx-circle-toggle [(ngModel)]="toggleModel" value="A" icon="product-heart" label="text1"></nx-circle-toggle>`,
+    standalone: true,
+    imports: [NxCircleToggleModule, FormsModule, ReactiveFormsModule],
 })
 class NgModelToggleButtonComponent extends AbstractButtonToggleComponent {}
 
@@ -360,14 +464,17 @@ class NgModelToggleButtonComponent extends AbstractButtonToggleComponent {}
             <nx-circle-toggle formControlName="reactiveToggle"></nx-circle-toggle>
         </form>
     `,
+    standalone: true,
+    imports: [NxCircleToggleModule, FormsModule, ReactiveFormsModule],
 })
 class ReactiveToggleButtonComponent extends AbstractButtonToggleComponent {
-    fb: UntypedFormBuilder = new UntypedFormBuilder();
+    fb: FormBuilder = new FormBuilder();
 
     testGroup = this.fb.group({
-        reactiveToggle: new UntypedFormControl(
+        reactiveToggle: new FormControl(
             {
-                value: null,
+                value: false,
+                disabled: false,
             },
             {
                 validators: Validators.required,

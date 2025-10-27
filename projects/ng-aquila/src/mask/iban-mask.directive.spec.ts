@@ -1,19 +1,20 @@
 import { Component, Directive, Type, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { dispatchFakeEvent } from 'projects/ng-aquila/src/cdk-test-utils';
 
 import { NxIbanMaskDirective } from './iban-mask.directive';
 import { NxMaskDirective } from './mask.directive';
 import { assertInputValue } from './mask.directive.spec';
 import { NxMaskModule } from './mask.module';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class IbanMaskTest {
     @ViewChild(NxMaskDirective) maskInstance!: NxMaskDirective;
     @ViewChild(NxIbanMaskDirective) ibanInstance!: NxIbanMaskDirective;
 
-    testForm: UntypedFormGroup = new UntypedFormGroup({
-        maskInput: new UntypedFormControl('', {}),
+    testForm: FormGroup = new FormGroup({
+        maskInput: new FormControl('', {}),
     });
 
     validateMask = true;
@@ -51,8 +52,15 @@ describe('NxIbanMaskDirective', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [BasicIbanMaskComponent, FormIbanMaskComponent, FormWithInitalIbanMaskComponent, FormIbanOnBlurMaskComponent],
-            imports: [FormsModule, ReactiveFormsModule, NxMaskModule],
+            imports: [
+                FormsModule,
+                ReactiveFormsModule,
+                NxMaskModule,
+                BasicIbanMaskComponent,
+                FormIbanMaskComponent,
+                FormWithInitalIbanMaskComponent,
+                FormIbanOnBlurMaskComponent,
+            ],
         }).compileComponents();
     }));
 
@@ -73,6 +81,19 @@ describe('NxIbanMaskDirective', () => {
 
             assertInputValue(nativeElement, 'FR', 'FR');
             expect(maskInstance.mask).toBe('SS00 0000 0000 00AA AAAA AAAA A00');
+        });
+
+        it('has correct cursor positions when typing', () => {
+            createTestComponent(BasicIbanMaskComponent);
+            assertInputValue(nativeElement, 'DE', 'DE');
+            expect(nativeElement.selectionStart).toBe(2);
+            expect(nativeElement.selectionEnd).toBe(2);
+            assertInputValue(nativeElement, 'DE1', 'DE1');
+            expect(nativeElement.selectionStart).toBe(3);
+            expect(nativeElement.selectionEnd).toBe(3);
+            assertInputValue(nativeElement, 'DE123', 'DE12 3');
+            expect(nativeElement.selectionStart).toBe(6);
+            expect(nativeElement.selectionEnd).toBe(6);
         });
 
         it('does not update mask on entering invalid country code', () => {
@@ -112,7 +133,20 @@ describe('NxIbanMaskDirective', () => {
         it('should correctly update on patchValue', () => {
             createTestComponent(FormIbanMaskComponent);
             testInstance.testForm.patchValue({ maskInput: 'NL91ABNA0417164300' });
+            fixture.detectChanges();
             expect(nativeElement.value).toBe('NL91 ABNA 0417 1643 00');
+        });
+    });
+
+    describe('browser autofill', () => {
+        it('should correctly set the value and cursor on auto fill', () => {
+            createTestComponent(BasicIbanMaskComponent);
+            nativeElement.value = 'DE89370400440532013000';
+            nativeElement.dispatchEvent(new Event('input'));
+            fixture.detectChanges();
+            expect(nativeElement.value).toBe('DE89 3704 0044 0532 0130 00');
+            expect(nativeElement.selectionStart).toBe(27);
+            expect(nativeElement.selectionEnd).toBe(27);
         });
     });
 
@@ -270,14 +304,13 @@ describe('NxIbanMaskDirective', () => {
     });
 
     describe('validation', () => {
-        it('should mark as invalid and touch input immediately for non-existing country code', () => {
+        it('should set nxIbanInvalidCountryError immediately for non-existing country code', () => {
             createTestComponent(FormIbanMaskComponent);
-            expect(testInstance.testForm.touched).toBeFalse();
+            expect(testInstance.testForm.controls.maskInput.getError('nxIbanInvalidCountryError')).toBeNull();
 
             assertInputValue(nativeElement, 'GD', 'GD');
 
-            expect(testInstance.testForm.valid).toBeFalse();
-            expect(testInstance.testForm.touched).toBeTrue();
+            expect(testInstance.testForm.controls.maskInput.getError('nxIbanInvalidCountryError')).toBeTruthy();
             expect(testInstance.testForm.get('maskInput')!.value).toBe('GD');
         });
 
@@ -287,29 +320,32 @@ describe('NxIbanMaskDirective', () => {
             const invalidIbanErrorKey = 'nxIbanInvalidCountryError';
 
             assertInputValue(nativeElement, 'G', 'G');
-
-            expect(maskInput.getError(invalidIbanErrorKey)).toBeUndefined();
+            fixture.detectChanges();
+            expect(maskInput.getError(invalidIbanErrorKey)).toBeNull();
 
             assertInputValue(nativeElement, 'GD', 'GD');
+            fixture.detectChanges();
+            expect(maskInput.getError(invalidIbanErrorKey)).toBeNull();
 
+            dispatchFakeEvent(nativeElement, 'blur');
+            fixture.detectChanges();
             expect(maskInput.getError(invalidIbanErrorKey)).toBeTruthy();
         });
 
-        it('should mark as invalid if iban is not valid', () => {
+        // quick solution for getting the mask updated after entering the first two letters
+        it('should set nxIbanParseError if iban is not valid', () => {
             createTestComponent(FormIbanMaskComponent);
 
-            // quick solution for getting the mask updated after entering the first to letters
-            assertInputValue(nativeElement, 'DE', 'DE');
             assertInputValue(nativeElement, 'DE89370400440532013001', 'DE89 3704 0044 0532 0130 01');
-            expect(testInstance.testForm.valid).toBeFalse();
+            expect(testInstance.testForm.controls.maskInput.getError('nxIbanParseError')).toBeTruthy();
             expect(testInstance.testForm.get('maskInput')!.value).toBe('DE89 3704 0044 0532 0130 01');
 
             assertInputValue(nativeElement, 'DE89370400440532013000', 'DE89 3704 0044 0532 0130 00');
-            expect(testInstance.testForm.valid).toBeTrue();
+            expect(testInstance.testForm.controls.maskInput.getError('nxIbanParseError')).toBeNull();
             expect(testInstance.testForm.get('maskInput')!.value).toBe('DE89 3704 0044 0532 0130 00');
 
             assertInputValue(nativeElement, 'DE89370400440532013002', 'DE89 3704 0044 0532 0130 02');
-            expect(testInstance.testForm.valid).toBeFalse();
+            expect(testInstance.testForm.controls.maskInput.getError('nxIbanParseError')).toBeTruthy();
             expect(testInstance.testForm.get('maskInput')!.value).toBe('DE89 3704 0044 0532 0130 02');
         });
 
@@ -442,6 +478,8 @@ describe('NxIbanMaskDirective', () => {
 
 @Component({
     template: `<input nxMask nxIbanMask />`,
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, NxMaskModule],
 })
 class BasicIbanMaskComponent extends IbanMaskTest {}
 
@@ -451,6 +489,8 @@ class BasicIbanMaskComponent extends IbanMaskTest {}
             <input nxMask nxIbanMask formControlName="maskInput" [validateMask]="validateMask" />
         </form>
     `,
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, NxMaskModule],
 })
 class FormIbanMaskComponent extends IbanMaskTest {}
 
@@ -460,10 +500,12 @@ class FormIbanMaskComponent extends IbanMaskTest {}
             <input nxMask nxIbanMask formControlName="maskInput" [validateMask]="validateMask" />
         </form>
     `,
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, NxMaskModule],
 })
 class FormWithInitalIbanMaskComponent extends IbanMaskTest {
-    testForm: UntypedFormGroup = new UntypedFormGroup({
-        maskInput: new UntypedFormControl('NL91 ABNA 0417 1643 00', {}),
+    testForm: FormGroup = new FormGroup({
+        maskInput: new FormControl('NL91 ABNA 0417 1643 00', {}),
     });
 }
 
@@ -473,9 +515,11 @@ class FormWithInitalIbanMaskComponent extends IbanMaskTest {
             <input nxMask nxIbanMask formControlName="maskInput" [validateMask]="validateMask" />
         </form>
     `,
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, NxMaskModule],
 })
 class FormIbanOnBlurMaskComponent extends IbanMaskTest {
-    testForm: UntypedFormGroup = new UntypedFormGroup({
-        maskInput: new UntypedFormControl('', { updateOn: 'blur' }),
+    testForm: FormGroup = new FormGroup({
+        maskInput: new FormControl('', { updateOn: 'blur' }),
     });
 }

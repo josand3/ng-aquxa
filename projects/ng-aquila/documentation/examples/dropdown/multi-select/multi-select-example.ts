@@ -1,5 +1,17 @@
+import { JsonPipe } from '@angular/common';
 import { Component } from '@angular/core';
-import { UntypedFormControl, Validators } from '@angular/forms';
+import {
+    FormControl,
+    FormsModule,
+    ReactiveFormsModule,
+    Validators,
+} from '@angular/forms';
+import { NxErrorComponent } from '@aposin/ng-aquila/base';
+import { NxMultiSelectComponent } from '@aposin/ng-aquila/dropdown';
+import {
+    NxFormfieldComponent,
+    NxFormfieldErrorDirective,
+} from '@aposin/ng-aquila/formfield';
 
 interface MyOption {
     label: string;
@@ -71,6 +83,19 @@ function getOptions(): MyOption[] {
     ];
 }
 
+function getLongOptions(): MyOption[] {
+    return [
+        {
+            label: 'Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua, sed eiusmod tempor incidunt ut.',
+            id: 1,
+        },
+        {
+            label: 'Sed eiusmod tempor incidunt ut labore et dolore magna aliqua, sed eiusmod tempor incidunt ut.',
+            id: 2,
+        },
+    ];
+}
+
 /**
  * @title Basic multi select example
  */
@@ -78,6 +103,16 @@ function getOptions(): MyOption[] {
     selector: 'multi-select-example',
     templateUrl: './multi-select-example.html',
     styleUrls: ['./multi-select-example.css'],
+    standalone: true,
+    imports: [
+        NxFormfieldComponent,
+        NxMultiSelectComponent,
+        FormsModule,
+        ReactiveFormsModule,
+        NxErrorComponent,
+        NxFormfieldErrorDirective,
+        JsonPipe,
+    ],
 })
 export class MultiSelectExampleComponent {
     model: number[] = [3];
@@ -86,7 +121,9 @@ export class MultiSelectExampleComponent {
 
     options: MyOption[] = getOptions();
 
-    control = new UntypedFormControl(undefined, {
+    longOptions: MyOption[] = getLongOptions();
+
+    control = new FormControl([], {
         validators: Validators.minLength(3),
     });
 

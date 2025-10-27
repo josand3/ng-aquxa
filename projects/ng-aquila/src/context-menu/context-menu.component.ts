@@ -2,15 +2,20 @@ import { AnimationEvent } from '@angular/animations';
 import { FocusKeyManager, FocusOrigin } from '@angular/cdk/a11y';
 import { Direction } from '@angular/cdk/bidi';
 import { END, ESCAPE, hasModifierKey, HOME, LEFT_ARROW, RIGHT_ARROW } from '@angular/cdk/keycodes';
+import { NgClass } from '@angular/common';
 import {
     AfterContentInit,
+    afterNextRender,
+    AfterRenderPhase,
+    AfterRenderRef,
     ChangeDetectionStrategy,
     Component,
     ContentChild,
     ContentChildren,
     EventEmitter,
     HostListener,
-    NgZone,
+    inject,
+    Injector,
     OnDestroy,
     Output,
     QueryList,
@@ -18,7 +23,7 @@ import {
     ViewChild,
 } from '@angular/core';
 import { merge, Observable, ReplaySubject, Subject } from 'rxjs';
-import { startWith, switchMap, take, takeUntil } from 'rxjs/operators';
+import { startWith, switchMap, takeUntil } from 'rxjs/operators';
 
 import { nxContextMenuAnimations } from './context-menu-animations';
 import { NxContextMenuContentDirective } from './context-menu-content.directive';
@@ -31,6 +36,8 @@ import { NxContextMenuItemComponent, NxContextMenuItemWrapComponent } from './co
     changeDetection: ChangeDetectionStrategy.OnPush,
     exportAs: 'nxContextMenu',
     animations: [nxContextMenuAnimations.transformContextMenu],
+    standalone: true,
+    imports: [NgClass],
 })
 export class NxContextMenuComponent implements AfterContentInit, OnDestroy {
     private _keyManager!: FocusKeyManager<NxContextMenuItemComponent>;
@@ -40,6 +47,9 @@ export class NxContextMenuComponent implements AfterContentInit, OnDestroy {
     @ContentChild(NxContextMenuItemWrapComponent) private _wrap!: NxContextMenuItemWrapComponent;
 
     private readonly _init = new ReplaySubject<void>(1);
+
+    private _injector = inject(Injector);
+    private _firstItemFocusRef?: AfterRenderRef;
 
     /** Config object to be passed into the menu's ngClass */
     _classList: { [key: string]: boolean } = {};
@@ -83,11 +93,15 @@ export class NxContextMenuComponent implements AfterContentInit, OnDestroy {
         event.preventDefault();
     }
 
-    constructor(private readonly _ngZone: NgZone) {}
+    constructor() {}
 
     ngAfterContentInit(): void {
         this._items = this._wrap ? this._wrap?._items : this._items;
-        this._keyManager = new FocusKeyManager<NxContextMenuItemComponent>(this._items).withWrap().withTypeAhead().setFocusOrigin('keyboard');
+        this._keyManager = new FocusKeyManager<NxContextMenuItemComponent>(this._items)
+            .withWrap()
+            .withTypeAhead()
+            .setFocusOrigin('keyboard')
+            .skipPredicate(() => false);
         this._keyManager.tabOut.pipe(takeUntil(this._destroyed)).subscribe(() => this.closed.emit('tab'));
         this._init.next();
     }
@@ -96,6 +110,7 @@ export class NxContextMenuComponent implements AfterContentInit, OnDestroy {
         this._destroyed.complete();
         this.closed.complete();
         this._init.complete();
+        this._firstItemFocusRef?.destroy();
     }
 
     /** Stream that emits whenever the hovered menu item changes. */
@@ -115,6 +130,7 @@ export class NxContextMenuComponent implements AfterContentInit, OnDestroy {
             case ESCAPE:
                 if (!hasModifierKey(event)) {
                     event.preventDefault();
+                    event.stopPropagation();
                     this.closed.emit('keydown');
                 }
                 break;
@@ -145,13 +161,17 @@ export class NxContextMenuComponent implements AfterContentInit, OnDestroy {
      */
     focusFirstItem(origin?: FocusOrigin): void {
         // When the content is rendered lazily, it takes a bit before the items are inside the DOM.
-        this._ngZone.onStable
-            .asObservable()
-            .pipe(take(1))
-            .subscribe(() => {
-                this._keyManager.setFirstItemActive();
+        this._firstItemFocusRef?.destroy();
+        this._firstItemFocusRef = afterNextRender(
+            () => {
+                this._keyManager.setActiveItem(0); // always select the very first item since even disabled items are focusable
                 this._keyManager.activeItem?.focus(origin);
-            });
+            },
+            {
+                injector: this._injector,
+                phase: AfterRenderPhase.Read,
+            },
+        );
     }
 
     /**

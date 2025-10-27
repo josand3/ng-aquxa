@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, DebugElement, Directive, Injectable, Type, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DebugElement, Directive, Injectable, LOCALE_ID, Type, ViewChild } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, inject, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { NxNumberStepperComponent } from './number-stepper.component';
@@ -13,7 +13,7 @@ class MyIntl extends NxNumberStepperIntl {
     incrementAriaLabel = 'erhöhen';
 }
 
-@Directive()
+@Directive({ standalone: true })
 abstract class NumberStepperTest {
     value = 0;
     min = 0;
@@ -25,7 +25,8 @@ abstract class NumberStepperTest {
     inputAriaLabel = 'input label';
     incrementAriaLabel = 'increase number';
     decrementAriaLabel = 'decrease number';
-    testForm: UntypedFormGroup = new UntypedFormBuilder().group({ stepper: 3 });
+    readonlyInput = false;
+    testForm: FormGroup = new FormBuilder().group({ stepper: 3 });
     @ViewChild(NxNumberStepperComponent) stepperInstance!: NxNumberStepperComponent;
 
     onSubmit() {}
@@ -57,9 +58,10 @@ describe('NxNumberStepperComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [NxNumberStepperModule, FormsModule, ReactiveFormsModule],
-            providers: [{ provide: NxNumberStepperIntl, useClass: MyIntl }],
-            declarations: [
+            imports: [
+                NxNumberStepperModule,
+                FormsModule,
+                ReactiveFormsModule,
                 BasicStepper,
                 SimpleBindingStepper,
                 ConfigurableStepper,
@@ -69,9 +71,12 @@ describe('NxNumberStepperComponent', () => {
                 ResizeOnInitTestOnPush,
                 DirectivesStepper,
                 ReactiveFormStepper,
+                LocaleStepper,
+                LocaleUsStepper,
                 ReactiveFormOnBlurStepper,
                 DisableableStepper,
             ],
+            providers: [{ provide: NxNumberStepperIntl, useClass: MyIntl }],
         }).compileComponents();
     }));
 
@@ -89,6 +94,17 @@ describe('NxNumberStepperComponent', () => {
 
     function assertInputValue(value: any) {
         expect(inputElement.value).toBe(value);
+    }
+
+    function assertInputAndValue(userInput: string, viewValue: string, modelValue: number | null) {
+        inputElement.value = userInput;
+        inputElement.dispatchEvent(new Event('input'));
+        fixture.detectChanges();
+        tick();
+
+        expect(inputElement.value).toBe(viewValue);
+        expect(testInstance.stepperInstance.value).toBe(modelValue);
+        tick();
     }
 
     describe('basic number stepper', () => {
@@ -435,6 +451,53 @@ describe('NxNumberStepperComponent', () => {
             assertInputValue('00');
             flush();
         }));
+
+        it('correctly display format in view and value', fakeAsync(() => {
+            createTestComponent(LocaleUsStepper);
+            // common
+            assertInputAndValue('00', '00', 0);
+            assertInputAndValue('12', '12', 12);
+            assertInputAndValue('-10', '-10', -10);
+
+            // decimal
+            assertInputAndValue('0.0', '0.0', 0);
+            assertInputAndValue('00.00', '0.00', 0);
+            assertInputAndValue('0.1', '0.1', 0.1);
+            assertInputAndValue('0.10', '0.10', 0.1);
+            assertInputAndValue('1.00', '1.00', 1);
+            assertInputAndValue('0.010', '0.010', 0.01);
+            assertInputAndValue('00.01', '0.01', 0.01);
+            assertInputAndValue('000.01', '0.01', 0.01);
+            assertInputAndValue('-0.1', '-0.1', -0.1);
+            assertInputAndValue('-00.10', '-0.10', -0.1);
+
+            // invalid
+            assertInputAndValue('.09', '.09', null);
+            assertInputAndValue('04.', '04.', null);
+            assertInputAndValue('02,', '02,', null);
+            assertInputAndValue('04-', '04-', null);
+            assertInputAndValue('x.01', 'x.01', null);
+            assertInputAndValue('0.01.01', '0.01.01', null);
+            assertInputAndValue('x1', 'x1', null);
+            assertInputAndValue('-01x', '-01x', null);
+        }));
+
+        it('be able to use comma as decimal seperator', fakeAsync(() => {
+            createTestComponent(LocaleUsStepper);
+            assertInputAndValue('5,55', '5.55', 5.55);
+            assertInputAndValue('0,50', '0.50', 0.5);
+            assertInputAndValue('-00,50', '-0.50', -0.5);
+            flush();
+        }));
+
+        it('show comma as deicimal seperator when set locale to DE', fakeAsync(() => {
+            createTestComponent(LocaleStepper);
+            fixture.detectChanges();
+            assertInputAndValue('7.70', '7,70', 7.7);
+            assertInputAndValue('8,08', '8,08', 8.08);
+            flush();
+            // dsd
+        }));
     });
 
     describe('reactive', () => {
@@ -481,7 +544,9 @@ describe('NxNumberStepperComponent', () => {
     describe('programmatic change', () => {
         it('should update on label change', () => {
             createTestComponent(BasicStepper);
-            testInstance.stepperInstance.label = 'Programmatic label';
+
+            const basicStepperInstance = testInstance as BasicStepper;
+            basicStepperInstance.label = 'Programmatic label';
             fixture.detectChanges();
             expect(label.textContent!.trim()).toBe('Programmatic label');
         });
@@ -551,6 +616,21 @@ describe('NxNumberStepperComponent', () => {
         });
     });
 
+    describe('nxReadonly Input', () => {
+        it('should not be readonly input field by default', () => {
+            createTestComponent(ConfigurableStepper);
+            expect(inputElement.getAttribute('readonly')).toBeNull();
+        });
+
+        it('should be readonly input field when set readonlyInput', () => {
+            createTestComponent(ConfigurableStepper);
+            testInstance.readonlyInput = true;
+            fixture.detectChanges();
+
+            expect(inputElement.getAttribute('readonly')).not.toBeNull();
+        });
+    });
+
     describe('a11y', () => {
         it('should use injected subclass for button aria-labels', inject([NxNumberStepperIntl], (intl: NxNumberStepperIntl) => {
             createTestComponent(BasicStepper);
@@ -608,17 +688,25 @@ describe('NxNumberStepperComponent', () => {
 });
 
 @Component({
-    template: `<nx-number-stepper nxLabel="Test"></nx-number-stepper>`,
+    template: `<nx-number-stepper [label]="label"></nx-number-stepper>`,
+    standalone: true,
+    imports: [NxNumberStepperModule, FormsModule, ReactiveFormsModule],
 })
-class BasicStepper extends NumberStepperTest {}
+class BasicStepper extends NumberStepperTest {
+    label = 'Test';
+}
 
 @Component({
-    template: `<nx-number-stepper [(nxValue)]="value"></nx-number-stepper>`,
+    template: `<nx-number-stepper [(value)]="value"></nx-number-stepper>`,
+    standalone: true,
+    imports: [NxNumberStepperModule, FormsModule, ReactiveFormsModule],
 })
 class SimpleBindingStepper extends NumberStepperTest {}
 
 @Component({
-    template: `<nx-number-stepper nxMax="10000000" nxStep="1000000" [(nxValue)]="value" nxResize="true"></nx-number-stepper>`,
+    template: `<nx-number-stepper max="10000000" step="1000000" [(value)]="value" resize="true"></nx-number-stepper>`,
+    standalone: true,
+    imports: [NxNumberStepperModule, FormsModule, ReactiveFormsModule],
 })
 class ResizeOnInitTest extends NumberStepperTest {
     value = 100000;
@@ -626,7 +714,9 @@ class ResizeOnInitTest extends NumberStepperTest {
 
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `<nx-number-stepper [(nxValue)]="value" [nxResize]="true"></nx-number-stepper>`,
+    template: `<nx-number-stepper [(value)]="value" [resize]="true"></nx-number-stepper>`,
+    standalone: true,
+    imports: [NxNumberStepperModule, FormsModule, ReactiveFormsModule],
 })
 class ResizeOnInitTestOnPush extends NumberStepperTest {
     value = 1000000;
@@ -634,33 +724,42 @@ class ResizeOnInitTestOnPush extends NumberStepperTest {
 
 @Component({
     template: `<nx-number-stepper [(ngModel)]="value"></nx-number-stepper>`,
+    standalone: true,
+    imports: [NxNumberStepperModule, FormsModule, ReactiveFormsModule],
 })
 class NgModelStepper extends NumberStepperTest {}
 
 @Component({
     template: `
         <nx-number-stepper
-            [nxMin]="min"
-            [nxMax]="max"
-            [nxStep]="step"
+            [min]="min"
+            [max]="max"
+            [step]="step"
             [negative]="negative"
             [leadingZero]="leadingZero"
             [inputAriaLabel]="inputAriaLabel"
             [incrementAriaLabel]="incrementAriaLabel"
             [decrementAriaLabel]="decrementAriaLabel"
+            [readonly]="readonlyInput"
         ></nx-number-stepper>
     `,
+    standalone: true,
+    imports: [NxNumberStepperModule, FormsModule, ReactiveFormsModule],
 })
 class ConfigurableStepper extends NumberStepperTest {}
 
 @Component({
-    template: `<nx-number-stepper [nxDisabled]="disabled" [nxMin]="-10"></nx-number-stepper>`,
+    template: `<nx-number-stepper [disabled]="disabled" [min]="-10"></nx-number-stepper>`,
+    standalone: true,
+    imports: [NxNumberStepperModule, FormsModule, ReactiveFormsModule],
 })
 class DisableableStepper extends NumberStepperTest {}
 
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `<nx-number-stepper [negative]="negative"></nx-number-stepper>`,
+    standalone: true,
+    imports: [NxNumberStepperModule, FormsModule, ReactiveFormsModule],
 })
 class StepperOnPush extends NumberStepperTest {}
 
@@ -672,6 +771,8 @@ class StepperOnPush extends NumberStepperTest {}
             <nx-number-stepper-suffix>suffix</nx-number-stepper-suffix>
         </nx-number-stepper>
     `,
+    standalone: true,
+    imports: [NxNumberStepperModule, FormsModule, ReactiveFormsModule],
 })
 class DirectivesStepper extends NumberStepperTest {}
 
@@ -682,8 +783,36 @@ class DirectivesStepper extends NumberStepperTest {}
             <button id="submit-button">Submit</button>
         </form>
     `,
+    standalone: true,
+    imports: [NxNumberStepperModule, FormsModule, ReactiveFormsModule],
 })
 class ReactiveFormStepper extends NumberStepperTest {}
+
+@Component({
+    template: `
+        <form [formGroup]="testForm" (ngSubmit)="onSubmit()">
+            <nx-number-stepper></nx-number-stepper>
+            <button id="submit-button">Submit</button>
+        </form>
+    `,
+    standalone: true,
+    providers: [{ provide: LOCALE_ID, useValue: 'de-DE' }],
+    imports: [NxNumberStepperModule, FormsModule, ReactiveFormsModule],
+})
+class LocaleStepper extends NumberStepperTest {}
+
+@Component({
+    template: `
+        <form [formGroup]="testForm" (ngSubmit)="onSubmit()">
+            <nx-number-stepper></nx-number-stepper>
+            <button id="submit-button">Submit</button>
+        </form>
+    `,
+    standalone: true,
+    providers: [{ provide: LOCALE_ID, useValue: 'en-US' }],
+    imports: [NxNumberStepperModule, FormsModule, ReactiveFormsModule],
+})
+class LocaleUsStepper extends NumberStepperTest {}
 
 @Component({
     template: `
@@ -691,9 +820,11 @@ class ReactiveFormStepper extends NumberStepperTest {}
             <nx-number-stepper formControlName="count"></nx-number-stepper>
         </form>
     `,
+    standalone: true,
+    imports: [NxNumberStepperModule, FormsModule, ReactiveFormsModule],
 })
 class ReactiveFormOnBlurStepper extends NumberStepperTest {
-    constructor(private readonly fb: UntypedFormBuilder) {
+    constructor(private readonly fb: FormBuilder) {
         super();
         this.testForm = this.fb.group(
             {

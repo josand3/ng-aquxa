@@ -1,5 +1,17 @@
+import { JsonPipe } from '@angular/common';
 import { Component } from '@angular/core';
-import { UntypedFormBuilder, Validators } from '@angular/forms';
+import {
+    FormBuilder,
+    FormsModule,
+    ReactiveFormsModule,
+    Validators,
+} from '@angular/forms';
+import { NxErrorComponent, NxLabelComponent } from '@aposin/ng-aquila/base';
+import { NxButtonComponent } from '@aposin/ng-aquila/button';
+import {
+    NxCheckboxComponent,
+    NxCheckboxGroupComponent,
+} from '@aposin/ng-aquila/checkbox';
 
 /**
  * @title Checkbox group dynamic checkboxes example
@@ -8,6 +20,17 @@ import { UntypedFormBuilder, Validators } from '@angular/forms';
     selector: 'checkbox-group-dynamic-example',
     templateUrl: './checkbox-group-dynamic-example.html',
     styleUrls: ['./checkbox-group-dynamic-example.css'],
+    standalone: true,
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        NxCheckboxGroupComponent,
+        NxLabelComponent,
+        NxErrorComponent,
+        NxCheckboxComponent,
+        NxButtonComponent,
+        JsonPipe,
+    ],
 })
 export class CheckboxGroupDynamicExampleComponent {
     readonly myFormGroup = this.fb.group({
@@ -18,7 +41,7 @@ export class CheckboxGroupDynamicExampleComponent {
 
     i = 1;
 
-    constructor(private readonly fb: UntypedFormBuilder) {}
+    constructor(private readonly fb: FormBuilder) {}
 
     addNewCb() {
         this.data.push('Checkbox ' + this.i);

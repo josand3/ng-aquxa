@@ -13,8 +13,8 @@ $border-size: nx-border-size(xs);
 @mixin focus-style {
     box-shadow: v(focus-box-shadow);
 
-    @media screen and (-ms-high-contrast: active), (forced-colors: active) {
-        box-shadow: 0 0 0 2px background, 0 0 0 6px windowText;
+    @media screen and (forced-colors: active), (forced-colors: active) {
+        box-shadow: 0 0 0 2px background, 0 0 0 6px CanvasText;
         outline: 4px solid CanvasText; // Chromium Edge
         outline-offset: 2px; // Chromium Edge
     }
@@ -23,7 +23,7 @@ $border-size: nx-border-size(xs);
 @mixin formfield-outline-focus-styles {
     box-shadow: v(formfield-outline-focus-box-shadow);
 
-    @media screen and (-ms-high-contrast: active) {
+    @media screen and (forced-colors: active) {
         box-shadow: 0 0 0 2px highlight;
         border: 1px solid highlight; // Chromium Edge
     }
@@ -32,8 +32,8 @@ $border-size: nx-border-size(xs);
 @mixin focus-style-inset {
     box-shadow: v(focus-inset-box-shadow);
 
-    @media screen and (-ms-high-contrast: active) {
-        box-shadow: inset 0 0 0 4px windowText, inset 0 0 0 6px background;
+    @media screen and (forced-colors: active) {
+        box-shadow: inset 0 0 0 4px CanvasText, inset 0 0 0 6px background;
         border: 4px solid CanvasText; // Chromium Edge
     }
 }
@@ -53,28 +53,10 @@ $border-size: nx-border-size(xs);
         .nx-margin-#{$key} {
             margin: $value !important;
         }
-
-        .nx-margin-x-#{$key} {
-            margin-right: $value !important;
-            margin-left: $value !important;
-        }
-
-        .nx-margin-y-#{$key} {
-            margin-top: $value !important;
-            margin-bottom: $value !important;
-        }
-
-        @each $position in $positions {
-            .nx-margin-#{$position}-#{$key} {
-                margin-#{$position}: $value !important;
-            }
-        }
     }
 
-    @each $position in $positions {
-        .nx-margin-#{$position}-0 {
-            margin-#{$position}: 0 !important;
-        }
+    .nx-margin-0 {
+        margin: 0 !important;
     }
 
     .nx-margin-x-0 {
@@ -87,8 +69,30 @@ $border-size: nx-border-size(xs);
         margin-bottom: 0 !important;
     }
 
-    .nx-margin-0 {
-        margin: 0 !important;
+    @each $key, $value in $margins {
+        .nx-margin-x-#{$key} {
+            margin-right: $value !important;
+            margin-left: $value !important;
+        }
+
+        .nx-margin-y-#{$key} {
+            margin-top: $value !important;
+            margin-bottom: $value !important;
+        }
+    }
+
+    @each $position in $positions {
+        .nx-margin-#{$position}-0 {
+            margin-#{$position}: 0 !important;
+        }
+    }
+
+    @each $key, $value in $margins {
+        @each $position in $positions {
+            .nx-margin-#{$position}-#{$key} {
+                margin-#{$position}: $value !important;
+            }
+        }
     }
 }
 
@@ -98,6 +102,18 @@ $border-size: nx-border-size(xs);
             .nx-hidden-#{$key} {
                 display: none !important;
             }
+        }
+    }
+}
+
+@mixin create-modal-margin-class() {
+    .nx-modal-margin-bottom {
+        margin-bottom: nx-spacer(3m) !important;
+    }
+
+    @include media-breakpoint-response(mobile) {
+        .nx-modal-margin-bottom {
+            margin-bottom: nx-spacer(2m) !important;
         }
     }
 }
@@ -121,9 +137,10 @@ $border-size: nx-border-size(xs);
     padding: 0 nx-spacer(2xs) + $dropdown-overlay__focus-line-width;
     margin: 0 $dropdown-overlay__option-margin;
     color: v(dropdown-item-text-color);
+    word-break: break-word;
 
-    @media screen and (-ms-high-contrast: active) {
-        -ms-high-contrast-adjust: none;
+    @media screen and (forced-colors: active) {
+        forced-colors-adjust: none;
         color: buttonText;
         background-color: buttonFace;
         border-radius: nx-border-radius(s);
@@ -146,11 +163,11 @@ $border-size: nx-border-size(xs);
     position: relative;
     cursor: pointer;
 
-    @media screen and (-ms-high-contrast: active) {
+    @media screen and (forced-colors: active) {
         background-color: buttonFace;
         border-color: buttonText;
         color: buttonText;
-        -ms-high-contrast-adjust: none;
+        forced-colors-adjust: none;
     }
 
     &:hover {
@@ -175,15 +192,13 @@ $border-size: nx-border-size(xs);
         color: v(tab-item-color);
     }
 
-    @media screen and (-ms-high-contrast: active) {
-        background-color: highlight;
-        color: highlightText;
+    @media screen and (forced-colors: active) {
         border-color: highlight;
     }
 }
 
 @mixin tab__item--disabled {
-    border-color: v(tab-item-disabled-border-color);
+    border-color: v(tab-item-disabled-color);
     color: v(tab-item-disabled-color);
     cursor: not-allowed;
 
@@ -192,10 +207,14 @@ $border-size: nx-border-size(xs);
         color: v(tab-item-disabled-color);
     }
 
-    @media screen and (-ms-high-contrast: active) {
+    @media screen and (forced-colors: active) {
         border-color: GrayText;
         background-color: buttonFace;
         color: GrayText;
+    }
+
+    ::ng-deep .nx-indicator {
+        opacity: 0.4;
     }
 }
 

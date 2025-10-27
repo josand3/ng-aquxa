@@ -24,6 +24,10 @@
     }
 }
 
+:host.nx-link--xsmall {
+    @include type-style(link-xsmall);
+}
+
 :host.nx-link--small {
     @include type-style(link-small);
 }
@@ -104,6 +108,13 @@
     }
 }
 
+:host.nx-link--xsmall ::ng-deep {
+    .c-icon,
+    nx-icon.nx-link__icon {
+        font-size: v(link-xsmall-icon-size);
+    }
+}
+
 :host.nx-link--small ::ng-deep {
     .c-icon,
     nx-icon.nx-link__icon {
@@ -174,7 +185,7 @@
     }
 }
 
-@media screen and (-ms-high-contrast: active) {
+@media screen and (forced-colors: active) {
     :host::ng-deep a[disabled],
     :host::ng-deep a[aria-disabled] {
         color: GrayText !important;

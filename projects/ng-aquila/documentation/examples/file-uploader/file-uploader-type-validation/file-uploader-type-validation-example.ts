@@ -1,15 +1,26 @@
+import { JsonPipe } from '@angular/common';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import {
-    UntypedFormControl,
-    UntypedFormGroup,
+    FormControl,
+    FormGroup,
+    FormsModule,
+    ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
+import { NxErrorComponent, NxLabelComponent } from '@aposin/ng-aquila/base';
+import { NxButtonComponent } from '@aposin/ng-aquila/button';
 import {
     FileItem,
     NxFileUploadConfig,
     NxFileUploader,
+    NxFileUploaderButtonDirective,
+    NxFileUploaderComponent,
+    NxFileUploaderDropZoneComponent,
+    NxFileUploaderHintDirective,
+    NxFileUploaderTriggerDirective,
 } from '@aposin/ng-aquila/file-uploader';
+import { NxIconComponent } from '@aposin/ng-aquila/icon';
 import {
     NxMessageToastConfig,
     NxMessageToastService,
@@ -28,6 +39,21 @@ export const myCustomConfig: NxMessageToastConfig = {
     selector: 'file-uploader-type-validation-example',
     templateUrl: './file-uploader-type-validation-example.html',
     styleUrls: ['./file-uploader-type-validation-example.css'],
+    standalone: true,
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        NxFileUploaderComponent,
+        NxLabelComponent,
+        NxFileUploaderHintDirective,
+        NxFileUploaderDropZoneComponent,
+        NxButtonComponent,
+        NxFileUploaderButtonDirective,
+        NxIconComponent,
+        NxErrorComponent,
+        NxFileUploaderTriggerDirective,
+        JsonPipe,
+    ],
 })
 export class FileUploaderTypeValidationExampleComponent
     implements OnInit, OnDestroy
@@ -42,8 +68,8 @@ export class FileUploaderTypeValidationExampleComponent
 
     readonly uploader = new NxFileUploader(this.uploadConfig, this.http);
 
-    readonly testForm = new UntypedFormGroup({
-        documents: new UntypedFormControl([], Validators.required),
+    readonly testForm = new FormGroup({
+        documents: new FormControl([], Validators.required),
     });
 
     private readonly _destroyed = new Subject<void>();

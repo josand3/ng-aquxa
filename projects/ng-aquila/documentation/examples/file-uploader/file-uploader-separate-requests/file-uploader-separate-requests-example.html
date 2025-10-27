@@ -12,23 +12,29 @@
         class="nx-margin-bottom-s"
         nxFileUploadButton
     >
-        <nx-icon name="plus" class="nx-margin-right-2xs"></nx-icon>
+        <nx-icon
+            name="plus"
+            class="nx-margin-right-2xs"
+            aria-hidden="true"
+        ></nx-icon>
         Add File
     </button>
 </nx-file-uploader>
 
-<nx-error *ngIf="showUploadError"> An error occured while uploading. </nx-error>
+@if (showUploadError) {
+<nx-error> An error occured while uploading. </nx-error>
+}
 
 <p>
     Set url for testing the upload: {{ uploadConfig['requestUrl'] ===
     'file-upload' ? 'Valid url' : 'Invalid url' }}
 </p>
 
-<nx-radio-toggle nxStyle="small" [(ngModel)]="uploadConfig['requestUrl']">
-    <nx-radio-toggle-button nxValue="file-upload"
+<nx-radio-toggle variant="small" [(ngModel)]="uploadConfig['requestUrl']">
+    <nx-radio-toggle-button value="file-upload"
         >Valid url</nx-radio-toggle-button
     >
-    <nx-radio-toggle-button nxValue="file-upload-error"
+    <nx-radio-toggle-button value="file-upload-error"
         >Invalid url</nx-radio-toggle-button
     >
 </nx-radio-toggle>

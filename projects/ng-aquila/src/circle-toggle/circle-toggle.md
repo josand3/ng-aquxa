@@ -5,6 +5,7 @@ b2c: true
 expert: true
 stable: done
 alias: button, radio, toggle, checkbox
+a1: true
 ---
 
 The toggle circle can be used as standalone toggle circle (checkbox role) or multiple toggle circles can be grouped with the circle toggle group wrapper and fullfill a radio group role.
@@ -49,7 +50,7 @@ Please note that if no label is provided, on mobile the circleText will be displ
 
 #### Expert: Appearance
 
-With `appearance="expert"` you can change the styling of the card to expert.
+With `appearance="expert"` you can change the styling of the circle toggle to expert. This will be automatically set if you use the `NxExpertModule`.
 
 Please note that this is an **Expert option**. This means that it is only intended for internal applications and not for applications that are client facing.
 
@@ -72,6 +73,19 @@ Please note that this is an **Expert option**. This means that it is only intend
 ### Reactive form disabled
 
 <!-- example(circle-toggle-reactive-disabled) -->
+
+<div class="docs-expert-container">
+
+### Expert: readonly
+
+<div class="docs-deprecation-warning">
+<strong>Expert only: </strong>
+  Please note that the readonly option is only for expert/internal applications because of accessibility restrictions. There is currently no solution for readonly states that is accepted for retail applications.
+</div>
+
+<!-- example(circle-toggle-readonly) -->
+
+</div>
 
 ### Validation
 <!-- example(circle-toggle-validation)-->

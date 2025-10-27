@@ -14,11 +14,10 @@ describe('NxMultiYearView', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [NxNativeDateModule],
-            declarations: [
+            imports: [
+                NxNativeDateModule,
                 NxCalendarBodyComponent,
                 NxMultiYearViewComponent,
-
                 // Test components.
                 StandardMultiYearView,
                 MultiYearViewWithDateFilter,
@@ -44,7 +43,7 @@ describe('NxMultiYearView', () => {
         });
 
         it('has correct number of years', () => {
-            const cellEls = multiYearViewNativeElement.querySelectorAll('.nx-calendar-body-cell');
+            const cellEls = multiYearViewNativeElement.querySelectorAll('.nx-calendar-body-cell-content');
             expect(cellEls).toHaveSize(yearsPerPage);
         });
 
@@ -57,7 +56,7 @@ describe('NxMultiYearView', () => {
         });
 
         it('fires selected change event on cell clicked', () => {
-            const cellEls = multiYearViewNativeElement.querySelectorAll('.nx-calendar-body-cell');
+            const cellEls = multiYearViewNativeElement.querySelectorAll('.nx-calendar-body-cell-content');
             (cellEls[cellEls.length - 1] as HTMLElement).click();
             fixture.detectChanges();
 
@@ -66,7 +65,7 @@ describe('NxMultiYearView', () => {
         });
 
         it('should emit the selected year on cell clicked', () => {
-            const cellEls = multiYearViewNativeElement.querySelectorAll('.nx-calendar-body-cell');
+            const cellEls = multiYearViewNativeElement.querySelectorAll('.nx-calendar-body-cell-content');
 
             (cellEls[1] as HTMLElement).click();
             fixture.detectChanges();
@@ -76,7 +75,7 @@ describe('NxMultiYearView', () => {
         });
 
         it('should mark active date', () => {
-            const cellEls = multiYearViewNativeElement.querySelectorAll('.nx-calendar-body-cell');
+            const cellEls = multiYearViewNativeElement.querySelectorAll('.nx-calendar-body-cell-content');
 
             expect((cellEls[cellEls.length - 3] as HTMLElement).innerText.trim()).toBe('2017');
             expect(cellEls[cellEls.length - 3]).toHaveClass('nx-calendar-body-active');
@@ -212,7 +211,7 @@ describe('NxMultiYearView', () => {
         });
 
         it('should disable years with no enabled days', () => {
-            const cells = multiYearViewNativeElement.querySelectorAll('.nx-calendar-body-cell');
+            const cells = multiYearViewNativeElement.querySelectorAll('.nx-calendar-body-cell-content');
             expect(cells[0]).not.toHaveClass('nx-calendar-body-disabled');
             expect(cells[1]).toHaveClass('nx-calendar-body-disabled');
         });
@@ -221,6 +220,8 @@ describe('NxMultiYearView', () => {
 
 @Component({
     template: `<nx-multi-year-view [(activeDate)]="date" [(selected)]="selected" (yearSelected)="selectedYear = $event"></nx-multi-year-view>`,
+    standalone: true,
+    imports: [NxNativeDateModule, NxMultiYearViewComponent],
 })
 class StandardMultiYearView {
     date = new Date(2017, JAN, 1);
@@ -232,6 +233,8 @@ class StandardMultiYearView {
 
 @Component({
     template: `<nx-multi-year-view [(activeDate)]="activeDate" [dateFilter]="dateFilter"></nx-multi-year-view>`,
+    standalone: true,
+    imports: [NxNativeDateModule, NxMultiYearViewComponent],
 })
 class MultiYearViewWithDateFilter {
     activeDate = new Date(2001, JAN, 1);

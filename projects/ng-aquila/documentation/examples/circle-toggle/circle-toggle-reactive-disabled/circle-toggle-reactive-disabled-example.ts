@@ -1,5 +1,16 @@
+import { JsonPipe } from '@angular/common';
 import { Component } from '@angular/core';
-import { UntypedFormBuilder, Validators } from '@angular/forms';
+import {
+    FormBuilder,
+    FormsModule,
+    ReactiveFormsModule,
+    Validators,
+} from '@angular/forms';
+import { NxButtonComponent } from '@aposin/ng-aquila/button';
+import {
+    NxCircleToggleComponent,
+    NxCircleToggleGroupComponent,
+} from '@aposin/ng-aquila/circle-toggle';
 
 /**
  * @title Reactive disabled example
@@ -8,6 +19,15 @@ import { UntypedFormBuilder, Validators } from '@angular/forms';
     selector: 'circle-toggle-reactive-disabled-example',
     templateUrl: './circle-toggle-reactive-disabled-example.html',
     styleUrls: ['./circle-toggle-reactive-disabled-example.css'],
+    standalone: true,
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        NxCircleToggleGroupComponent,
+        NxCircleToggleComponent,
+        NxButtonComponent,
+        JsonPipe,
+    ],
 })
 export class CircleToggleReactiveDisabledExampleComponent {
     readonly testForm = this.fb.group({
@@ -38,7 +58,7 @@ export class CircleToggleReactiveDisabledExampleComponent {
         },
     ];
 
-    constructor(private readonly fb: UntypedFormBuilder) {
+    constructor(private readonly fb: FormBuilder) {
         this.testForm.disable();
     }
 

@@ -1,3 +1,4 @@
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ComponentHarness, HarnessLoader, parallel } from '@angular/cdk/testing';
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { Component, Directive, Type, ViewChild } from '@angular/core';
@@ -58,11 +59,12 @@ describe('NxMultiSelectOptionComponent', () => {
     let multiSelectOptionInstance: NxMultiSelectOptionComponent<any>;
     let loader: HarnessLoader;
     let multiSelectOptionHarness: MultiSelectOptionHarness;
+    let liveAnnouncer: LiveAnnouncer;
 
-    async function configureTestingModule(declarations: any[]) {
+    async function configureTestingModule() {
         return TestBed.configureTestingModule({
-            imports: [NxDropdownModule],
-            declarations,
+            imports: [NxDropdownModule, BasicMultiSelectOptionComponent],
+            providers: [LiveAnnouncer],
         }).compileComponents();
     }
 
@@ -71,11 +73,13 @@ describe('NxMultiSelectOptionComponent', () => {
         fixture.detectChanges();
         testInstance = fixture.componentInstance;
         multiSelectOptionInstance = testInstance.multiSelectOption;
+        liveAnnouncer = TestBed.inject(LiveAnnouncer);
+
         loader = TestbedHarnessEnvironment.loader(fixture);
     }
 
     beforeEach(async () => {
-        await configureTestingModule([BasicMultiSelectOptionComponent, NxMultiSelectOptionComponent]);
+        await configureTestingModule();
         createTestComponent(BasicMultiSelectOptionComponent);
         multiSelectOptionHarness = await loader.getHarness(MultiSelectOptionHarness);
     });
@@ -208,10 +212,18 @@ describe('NxMultiSelectOptionComponent', () => {
             createTestComponent(BasicMultiSelectOptionComponent);
             await expectAsync(fixture.nativeElement).toBeAccessible();
         });
+
+        it('read out select state', async () => {
+            createTestComponent(BasicMultiSelectOptionComponent);
+            const announceSpy = spyOn(liveAnnouncer, 'announce');
+            await multiSelectOptionHarness.click();
+
+            expect(announceSpy).toHaveBeenCalledWith('example label selected');
+        });
     });
 });
 
-@Directive()
+@Directive({ standalone: true })
 abstract class MultiSelectOptionTest {
     @ViewChild(NxMultiSelectOptionComponent) multiSelectOption!: NxMultiSelectOptionComponent<any>;
 
@@ -237,5 +249,7 @@ abstract class MultiSelectOptionTest {
             </nx-multi-select-option>
         </div>
     `,
+    standalone: true,
+    imports: [NxMultiSelectOptionComponent],
 })
 class BasicMultiSelectOptionComponent extends MultiSelectOptionTest {}

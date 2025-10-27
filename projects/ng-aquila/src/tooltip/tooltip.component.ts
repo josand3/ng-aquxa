@@ -1,5 +1,7 @@
 import { AnimationEvent } from '@angular/animations';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, OnDestroy } from '@angular/core';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { NgClass, NgStyle } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, inject, OnDestroy } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 
 import { TooltipPosition } from './tooltip.directive';
@@ -25,8 +27,12 @@ type TooltipVisibility = 'initial' | 'visible' | 'hidden';
         '(body:click)': 'this._handleBodyInteraction()',
         'aria-hidden': 'true',
     },
+    standalone: true,
+    imports: [NgClass, NgStyle],
 })
 export class NxTooltipComponent implements OnDestroy {
+    private _liveAnnouncer = inject(LiveAnnouncer);
+
     /** The timeout ID of any current timer set to show the tooltip */
     private _showTimeoutId: number | null = null;
 
@@ -102,12 +108,10 @@ export class NxTooltipComponent implements OnDestroy {
             this._hideTimeoutId = null;
         }
 
-        // Body interactions should cancel the tooltip if there is a delay in showing.
-        this._closeOnInteraction = true;
         this._showTimeoutId = window.setTimeout(() => {
             this._visibility = 'visible';
             this._showTimeoutId = null;
-
+            this._liveAnnouncer.announce(this.message);
             // Mark for check so if any parent component has set the
             // ChangeDetectionStrategy to OnPush it will be checked anyways
             this._cdr.markForCheck();

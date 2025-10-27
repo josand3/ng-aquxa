@@ -2,11 +2,13 @@ import { FocusMonitor } from '@angular/cdk/a11y';
 import { Directionality } from '@angular/cdk/bidi';
 import { BooleanInput, coerceBooleanProperty, coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import { DOWN_ARROW, LEFT_ARROW, RIGHT_ARROW, UP_ARROW } from '@angular/cdk/keycodes';
+import { NgStyle } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    ContentChildren,
     ElementRef,
     EventEmitter,
     forwardRef,
@@ -15,12 +17,15 @@ import {
     OnDestroy,
     Optional,
     Output,
+    QueryList,
     ViewChild,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { clamp } from '@aposin/ng-aquila/utils';
 import { Decimal } from 'decimal.js';
 import { fromEvent, Subscription } from 'rxjs';
+
+import { NxSliderAppendixDirective } from './appendix.directive';
 
 interface TickItem {
     gapSize: number;
@@ -54,6 +59,8 @@ const VALUE_MARGIN = 4;
         '[class.nx-slider--disabled]': 'disabled',
         '[class.nx-slider--negative]': 'negative',
     },
+    standalone: true,
+    imports: [NgStyle],
 })
 export class NxSliderComponent implements ControlValueAccessor, AfterViewInit, OnDestroy {
     private _dragSubscriptions: Subscription[] = [];
@@ -64,7 +71,7 @@ export class NxSliderComponent implements ControlValueAccessor, AfterViewInit, O
      * How often to show ticks. Relative to the step so that a tick always appears on a step.
      * Ex: Tick interval of 4 with a step of 3 will draw a tick every 4 steps (every 12 values).
      */
-    @Input('tickInterval') set tickInterval(value: NumberInput) {
+    @Input() set tickInterval(value: NumberInput) {
         this._tickInterval = coerceNumberProperty(value);
         this.ticks = this.getTicks(this.min, this.max, this.step, this._tickInterval, this.longTicks);
         this._cdr.markForCheck();
@@ -77,11 +84,12 @@ export class NxSliderComponent implements ControlValueAccessor, AfterViewInit, O
     ticks: TickItem[] = [];
 
     @ViewChild('handle', { static: true }) private _handleElement!: ElementRef;
+    @ContentChildren(NxSliderAppendixDirective) _appendixChildren!: QueryList<NxSliderAppendixDirective>;
 
     _labelPosition: string = DEFAULT_LABEL_POSITION;
 
     /** Sets the id of the slider. */
-    @Input('id') set id(value: string) {
+    @Input() set id(value: string) {
         if (this._id !== value) {
             this._id = value;
             this._cdr.markForCheck();
@@ -103,7 +111,7 @@ export class NxSliderComponent implements ControlValueAccessor, AfterViewInit, O
     private _tabIndex = 0;
 
     /** Sets the minimum value (Default: 0). */
-    @Input('nxMin') set min(value: NumberInput) {
+    @Input() set min(value: NumberInput) {
         this._min = coerceNumberProperty(value);
         this.ticks = this.getTicks(this._min, this.max, this.step, this.tickInterval, this.longTicks);
         this._cdr.markForCheck();
@@ -114,7 +122,7 @@ export class NxSliderComponent implements ControlValueAccessor, AfterViewInit, O
     private _min = DEFAULT_MIN;
 
     /** Sets the maximum value (Default: 100). */
-    @Input('nxMax') set max(value: NumberInput) {
+    @Input() set max(value: NumberInput) {
         this._max = coerceNumberProperty(value);
         this.ticks = this.getTicks(this.min, this._max, this.step, this.tickInterval, this.longTicks);
         this._cdr.markForCheck();
@@ -125,7 +133,7 @@ export class NxSliderComponent implements ControlValueAccessor, AfterViewInit, O
     private _max = DEFAULT_MAX;
 
     /** Sets the step size by which the value of the slider can be increased or decreased (Default: 1). */
-    @Input('nxStep') set step(value: NumberInput) {
+    @Input() set step(value: NumberInput) {
         this._step = coerceNumberProperty(value, this._step);
         this.ticks = this.getTicks(this.min, this.max, this._step, this._tickInterval, this.longTicks);
         if (this._step % 1 !== 0) {
@@ -139,7 +147,7 @@ export class NxSliderComponent implements ControlValueAccessor, AfterViewInit, O
     private _step: number = DEFAULT_STEP;
 
     /** Sets the label which is displayed on top of the slider. */
-    @Input('nxLabel') set label(value: string) {
+    @Input() set label(value: string) {
         if (this._label !== value) {
             this._label = value;
             this._cdr.markForCheck();
@@ -161,7 +169,7 @@ export class NxSliderComponent implements ControlValueAccessor, AfterViewInit, O
     private _disabled = false;
 
     /** Whether the max value is to the right (false) or left (true).*/
-    @Input('nxInverted') set inverted(value: BooleanInput) {
+    @Input() set inverted(value: BooleanInput) {
         this._inverted = coerceBooleanProperty(value);
         this._cdr.markForCheck();
     }
@@ -180,7 +188,7 @@ export class NxSliderComponent implements ControlValueAccessor, AfterViewInit, O
     }
 
     /** Sets the current value of the slider. */
-    @Input('nxValue') set value(value: NumberInput) {
+    @Input() set value(value: NumberInput) {
         this.writeValue(Number(value));
 
         // wait for rerender to calculate latest label position
@@ -194,7 +202,7 @@ export class NxSliderComponent implements ControlValueAccessor, AfterViewInit, O
     private _value = 0;
 
     /** Whether the negative set of styles is applied (Default: 'false').*/
-    @Input('negative') set negative(value: BooleanInput) {
+    @Input() set negative(value: BooleanInput) {
         this._negative = coerceBooleanProperty(value);
         this._cdr.markForCheck();
     }
@@ -204,7 +212,7 @@ export class NxSliderComponent implements ControlValueAccessor, AfterViewInit, O
     private _negative = false;
 
     /** Hides the min/max labels (Default: 'false'). */
-    @Input('hideLabels') set hideLabels(value: BooleanInput) {
+    @Input() set hideLabels(value: BooleanInput) {
         this._hideLabels = coerceBooleanProperty(value);
         this._cdr.markForCheck();
     }
@@ -214,7 +222,7 @@ export class NxSliderComponent implements ControlValueAccessor, AfterViewInit, O
     private _hideLabels = false;
 
     /** Sets the array of value which will render as long tick (Default: Middle value if present). */
-    @Input('longTicks') set longTicks(value: number[]) {
+    @Input() set longTicks(value: number[]) {
         if (this._longTicks !== value) {
             this._longTicks = value;
             this.ticks = this.getTicks(this.min, this.max, this.step, this.tickInterval, this._longTicks);
@@ -227,16 +235,16 @@ export class NxSliderComponent implements ControlValueAccessor, AfterViewInit, O
     private _longTicks = [0];
 
     /** An event is dispatched on each value change. */
-    @Output('nxValueChange') readonly valueChange = new EventEmitter<number>();
+    @Output() readonly valueChange = new EventEmitter<number>();
 
     /** Sets the customization function for the value which is displayed above the slider handle (Default:(value) => value). ). */
-    @Input('nxValueFormatter') valueFormatter = (value: any) => value;
+    @Input() valueFormatter = (value: any) => value;
 
     /** Sets the customization function for the label on the min-side of the slider (Default:(value) => value). */
-    @Input('nxLabelMinFormatter') labelMinFormatter = (value: any) => value;
+    @Input() labelMinFormatter = (value: any) => value;
 
     /** Sets the customization function for the label on the max-side of the slider (Default:(value) => value). */
-    @Input('nxLabelMaxFormatter') labelMaxFormatter = (value: any) => value;
+    @Input() labelMaxFormatter = (value: any) => value;
 
     private _onChange: (value: any) => void = () => {};
     private _onTouched: () => any = () => {};
@@ -300,7 +308,7 @@ export class NxSliderComponent implements ControlValueAccessor, AfterViewInit, O
      *
      * - current value is a valid multitude of the step size - then we can safely add or subtract the step.
      *
-     * - the value is not a valid multitude. This could be the max value or the value bound via nxValue - then
+     * - the value is not a valid multitude. This could be the max value or the value bound via value - then
      * we look for the next closest value upwards or downwards decimal.js provides a nice utility function for this.
      */
     _changeValue(valueDiff: number) {

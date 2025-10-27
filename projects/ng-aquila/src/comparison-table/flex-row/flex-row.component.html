@@ -1,71 +1,63 @@
 <!-- own row for description cell for tablet view -->
-<div *ngIf="row.type === 'content' && row.descriptionCell && _table.viewType === 'tablet'" class="nx-comparison-table__row" role="row">
+@if (row.type === 'content' && row.descriptionCell && _table.viewType === 'tablet') {
+<div class="nx-comparison-table__row" role="row">
     <ng-container *ngTemplateOutlet="row.descriptionCell._content"></ng-container>
 </div>
+}
 
 <!-- special row for the popular cell -->
-<div *ngIf="row.popularCell && (_table.viewType === 'desktop' || _table.viewType === 'tablet')" class="nx-comparison-table__row" role="row">
+@if (row.popularCell && (_table.viewType === 'desktop' || _table.viewType === 'tablet')) {
+<div class="nx-comparison-table__row" role="row">
     <!-- this placeholder cell is removed on tablet, as the row header disappears there  -->
-    <div *ngIf="!(_table.viewType === 'tablet')" role="cell" class="nx-comparison-table__placeholder-cell is-popular-placeholder-cell">
+    @if (!(_table.viewType === 'tablet')) {
+    <div role="cell" class="nx-comparison-table__placeholder-cell is-popular-placeholder-cell">
         <div class="nx-comparison-table__cell-content"></div>
     </div>
-
-    <div
-        *ngFor="let emptyCellBeforePopular of [].constructor(row.popularCell.forColumn - 1); let i = index"
-        role="cell"
-        class="nx-comparison-table__placeholder-cell is-popular-placeholder-cell"
-        [class.is-hidden]="_table._hiddenIndexes.indexOf(i) !== -1"
-    >
+    } @for (emptyCellBeforePopular of [].constructor(row.popularCell.forColumn - 1); track $index; let i = $index) {
+    <div role="cell" class="nx-comparison-table__placeholder-cell is-popular-placeholder-cell" [class.is-hidden]="_table._hiddenIndexes.indexOf(i) !== -1">
         <div class="nx-comparison-table__cell-content"></div>
     </div>
-
+    }
     <!-- popular cell content -->
     <ng-container *ngTemplateOutlet="row.popularCell._content"></ng-container>
-
+    @for (emptyCellAfterPopular of [].constructor(row.cells.length - row.popularCell.forColumn); track $index; let i = $index) {
     <div
-        *ngFor="let emptyCellAfterPopular of [].constructor(row.cells.length - row.popularCell.forColumn); let i = index"
         role="cell"
         class="nx-comparison-table__placeholder-cell is-popular-placeholder-cell"
         [class.is-hidden]="_table._hiddenIndexes.indexOf(row.popularCell.forColumn + i) !== -1"
     >
         <div class="nx-comparison-table__cell-content"></div>
     </div>
+    }
 </div>
+}
 
 <div class="nx-comparison-table__row" role="row">
     <!-- header row -->
-    <ng-container *ngIf="row.type === 'header'">
-        <div *ngIf="_table.viewType === 'desktop'" role="columnheader" class="nx-comparison-table__placeholder-cell">
-            <div class="nx-comparison-table__cell-content"></div>
-        </div>
-        <ng-container *ngFor="let headerCell of row.cells; let i = index">
-            <ng-container *ngTemplateOutlet="headerCell._content"></ng-container>
-        </ng-container>
-    </ng-container>
+    @if (row.type === 'header') { @if (_table.viewType === 'desktop') {
+    <div role="columnheader" class="nx-comparison-table__placeholder-cell">
+        <div class="nx-comparison-table__cell-content"></div>
+    </div>
+    } @for (headerCell of row.cells; track headerCell; let i = $index) {
+    <ng-container *ngTemplateOutlet="headerCell._content"></ng-container>
+    } }
 
     <!-- content row -->
     <!-- description cell only displayed here if desktop view -->
-    <ng-container *ngIf="row.type === 'content'">
-        <ng-container *ngIf="row.descriptionCell && _table.viewType === 'desktop'">
-            <ng-container *ngTemplateOutlet="row.descriptionCell._content"></ng-container>
-        </ng-container>
-
-        <ng-container *ngFor="let cell of row.cells">
-            <ng-container *ngTemplateOutlet="cell._content"></ng-container>
-        </ng-container>
-
-        <ng-container *ngIf="row.intersectionCell">
-            <ng-container *ngTemplateOutlet="row.intersectionCell._content"></ng-container>
-        </ng-container>
-    </ng-container>
+    @if (row.type === 'content') { @if (row.descriptionCell && _table.viewType === 'desktop') {
+    <ng-container *ngTemplateOutlet="row.descriptionCell._content"></ng-container>
+    } @for (cell of row.cells; track cell) {
+    <ng-container *ngTemplateOutlet="cell._content"></ng-container>
+    } @if (row.intersectionCell) {
+    <ng-container *ngTemplateOutlet="row.intersectionCell._content"></ng-container>
+    } }
 
     <!-- footer row -->
-    <ng-container *ngIf="row.type === 'footer'">
-        <div *ngIf="_table.viewType === 'desktop'" class="nx-comparison-table__placeholder-cell" role="cell">
-            <div class="nx-comparison-table__cell-content"></div>
-        </div>
-        <ng-container *ngFor="let footerCell of row.cells">
-            <ng-container *ngTemplateOutlet="footerCell._content"></ng-container>
-        </ng-container>
-    </ng-container>
+    @if (row.type === 'footer') { @if (_table.viewType === 'desktop') {
+    <div class="nx-comparison-table__placeholder-cell" role="cell">
+        <div class="nx-comparison-table__cell-content"></div>
+    </div>
+    } @for (footerCell of row.cells; track footerCell) {
+    <ng-container *ngTemplateOutlet="footerCell._content"></ng-container>
+    } }
 </div>

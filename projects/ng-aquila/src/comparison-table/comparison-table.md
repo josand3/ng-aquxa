@@ -4,6 +4,7 @@ category: components
 b2c: true
 expert: true
 stable: done
+a1: true
 ---
 
 ### Notes about the usage of the component
@@ -12,7 +13,7 @@ It is recommended to use the comparison table with a **maximum of 5 products**.
 
 The footer cells are not displayed on mobile. Therefore please **do not put any important content in the footer**.
 
-For better mobile side-to-side scrolling user experience the table should be placed in a horizontal scroll indicator `<nx-swipebar>` component.
+For better mobile user experience the table should be placed in a horizontal scrollable container.
 
 ### Accessibility
 
@@ -80,7 +81,7 @@ Multiple table rows can be grouped in a toggle section (`nxComparisonTableToggle
 
 #### Disabled table columns
 
-You can disable certain columns of the comparison table via the input `disabledColumn` on a header `nx-comparison-table-cell` as shown in the example below. Keep in mind that the `disabledColumn` attribute can be set only on header cells.
+You can disable certain columns of the comparison table via the input `disabledColumn` on a header `nx-comparison-table-cell` as shown in the example below. Keep in mind that the `disabledColumn` attribute can be set only on header cells. Note that disabling a column in the comparison table using the `disabledColumn` attribute on a header cell won't automatically disable other input fields like dropdowns, text fields, and checkboxes. You'll have to manually disable those fields using the disabled attribute.
 
 <!-- example(comparison-table-disabled-columns) -->
 
@@ -155,3 +156,9 @@ A more neutral variant is available for expert applications.
 <!-- example(recommendation-table-expert) -->
 
 </div>
+
+ #### Error state
+You can display an error state for the header and footer of the table using the `isError` attribute as shown in the example below.
+
+To enhance accessibility,  please ensure that an explanation of any error messages is included above the table, if applicable.
+ <!-- example(comparison-table-error) -->

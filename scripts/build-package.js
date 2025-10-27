@@ -1,7 +1,7 @@
 const { execSync } = require('child_process');
+const path = require('path');
 const fs = require('fs-extra');
-const { promisify } = require('util');
-const rimraf = promisify(require('rimraf'));
+const { rimrafSync } = require('rimraf');
 const { opensourceThemes } = require('./themes.js');
 const glob = require('glob');
 
@@ -20,6 +20,20 @@ function compileTheme(theme) {
     });
 }
 
+function compileAgGridTheme() {
+    let nodeModulesPath = 'node_modules';
+    // little trick to build it correctly when it is used as a git submodule
+    if (fs.existsSync('../node_modules/ag-grid-community')) {
+        nodeModulesPath = '../node_modules';
+    }
+    execSync(
+        `sass --no-source-map --load-path=${nodeModulesPath} projects/ng-aquila/src/ag-grid/ag-theme-aquila.scss dist/ng-aquila/themes/ag-theme-aquila.css`,
+        {
+            stdio: 'inherit',
+        },
+    );
+}
+
 function globCopy(sourcePath, destinationPath, globPath) {
     const files = glob.sync(sourcePath + globPath, null);
     files.forEach(src => {
@@ -29,7 +43,7 @@ function globCopy(sourcePath, destinationPath, globPath) {
 }
 
 function compileSchematics() {
-    rimraf.sync('./dist/ng-aquila/schematics');
+    rimrafSync('./dist/ng-aquila/schematics');
 
     execSync(`tsc -p ./projects/ng-aquila/tsconfig.schematics.json`, { stdio: 'inherit' });
     console.log('============================');
@@ -42,12 +56,28 @@ console.log('  Building themes');
 opensourceThemes.forEach(theme => {
     compileTheme(theme);
 });
+console.log('  Building ag-grid theme');
+compileAgGridTheme();
 
 console.log('============================');
 console.log('  Building utility css');
 ['utilities', 'normalize', 'compatibility'].forEach(file => {
     execSync(`sass --no-source-map projects/ng-aquila/src/shared-styles/${file}.scss dist/ng-aquila/css/${file}.css`, { stdio: 'inherit' });
 });
+try {
+    fs.readdirSync(path.join(__dirname, '../projects/ng-aquila/src/shared-styles/compatibility'), {})
+        .map(file => file.replace('.scss', ''))
+        .forEach(file => {
+            execSync(`sass --no-source-map projects/ng-aquila/src/shared-styles/compatibility/${file}.scss dist/ng-aquila/css/compatibility/${file}.css`, {
+                stdio: 'inherit',
+            });
+        });
+} catch (e) {
+    // suppress error if the optional compatibility folder does not exist
+    if (e.code !== 'ENOENT') {
+        console.error(e);
+    }
+}
 
 console.log('============================');
 console.log('  Building schematics');

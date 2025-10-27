@@ -1,4 +1,5 @@
 import { OverlayRef } from '@angular/cdk/overlay';
+import { ComponentRef } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { take } from 'rxjs/operators';
 
@@ -28,6 +29,7 @@ export class NxMessageToastRef {
          */
         public toastInstance: NxMessageToastComponent,
         private readonly _overlayRef: OverlayRef,
+        private readonly _componentRef: ComponentRef<any>,
     ) {
         toastInstance._onExit.pipe(take(1)).subscribe(() => this._finishDismiss());
     }

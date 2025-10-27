@@ -10,7 +10,7 @@ const errorOptions: ErrorDefaultOptions = {
     appearance: 'text',
 };
 
-@Directive()
+@Directive({ standalone: true })
 abstract class ErrorTest {
     @ViewChild(NxErrorComponent) errorInstance!: NxErrorComponent;
     id!: string;
@@ -32,8 +32,7 @@ describe('NxErrorComponent', () => {
     describe('basic', () => {
         beforeEach(waitForAsync(() => {
             TestBed.configureTestingModule({
-                declarations: [BasicError, ConfigurableError],
-                imports: [NxErrorModule],
+                imports: [NxErrorModule, BasicError, ConfigurableError],
             }).compileComponents();
         }));
 
@@ -59,25 +58,24 @@ describe('NxErrorComponent', () => {
 
         it('creates the nx-error with an auto generated id', () => {
             createTestComponent(BasicError);
-            const nxError = fixture.nativeElement.querySelector('nx-error') as HTMLButtonElement;
+            const content = fixture.nativeElement.querySelector('.nx-error__content') as HTMLElement;
 
-            expect(nxError.id).toMatch('^nx-error-[0-9]');
+            expect(content.id).toMatch('^nx-error-[0-9]');
         });
 
         it('creates the nx-error with a custom id', () => {
             createTestComponent(ConfigurableError);
-            const nxError = fixture.nativeElement.querySelector('nx-error') as HTMLButtonElement;
-
+            const content = fixture.nativeElement.querySelector('.nx-error__content') as HTMLElement;
             testInstance.id = '';
             fixture.detectChanges();
 
-            expect(nxError.id).toContain('nx-error-');
+            expect(content.id).toContain('nx-error-');
 
             testInstance.id = 'customID';
             fixture.detectChanges();
 
             expect(errorInstance.id).toBe('customID');
-            expect(nxError.id).toBe('customID');
+            expect(content.id).toBe('customID');
         });
     });
 
@@ -85,8 +83,7 @@ describe('NxErrorComponent', () => {
         beforeEach(waitForAsync(() => {
             errorOptions.appearance = 'text';
             TestBed.configureTestingModule({
-                declarations: [BasicError, ConfigurableError],
-                imports: [NxErrorModule],
+                imports: [NxErrorModule, BasicError, ConfigurableError],
                 providers: [{ provide: ERROR_DEFAULT_OPTIONS, useValue: errorOptions }],
             }).compileComponents();
         }));
@@ -126,10 +123,14 @@ describe('NxErrorComponent', () => {
 
 @Component({
     template: `<nx-error>I am an error message.</nx-error>`,
+    standalone: true,
+    imports: [NxErrorModule],
 })
 class BasicError extends ErrorTest {}
 
 @Component({
     template: `<nx-error [appearance]="appearance" [id]="id">I am an error message with an icon.</nx-error>`,
+    standalone: true,
+    imports: [NxErrorModule],
 })
 class ConfigurableError extends ErrorTest {}

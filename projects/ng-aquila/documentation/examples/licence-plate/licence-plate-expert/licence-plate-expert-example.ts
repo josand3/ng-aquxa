@@ -1,5 +1,30 @@
+import { JsonPipe } from '@angular/common';
 import { Component } from '@angular/core';
-import { NxLicencePlateType } from '@aposin/ng-aquila/licence-plate';
+import { FormsModule } from '@angular/forms';
+import { NxErrorComponent } from '@aposin/ng-aquila/base';
+import {
+    NxDropdownComponent,
+    NxDropdownItemComponent,
+} from '@aposin/ng-aquila/dropdown';
+import {
+    NxFormfieldComponent,
+    NxFormfieldErrorDirective,
+    NxFormfieldHintDirective,
+    NxFormfieldPrefixDirective,
+    NxFormfieldSuffixDirective,
+} from '@aposin/ng-aquila/formfield';
+import {
+    NxColComponent,
+    NxLayoutComponent,
+    NxRowComponent,
+} from '@aposin/ng-aquila/grid';
+import { NxInputDirective } from '@aposin/ng-aquila/input';
+import {
+    NxLicencePlateEuroPrefixComponent,
+    NxLicencePlateSeasonSuffixComponent,
+    NxLicencePlateType,
+    NxLicencePlateValidatorDirective,
+} from '@aposin/ng-aquila/licence-plate';
 
 /**
  * @title Licence plate expert
@@ -8,8 +33,28 @@ import { NxLicencePlateType } from '@aposin/ng-aquila/licence-plate';
     selector: 'licence-plate-expert-example',
     templateUrl: 'licence-plate-expert-example.html',
     styleUrls: ['licence-plate-expert-example.css'],
+    standalone: true,
+    imports: [
+        NxLayoutComponent,
+        NxRowComponent,
+        NxColComponent,
+        NxFormfieldComponent,
+        NxDropdownComponent,
+        NxDropdownItemComponent,
+        NxLicencePlateEuroPrefixComponent,
+        NxFormfieldPrefixDirective,
+        NxInputDirective,
+        FormsModule,
+        NxLicencePlateValidatorDirective,
+        NxLicencePlateSeasonSuffixComponent,
+        NxFormfieldSuffixDirective,
+        NxFormfieldHintDirective,
+        NxErrorComponent,
+        NxFormfieldErrorDirective,
+        JsonPipe,
+    ],
 })
-export class LicencePlateExpertExample {
+export class LicencePlateExpertExampleComponent {
     licencePlateModel: {
         type: NxLicencePlateType;
         country: string;

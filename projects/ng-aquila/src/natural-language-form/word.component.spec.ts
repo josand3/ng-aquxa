@@ -1,14 +1,16 @@
 import { OverlayContainer } from '@angular/cdk/overlay';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Directive, ElementRef, QueryList, Type, ViewChild, ViewChildren } from '@angular/core';
 import { ComponentFixture, fakeAsync, inject, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { FormsModule, NgControl, ReactiveFormsModule, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
+import { FormControl, FormGroup, FormsModule, NgControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 import { NxInputDirective, NxInputModule } from '@aposin/ng-aquila/input';
 
 import { NxNaturalLanguageFormComponent } from './natural-language-form.component';
 import { NxNaturalLanguageFormModule } from './natural-language-form.module';
 import { NxWordComponent } from './word.component';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class NaturalLanguageFormTest {
     size = 'regular';
     value!: string;
@@ -19,7 +21,6 @@ abstract class NaturalLanguageFormTest {
     @ViewChildren(NxInputDirective) inputs!: QueryList<NxInputDirective>;
     @ViewChildren(NxWordComponent, { read: ElementRef }) words!: QueryList<ElementRef>;
 }
-
 describe('NxNaturalLanguageFormComponent', () => {
     let fixture: ComponentFixture<NaturalLanguageFormTest>;
     let testInstance: NaturalLanguageFormTest;
@@ -35,13 +36,17 @@ describe('NxNaturalLanguageFormComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [NxNaturalLanguageFormModule, FormsModule, ReactiveFormsModule, NxInputModule],
-            declarations: [
+            imports: [
+                NxNaturalLanguageFormModule,
+                FormsModule,
+                ReactiveFormsModule,
+                NxInputModule,
                 NaturalLanguageFormBasicComponent,
                 NaturalLanguageFormErrorComponent,
                 NaturalLanguageFormSizesComponent,
                 NaturalLanguageFormSmallComponent,
                 FormWithPreviousFormfieldComponent,
+                NaturalLanguageFormWithErrorId,
             ],
         }).compileComponents();
     }));
@@ -67,7 +72,7 @@ describe('NxNaturalLanguageFormComponent', () => {
 
         it('should show an error in a popover', fakeAsync(() => {
             createTestComponent(NaturalLanguageFormBasicComponent);
-            const formControl = testInstance.inputs.first.ngControl?.control as UntypedFormControl;
+            const formControl = testInstance.inputs.first.ngControl?.control as FormControl;
             formControl.markAsTouched();
 
             fixture.detectChanges();
@@ -79,7 +84,7 @@ describe('NxNaturalLanguageFormComponent', () => {
 
         it('should dispose overlay container for word popover upon destroy', fakeAsync(() => {
             createTestComponent(NaturalLanguageFormBasicComponent);
-            const formControl = testInstance.inputs.first.ngControl?.control as UntypedFormControl;
+            const formControl = testInstance.inputs.first.ngControl?.control as FormControl;
             formControl.markAsTouched();
 
             fixture.detectChanges();
@@ -187,6 +192,20 @@ describe('NxNaturalLanguageFormComponent', () => {
 
             expect(dimensionWord.width).toBeLessThanOrEqual(dimensionForm.width);
         }));
+
+        it('should not throw even environment does not have Canvas', fakeAsync(() => {
+            createTestComponent(NaturalLanguageFormSizesComponent);
+
+            expect(() => {
+                const getContext = HTMLCanvasElement.prototype.getContext;
+                HTMLCanvasElement.prototype.getContext = () => null;
+                testInstance.value = 'lorem ipsum dolar sit amet';
+                fixture.detectChanges();
+                tick();
+
+                HTMLCanvasElement.prototype.getContext = getContext;
+            }).not.toThrow();
+        }));
     });
 
     describe('a11y', () => {
@@ -201,7 +220,34 @@ describe('NxNaturalLanguageFormComponent', () => {
             tick();
 
             const input = testInstance.inputs.first.elementRef.nativeElement;
-            expect(input.attributes.getNamedItem('aria-label').value).toBe('Label for the form');
+            const label = fixture.debugElement.query(By.css('nx-word>div>label'));
+
+            const inputId = input.attributes.getNamedItem('id').value;
+            const labelForId = label.nativeElement.attributes.getNamedItem('for').value;
+            expect(inputId).toBe(labelForId);
+        }));
+
+        it('assigns describedby to error components within the word component', fakeAsync(() => {
+            createTestComponent(FormWithPreviousFormfieldComponent);
+            tick();
+            fixture.detectChanges();
+
+            const wordInputElement = fixture.debugElement.query(By.css('nx-word>div>div>input'));
+
+            expect(wordInputElement.nativeElement.getAttribute('aria-describedby')).toBeDefined();
+
+            const ariaDescribedBy: string = wordInputElement.nativeElement.getAttribute('aria-describedby');
+            expect(ariaDescribedBy.startsWith('nx-formfield-error-')).toBeTruthy();
+        }));
+
+        it('assigns aria-describedby to input element', fakeAsync(() => {
+            createTestComponent(NaturalLanguageFormWithErrorId);
+            tick();
+            fixture.detectChanges();
+
+            const wordInputElement = fixture.debugElement.query(By.css('nx-word>div>div>input'));
+
+            expect(wordInputElement.nativeElement.getAttribute('aria-describedby')).toBe('custom-error-id some-other-id');
         }));
     });
 
@@ -226,13 +272,15 @@ describe('NxNaturalLanguageFormComponent', () => {
     template: `
         <nx-natural-language-form>
             A Word
-            <nx-word nxLabel="Label for the form">
+            <nx-word label="Label for the form">
                 <input nxInput ngModel required />
                 <div nxError>This field is required.</div>
             </nx-word>
             with copy.
         </nx-natural-language-form>
     `,
+    standalone: true,
+    imports: [NxNaturalLanguageFormModule, FormsModule, ReactiveFormsModule, NxInputModule],
 })
 class NaturalLanguageFormBasicComponent extends NaturalLanguageFormTest {}
 
@@ -242,19 +290,37 @@ class NaturalLanguageFormBasicComponent extends NaturalLanguageFormTest {}
             <nx-word></nx-word>
         </nx-natural-language-form>
     `,
+    standalone: true,
+    imports: [NxNaturalLanguageFormModule, FormsModule, ReactiveFormsModule, NxInputModule],
 })
 class NaturalLanguageFormErrorComponent extends NaturalLanguageFormTest {}
 
 @Component({
     template: `
         <nx-natural-language-form [ngStyle]="{ width: '500px' }">
-            <nx-word [nxSize]="size">
+            <nx-word [size]="size">
                 <input nxInput [(ngModel)]="value" required />
             </nx-word>
         </nx-natural-language-form>
     `,
+    standalone: true,
+    imports: [CommonModule, NxNaturalLanguageFormModule, FormsModule, ReactiveFormsModule, NxInputModule],
 })
 class NaturalLanguageFormSizesComponent extends NaturalLanguageFormTest {}
+
+@Component({
+    template: `
+        <nx-natural-language-form>
+            <nx-word describedBy="some-other-id">
+                <input nxInput required />
+                <div nxError id="custom-error-id">My Error Text</div>
+            </nx-word>
+        </nx-natural-language-form>
+    `,
+    standalone: true,
+    imports: [NxNaturalLanguageFormModule, FormsModule, ReactiveFormsModule, NxInputModule, CommonModule],
+})
+class NaturalLanguageFormWithErrorId extends NaturalLanguageFormTest {}
 
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -265,19 +331,21 @@ class NaturalLanguageFormSizesComponent extends NaturalLanguageFormTest {}
             </nx-word>
         </nx-natural-language-form>
     `,
+    standalone: true,
+    imports: [NxNaturalLanguageFormModule, FormsModule, ReactiveFormsModule, NxInputModule],
 })
 class NaturalLanguageFormSmallComponent extends NaturalLanguageFormTest {}
 
 @Component({
     template: `
         <form [formGroup]="form">
-            <nx-formfield [nxLabel]="'some label'">
+            <nx-formfield [label]="'some label'">
                 <input nxInput [formControl]="input" />
                 <nx-error nxFormfieldError> This field is required! </nx-error>
             </nx-formfield>
             <nx-natural-language-form>
                 <span>text text text text text text text text</span>
-                <nx-word nxSize="short" nxLabel="Always a label">
+                <nx-word size="short" label="Always a label">
                     <input nxInput [formControl]="nlfInput" />
                     <div nxError>This word is required!</div>
                 </nx-word>
@@ -285,11 +353,13 @@ class NaturalLanguageFormSmallComponent extends NaturalLanguageFormTest {}
             <button type="submit">submit</button>
         </form>
     `,
+    standalone: true,
+    imports: [NxNaturalLanguageFormModule, FormsModule, ReactiveFormsModule, NxInputModule],
 })
 class FormWithPreviousFormfieldComponent extends NaturalLanguageFormTest {
-    input = new UntypedFormControl(null, Validators.required);
-    nlfInput = new UntypedFormControl(null, Validators.required);
-    form = new UntypedFormGroup({
+    input = new FormControl(null, Validators.required);
+    nlfInput = new FormControl(null, Validators.required);
+    form = new FormGroup({
         input: this.input,
         nlfInput: this.nlfInput,
     });

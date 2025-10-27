@@ -5,7 +5,7 @@ import { NxInputModule } from '@aposin/ng-aquila/input';
 
 import { NxPasswordToggleComponent } from './password-toggle.component';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class PasswordToggleTest {
     @ViewChild(NxPasswordToggleComponent) passwordToggle!: NxPasswordToggleComponent;
 }
@@ -26,8 +26,7 @@ describe('NxPasswordToggleComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [BasicPasswordToggle, NoControlToggle, BasicPasswordToggleOnPush],
-            imports: [NxInputModule, FormsModule],
+            imports: [NxInputModule, FormsModule, BasicPasswordToggle, NoControlToggle, BasicPasswordToggleOnPush],
         }).compileComponents();
     }));
 
@@ -91,13 +90,15 @@ describe('NxPasswordToggleComponent', () => {
 
 @Component({
     template: `
-        <nx-formfield nxLabel="Password">
+        <nx-formfield label="Password">
             <input required nxInput #testInput type="password" [(ngModel)]="inputValue" />
             <span nxFormfieldSuffix>
                 <nx-password-toggle [control]="testInput"></nx-password-toggle>
             </span>
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [NxInputModule, FormsModule],
 })
 class BasicPasswordToggle extends PasswordToggleTest {
     inputValue: any;
@@ -105,7 +106,7 @@ class BasicPasswordToggle extends PasswordToggleTest {
 
 @Component({
     template: `
-        <nx-formfield nxLabel="Password">
+        <nx-formfield label="Password">
             <input required nxInput #testInput type="password" [(ngModel)]="inputValue" />
             <span nxFormfieldSuffix>
                 <nx-password-toggle [control]="testInput"></nx-password-toggle>
@@ -113,6 +114,8 @@ class BasicPasswordToggle extends PasswordToggleTest {
         </nx-formfield>
     `,
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxInputModule, FormsModule],
 })
 class BasicPasswordToggleOnPush extends PasswordToggleTest {
     inputValue: any;
@@ -120,5 +123,7 @@ class BasicPasswordToggleOnPush extends PasswordToggleTest {
 
 @Component({
     template: `<nx-password-toggle></nx-password-toggle>`,
+    standalone: true,
+    imports: [NxInputModule, FormsModule],
 })
 class NoControlToggle extends PasswordToggleTest {}

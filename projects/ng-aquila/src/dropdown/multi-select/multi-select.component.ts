@@ -1,8 +1,9 @@
 import { ActiveDescendantKeyManager, FocusOrigin } from '@angular/cdk/a11y';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { CdkConnectedOverlay, ConnectionPositionPair, FlexibleConnectedPositionStrategy } from '@angular/cdk/overlay';
+import { CdkConnectedOverlay, CdkOverlayOrigin, ConnectionPositionPair, FlexibleConnectedPositionStrategy } from '@angular/cdk/overlay';
 import {
     AfterViewInit,
+    booleanAttribute,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
@@ -19,14 +20,18 @@ import {
     ViewChild,
     ViewChildren,
 } from '@angular/core';
-import { ControlValueAccessor, FormGroupDirective, NgControl, NgForm, UntypedFormControl } from '@angular/forms';
-import { AppearanceType, NxFormfieldComponent, NxFormfieldControl } from '@aposin/ng-aquila/formfield';
+import { ControlValueAccessor, FormControl, FormGroupDirective, FormsModule, NgControl, NgForm } from '@angular/forms';
+import { AppearanceType, NxFormfieldComponent, NxFormfieldControl, NxFormfieldModule } from '@aposin/ng-aquila/formfield';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
+import { NxInputModule } from '@aposin/ng-aquila/input';
+import { NxTooltipModule } from '@aposin/ng-aquila/tooltip';
 import { ErrorStateMatcher } from '@aposin/ng-aquila/utils';
-import { Subject } from 'rxjs';
-import { take, takeUntil } from 'rxjs/operators';
+import { Observable, Subject } from 'rxjs';
+import { filter, map, take, takeUntil } from 'rxjs/operators';
 
 import { NxDropdownIntl } from '../dropdown';
 import { getPositionOffset, getPositions } from '../dropdown-position';
+import { NxMultiSelectAllComponent } from './multi-select-all.component';
 import { NxMultiSelectOptionComponent } from './multi-select-option.component';
 
 let id = 0;
@@ -49,6 +54,22 @@ const _defaultFilterFn: NxMultiSelectFilterFn = (query, label) => label.toLowerC
     styleUrls: ['./multi-select.component.scss'],
     providers: [{ provide: NxFormfieldControl, useExisting: NxMultiSelectComponent }],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        '[class.is-readonly]': 'readonly',
+        '[attr.readonly]': 'readonly || null',
+    },
+    standalone: true,
+    imports: [
+        CdkOverlayOrigin,
+        NxTooltipModule,
+        NxIconModule,
+        CdkConnectedOverlay,
+        NxMultiSelectAllComponent,
+        NxFormfieldModule,
+        NxInputModule,
+        FormsModule,
+        NxMultiSelectOptionComponent,
+    ],
 })
 export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFormfieldControl<T[]>, DoCheck, OnDestroy, AfterViewInit {
     get value(): T[] {
@@ -182,7 +203,23 @@ export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFor
         );
     }
 
-    @ViewChildren(NxMultiSelectOptionComponent) private _options!: QueryList<NxMultiSelectOptionComponent<T>>;
+    @ViewChildren('selectAllCheckbox,option') private _options!: QueryList<NxMultiSelectAllComponent<T> | NxMultiSelectOptionComponent<T>>;
+    @ViewChild('selectAllCheckbox') private _selectAll!: NxMultiSelectAllComponent<T>;
+
+    /** Event emitted when the select panel has been toggled. */
+    @Output() readonly openedChange = new EventEmitter<boolean>();
+
+    /** Event emitted when the select has been opened. */
+    @Output('opened') readonly _openedStream: Observable<void> = this.openedChange.pipe(
+        filter(o => o),
+        map(() => {}),
+    );
+
+    /** Event emitted when the select has been closed. */
+    @Output('closed') readonly _closedStream: Observable<void> = this.openedChange.pipe(
+        filter(o => !o),
+        map(() => {}),
+    );
 
     private _openedBy: FocusOrigin = 'mouse';
 
@@ -200,6 +237,12 @@ export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFor
     /** Event emitted when the selected value has been changed. */
     @Output() readonly selectionChange = new EventEmitter<T[]>();
 
+    /** Event emitted when the select panel has been focus out. */
+    @Output() readonly focusOut = new EventEmitter<boolean>();
+
+    /** Event emitted when the user types in the filter input. */
+    @Output('filterInput') readonly filterChanges = new EventEmitter<any>();
+
     /** @docs-private */
     readonly controlType: string = 'nx-multi-select';
 
@@ -212,7 +255,11 @@ export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFor
 
     _ariaDescribedby = '';
 
-    _width = 0;
+    /** Width of the overlay panel. */
+    _width: string | number = '';
+
+    /** Min-width of the overlay panel. */
+    _minWidth: string | number = '';
 
     _filterValue = '';
 
@@ -228,12 +275,22 @@ export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFor
 
     readonly stateChanges = new Subject<void>();
 
-    _keyManager!: ActiveDescendantKeyManager<NxMultiSelectOptionComponent<T>>;
+    _keyManager!: ActiveDescendantKeyManager<NxMultiSelectOptionComponent<T> | NxMultiSelectAllComponent<T>>;
+
+    /** The minimal space between the viewport and the overlay */
+    _overlayViewportMargin = 16;
 
     /**
      * List of options to choose from.
      */
-    @Input() options: S[] = [];
+    private _option: S[] = [];
+    @Input() set options(value: S[]) {
+        this._option = value;
+        this.writeValue(this.ngControl?.value);
+    }
+    get options() {
+        return this._option;
+    }
 
     /**
      * Placeholder for the filter input.
@@ -259,6 +316,15 @@ export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFor
      * Can be either a property name or a selector function.
      */
     @Input() selectDisabled?: string | ((option: S) => boolean);
+
+    /**
+     * panelGrow: true means the overlay can grow larger than the trigger and grows with the longest label
+     * panelGrow: false means the overlay is the size of the trigger
+     */
+    @Input({ transform: booleanAttribute }) panelGrow = false;
+
+    /* panelMaxWidth accepts a number for pixel values or a string for any css value */
+    @Input() panelMaxWidth!: string | number;
 
     @HostBinding('class.is-open') _isOpen = false;
 
@@ -298,6 +364,17 @@ export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFor
     private _onChange: (value: T[]) => void = () => {};
 
     private _onTouched: () => void = () => {};
+
+    private sortSelectedToTop = (a: S, b: S) => {
+        const aSelected = this.selectedItems.has(a);
+        const bSelected = this.selectedItems.has(b);
+        if (aSelected && !bSelected) {
+            return -1;
+        } else if (!aSelected && bSelected) {
+            return 1;
+        }
+        return 0;
+    };
 
     _selectValue(option: S): T {
         if (!this.selectValue) {
@@ -374,33 +451,48 @@ export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFor
     }
 
     _open($event: Event, origin: FocusOrigin) {
-        if (this._isOpen || this.disabled) {
+        if (this._isOpen || this.disabled || this.readonly) {
             return;
         }
 
-        const sortSelectedToTop = (a: S, b: S) => {
-            const aSelected = this.selectedItems.has(a);
-            const bSelected = this.selectedItems.has(b);
-            if (aSelected && !bSelected) {
-                return -1;
-            } else if (!aSelected && bSelected) {
-                return 1;
-            }
-            return 0;
-        };
+        // If the multi select takes upp 100% of the width of the window, don't add margin
+        if (this._formFieldComponent!.elementRef.nativeElement.getBoundingClientRect().width === window.innerWidth) {
+            this._overlayViewportMargin = 0;
+        }
 
         $event.preventDefault();
         this._filterValue = '';
-        this._width = Math.max(OVERLAY_MIN_WIDTH, this._trigger?.nativeElement.getBoundingClientRect().width);
+        this.getOverlayWidth();
+
         this._isOpen = true;
-        this.listItems = this.options.slice().sort(sortSelectedToTop);
+        this.listItems = this.options.slice().sort(this.sortSelectedToTop);
         this._divider = this.selectedItems.size - 1;
         this._openedBy = origin;
+
         this._cdr.markForCheck();
     }
 
+    private getOverlayWidth() {
+        const triggerWidth = Math.max(OVERLAY_MIN_WIDTH, this._trigger?.nativeElement.getBoundingClientRect().width);
+
+        if (this.panelGrow) {
+            // If panelGrow is set to true, the overlay will receive a
+            // min-width the size of the trigger to be able to grow
+            this._minWidth = triggerWidth;
+        } else if (!this.panelGrow) {
+            // If panelGrow is set to false, the overlay will receive a
+            // fixed width the size of the trigger
+            this._width = triggerWidth;
+        }
+    }
+
     _close() {
+        if (!this._isOpen) {
+            return;
+        }
+
         this._isOpen = false;
+        this.openedChange.emit(false);
         this._updateTooltipText();
         this._trigger?.nativeElement.focus();
     }
@@ -411,41 +503,78 @@ export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFor
         } else {
             this.selectedItems.delete(item);
         }
-
         this._onChange(this.value);
         this.selectionChange.emit(this.value);
     }
 
     _onKeydown($event: KeyboardEvent) {
-        if (!this._isOpen || this.disabled) {
+        if (this.disabled || this.readonly) {
+            return;
+        }
+        const altKey = $event.altKey;
+        const key = $event.key;
+        const isCharacterKey = key.length === 1;
+
+        const isArrowKey = key === 'ArrowDown' || key === 'ArrowUp' || key === 'ArrowLeft' || key === 'ArrowRight';
+
+        if (this._filterInput && $event.target === this._filterInput.nativeElement && isCharacterKey) {
             return;
         }
 
-        const key = $event.key;
+        if (!this._isOpen) {
+            if ((altKey && isArrowKey) || isArrowKey || key === 'Home') {
+                this._open($event, 'keyboard');
+                $event.preventDefault();
+            }
+            if (key === 'End') {
+                this._open($event, 'keyboard');
+                setTimeout(() => {
+                    this._keyManager.setLastItemActive();
+                    this._cdr.markForCheck();
+                });
+                $event.preventDefault();
+            }
+            if (isCharacterKey) {
+                this._open($event, 'keyboard');
 
-        if (key === 'ArrowUp' || key === 'ArrowDown' || key === 'Home' || key === 'End') {
-            this._keyManager.onKeydown($event);
-            this._scrollActiveOptionIntoView();
-            $event.preventDefault();
-        }
+                if (this.filter) {
+                    this._filterValue = key;
+                    this._onFilterChange(key);
+                } else {
+                    this._keyManager.onKeydown($event);
+                }
+            }
+        } else {
+            if (key === 'ArrowUp' || key === 'ArrowDown' || key === 'Home' || key === 'End') {
+                this._keyManager.onKeydown($event);
+                this._scrollActiveOptionIntoView();
+                $event.preventDefault();
+            }
 
-        if ((window.navigator.platform.match('Mac') ? $event.metaKey : $event.ctrlKey) && key === 'a') {
-            this._onSelectAll();
-            $event.preventDefault();
-        }
+            if ((window.navigator.platform.match('Mac') ? $event.metaKey : $event.ctrlKey) && key === 'a') {
+                this._onSelectAll();
+                $event.preventDefault();
+            }
 
-        if (key === 'Tab') {
-            this._keyManager.onKeydown($event);
-        }
+            if (key === 'Tab') {
+                this._keyManager.onKeydown($event);
+            }
 
-        if (key === 'Enter' || (this._filterValue.trim() === '' && key === ' ')) {
-            this._keyManager.activeItem?.selectViaInteraction();
-            $event.preventDefault();
+            if (key === 'Enter' || (this._filterValue.trim() === '' && key === ' ')) {
+                this._keyManager.activeItem?.selectViaInteraction();
+                $event.preventDefault();
+            }
+            if (isCharacterKey) {
+                this._keyManager.onKeydown($event);
+            }
         }
     }
 
     _onTriggerBlur() {
-        this._onTouched();
+        if (!this._isOpen && !this.disabled && !this.readonly) {
+            this._onTouched();
+            this.focusOut.emit(true);
+        }
     }
 
     _onFocusWithinOverlay($event: Event) {
@@ -464,15 +593,18 @@ export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFor
     }
 
     _onFilterChange(query: string | null | undefined) {
+        this.filterChanges.next(query);
         if (query) {
-            this.listItems = this.options.filter(item => this.filterFn(query, this._selectLabel(item)));
+            this.listItems = [...this.options].sort(this.sortSelectedToTop).filter(item => this.filterFn(query, this._selectLabel(item)));
         } else {
-            this.listItems = this.options.slice();
+            this.listItems = [...this.options].sort(this.sortSelectedToTop).slice();
         }
+
+        this._divider = this.listItems.filter(element => this.selectedItems.has(element)).length - 1;
 
         if (this._isActiveItemFiltered) {
             setTimeout(() => {
-                this._keyManager.setFirstItemActive();
+                this._keyManager.setActiveItem(1);
             });
         }
 
@@ -491,6 +623,7 @@ export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFor
             const overlayRef = this._overlayDir!.overlayRef;
             const positionStrategy = overlayRef.getConfig().positionStrategy as FlexibleConnectedPositionStrategy;
 
+            overlayRef.updateSize({ maxWidth: this.panelMaxWidth });
             this._updatePositions();
             positionStrategy.withPositions(this._positions);
             overlayRef.updatePosition();
@@ -498,10 +631,13 @@ export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFor
             this._filterInput?.nativeElement.focus();
             this._panelContent?.nativeElement.focus();
 
-            if (this._openedBy === 'keyboard') {
+            if (this._selectAll && this.selectedItems.size > 0) {
+                this._keyManager.setActiveItem(1);
+            } else {
                 this._keyManager.setFirstItemActive();
-                this._scrollActiveOptionIntoView();
             }
+            this._scrollActiveOptionIntoView();
+            this.openedChange.emit(true);
             this._cdr.markForCheck();
         });
     }
@@ -511,7 +647,15 @@ export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFor
     }
 
     _onSelectAll() {
-        if (this._allSelected) {
+        if (this._filterValue) {
+            const filterList = this.listItems.filter(option => !this._isDisabled(option));
+            const isSelectAll = filterList.every(option => this.selectedItems.has(option));
+            if (isSelectAll) {
+                filterList.forEach(option => this.selectedItems.delete(option));
+            } else {
+                filterList.forEach(option => this.selectedItems.add(option));
+            }
+        } else if (this._allSelected) {
             this.selectedItems.clear();
         } else {
             this.listItems.filter(option => !this._isDisabled(option)).forEach(option => this.selectedItems.add(option));
@@ -532,19 +676,22 @@ export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFor
     }
 
     writeValue(value: T[]): void {
-        this.selectedItems.clear();
+        setTimeout(() => {
+            this.selectedItems.clear();
 
-        if (Array.isArray(value)) {
-            for (const item of value) {
-                const selectedItem = this.options.find(option => this._selectValue(option) === item);
-                if (selectedItem) {
-                    this.selectedItems.add(selectedItem);
-                } else {
-                    console.warn('NxMultiSelect: Model contains value that does not exist in given options', item);
+            if (Array.isArray(value)) {
+                for (const item of value) {
+                    const selectedItem = this.options.find(option => this._selectValue(option) === item);
+                    if (selectedItem) {
+                        this.selectedItems.add(selectedItem);
+                    } else {
+                        console.warn('NxMultiSelect: Model contains value that does not exist in given options', item);
+                    }
                 }
             }
-        }
-        this._cdr.markForCheck();
+            this._updateTooltipText();
+            this._cdr.markForCheck();
+        });
     }
 
     registerOnChange(fn: any): void {
@@ -564,7 +711,7 @@ export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFor
     updateErrorState() {
         const oldState = this.errorState;
         const parent = this._parentFormGroup || this._parentForm;
-        const control = this.ngControl ? (this.ngControl.control as UntypedFormControl) : null;
+        const control = this.ngControl ? (this.ngControl.control as FormControl) : null;
         const newState = this._errorStateMatcher.isErrorState(control, parent);
 
         if (newState !== oldState) {
@@ -582,7 +729,7 @@ export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFor
         const { paddingLeft, paddingRight } = getComputedStyle(this._trigger.nativeElement);
         const triggerContentWidth = this._trigger.nativeElement.clientWidth - parseInt(paddingLeft, 10) - parseInt(paddingRight, 10);
 
-        if (triggerContentWidth - suffix.offsetWidth - icon.offsetWidth <= label.offsetWidth) {
+        if (triggerContentWidth - suffix.offsetWidth - icon.offsetWidth < label.scrollWidth) {
             this._tooltipText = this._getValueText();
         } else {
             this._tooltipText = '';
@@ -611,12 +758,17 @@ export class NxMultiSelectComponent<S, T> implements ControlValueAccessor, NxFor
     }
 
     private _initKeyManager() {
-        this._keyManager = new ActiveDescendantKeyManager<NxMultiSelectOptionComponent<T>>(this._options)
+        this._keyManager = new ActiveDescendantKeyManager<NxMultiSelectAllComponent<T> | NxMultiSelectOptionComponent<T>>(this._options)
+            .withTypeAhead(500)
             .withHomeAndEnd()
             .withVerticalOrientation()
             .withHorizontalOrientation('ltr')
-            .skipPredicate(item => item.disabled);
+            .skipPredicate(item => item?.disabled);
 
         this._keyManager.tabOut.pipe(takeUntil(this._destroyed)).subscribe(() => this._close());
+
+        this._keyManager.change.pipe(takeUntil(this._destroyed)).subscribe(() => {
+            this._scrollActiveOptionIntoView();
+        });
     }
 }

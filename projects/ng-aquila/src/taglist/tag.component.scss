@@ -40,11 +40,13 @@ $border-size: nx-border-size(m);
     outline: none;
     display: block;
     font-size: v(taglist-close-icon-size);
+    color: v(taglist-color);
 }
 
 .nx-tag__close {
     margin-left: nx-spacer(2xs);
-
+    padding: 0;
+    min-height: unset;
     :host-context([dir='rtl']) & {
         margin-right: nx-spacer(2xs);
         margin-left: initial;
@@ -55,13 +57,13 @@ $border-size: nx-border-size(m);
     padding: tag-padding(nx-spacer(s)) tag-padding(nx-spacer(m));
 }
 
-@media screen and (-ms-high-contrast: active) {
+@media screen and (forced-colors: active) {
     :host,
     :host:hover,
     :host:focus {
         color: buttonText;
         background-color: buttonFace;
         border-color: buttonText;
-        -ms-high-contrast-adjust: none;
+        forced-colors-adjust: none;
     }
 }

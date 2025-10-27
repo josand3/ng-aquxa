@@ -20,14 +20,15 @@ describe('NxCalendarComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [NxButtonModule, NxNativeDateModule, NxIconModule],
-            declarations: [
+            imports: [
+                NxButtonModule,
+                NxNativeDateModule,
+                NxIconModule,
                 NxCalendarBodyComponent,
                 NxCalendarComponent,
                 NxMonthViewComponent,
                 NxYearViewComponent,
                 NxMultiYearViewComponent,
-
                 // Test components.
                 StandardCalendar,
                 CalendarWithMinMax,
@@ -143,14 +144,14 @@ describe('NxCalendarComponent', () => {
             expect(calendarInstance._currentView).toBe('multi-year');
             expect(calendarInstance._activeDate).toEqual(new Date(2017, JAN, 31));
 
-            const yearCells = calendarElement.querySelectorAll('.nx-calendar-body-cell');
+            const yearCells = calendarElement.querySelectorAll('.nx-calendar-body-cell-content');
             (yearCells[0] as HTMLElement).click();
             fixture.detectChanges();
 
             expect(calendarInstance._currentView).toBe('year');
             expect(calendarInstance._activeDate).toEqual(new Date(2000, JAN, 31));
 
-            const monthCells = calendarElement.querySelectorAll('.nx-calendar-body-cell');
+            const monthCells = calendarElement.querySelectorAll('.nx-calendar-body-cell-content');
             (monthCells[monthCells.length - 1] as HTMLElement).click();
             fixture.detectChanges();
 
@@ -160,7 +161,7 @@ describe('NxCalendarComponent', () => {
         });
 
         it('should select date in month view', () => {
-            const monthCells = calendarElement.querySelectorAll('.nx-calendar-body-cell');
+            const monthCells = calendarElement.querySelectorAll('.nx-calendar-body-cell-content');
             (monthCells[monthCells.length - 1] as HTMLElement).click();
             fixture.detectChanges();
 
@@ -457,7 +458,7 @@ describe('NxCalendarComponent', () => {
         });
 
         it('should disable and prevent selection of filtered dates', () => {
-            const cells = calendarElement.querySelectorAll('.nx-calendar-body-cell');
+            const cells = calendarElement.querySelectorAll('.nx-calendar-body-cell-content');
             (cells[0] as HTMLElement).click();
             fixture.detectChanges();
 
@@ -516,6 +517,8 @@ describe('NxCalendarComponent', () => {
 @Component({
     template: `<nx-calendar [startAt]="startDate" [(selected)]="selected" (yearSelected)="selectedYear = $event" (monthSelected)="selectedMonth = $event">
     </nx-calendar>`,
+    standalone: true,
+    imports: [NxNativeDateModule, NxCalendarComponent],
 })
 class StandardCalendar {
     selected!: Date;
@@ -526,6 +529,8 @@ class StandardCalendar {
 
 @Component({
     template: `<nx-calendar [startAt]="startAt" [minDate]="minDate" [maxDate]="maxDate"></nx-calendar>`,
+    standalone: true,
+    imports: [NxNativeDateModule, NxCalendarComponent],
 })
 class CalendarWithMinMax {
     startAt!: Date;
@@ -535,6 +540,8 @@ class CalendarWithMinMax {
 
 @Component({
     template: `<nx-calendar [startAt]="startDate" [(selected)]="selected" [dateFilter]="dateFilter"> </nx-calendar>`,
+    standalone: true,
+    imports: [NxNativeDateModule, NxCalendarComponent],
 })
 class CalendarWithDateFilter {
     selected!: Date;

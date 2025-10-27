@@ -2,8 +2,8 @@ import { AnimationEvent } from '@angular/animations';
 import { BasePortalOutlet, CdkPortalOutlet, ComponentPortal, TemplatePortal } from '@angular/cdk/portal';
 import { ChangeDetectorRef, Component, ComponentRef, EmbeddedViewRef, NgZone, OnDestroy, ViewChild } from '@angular/core';
 import { Subject } from 'rxjs';
-import { take } from 'rxjs/operators';
 
+import { NxMessageComponent } from '../message/message.component';
 import { messageToastAnimations } from './message-toast-animations';
 import { NxMessageToastConfig, NxMessageToastContext, NxMessageToastData } from './message-toast-config';
 
@@ -22,6 +22,8 @@ import { NxMessageToastConfig, NxMessageToastContext, NxMessageToastData } from 
         '(@state.done)': 'onAnimationEnd($event)',
     },
     animations: [messageToastAnimations.toastState],
+    standalone: true,
+    imports: [NxMessageComponent, CdkPortalOutlet],
 })
 export class NxMessageToastComponent extends BasePortalOutlet implements OnDestroy {
     /** Whether the component has been destroyed. */
@@ -95,6 +97,7 @@ export class NxMessageToastComponent extends BasePortalOutlet implements OnDestr
         if (!this._destroyed) {
             this._animationState = 'visible';
             this._cdr.detectChanges();
+            this._cdr.markForCheck();
         }
     }
 
@@ -104,6 +107,7 @@ export class NxMessageToastComponent extends BasePortalOutlet implements OnDestr
         // where multiple notifications are opened in quick succession (e.g. two consecutive calls to
         // `NxMessageToastService.open`).
         this._animationState = 'hidden';
+        this._cdr.markForCheck();
     }
 
     /** Makes sure the exit callbacks have been invoked when the element is destroyed. */
@@ -113,17 +117,14 @@ export class NxMessageToastComponent extends BasePortalOutlet implements OnDestr
     }
 
     /**
-     * Waits for the zone to settle before removing the element. Helps prevent
-     * errors where we end up removing an element which is in the middle of an animation.
+     * Removes the element in a microtask. Helps prevent errors where we end up
+     * removing an element which is in the middle of an animation.
      */
     private _completeExit() {
-        this._ngZone.onMicrotaskEmpty
-            .asObservable()
-            .pipe(take(1))
-            .subscribe(() => {
-                this._onExit.next();
-                this._onExit.complete();
-            });
+        queueMicrotask(() => {
+            this._onExit.next();
+            this._onExit.complete();
+        });
     }
 
     /** Asserts that no content is already attached to the container. */

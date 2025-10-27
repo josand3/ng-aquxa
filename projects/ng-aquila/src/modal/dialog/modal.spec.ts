@@ -10,6 +10,7 @@ import {
     Component,
     ComponentFactoryResolver,
     Directive,
+    forwardRef,
     Inject,
     Injector,
     NgModule,
@@ -20,11 +21,22 @@ import {
 } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, flushMicrotasks, inject, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { NX_MODAL_DATA, NX_MODAL_DEFAULT_OPTIONS, NxDialogService, NxModalModule, NxModalRef, NxModalState } from '@aposin/ng-aquila/modal';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import {
+    NX_MODAL_DATA,
+    NX_MODAL_DEFAULT_OPTIONS,
+    NX_MODAL_SCROLL_STRATEGY,
+    NxDialogService,
+    NxModalModule,
+    NxModalRef,
+    NxModalState,
+} from '@aposin/ng-aquila/modal';
+import { fakeScrollStrategyFunction } from '@aposin/ng-aquila/utils';
 import { Subject } from 'rxjs';
 
 import { createKeyboardEvent, dispatchKeyboardEvent } from '../../cdk-test-utils';
+import { NxModalActionsDirective, NxModalContentDirective, NxModalTitleComponent } from '../modal.component';
+import { NxModalCloseDirective } from './modal-close.directive';
 import { NxModalContainer } from './modal-container.component';
 
 describe('NxDialog', () => {
@@ -229,6 +241,23 @@ describe('NxDialog', () => {
         expect((dialogRef as any)._overlayRef.getDirection()).toBe('rtl');
     }));
 
+    it('should be able to override the scroll strategy in parent injector', () => {
+        TestBed.resetTestingModule()
+            .configureTestingModule({
+                imports: [NxModalModule, DialogTestModule],
+                providers: [
+                    {
+                        provide: NX_MODAL_SCROLL_STRATEGY,
+                        useFactory: () => fakeScrollStrategyFunction,
+                    },
+                ],
+            })
+            .compileComponents();
+        const dialog = TestBed.inject(NxDialogService);
+        const dialogRef = dialog.open(PizzaMsg);
+        expect(dialogRef.componentInstance.scrollStrategy).toBe(fakeScrollStrategyFunction);
+    });
+
     describe('closing', () => {
         it('should close a dialog and get back a result before it is closed', fakeAsync(() => {
             const dialogRef = dialog.open(PizzaMsg, { viewContainerRef: testViewContainerRef });
@@ -348,6 +377,28 @@ describe('NxDialog', () => {
             const closeIconButton = overlayContainerElement.querySelector('.nx-modal__close') as HTMLElement;
 
             expect(closeIconButton.getAttribute('aria-label')).toBe('best label');
+        }));
+
+        it('should not close modal and emit closeDenied stream when shouldClose return false', fakeAsync(() => {
+            const modalRef = dialog.open(PizzaMsg, {
+                viewContainerRef: testViewContainerRef,
+                showCloseIcon: true,
+                closeIconButtonLabel: 'best label',
+                shouldClose: () => false,
+            });
+
+            const spy = jasmine.createSpy('closeDenied spy');
+            modalRef.closeDenied.subscribe(spy);
+            viewContainerFixture.detectChanges();
+
+            const closeIconButton = overlayContainerElement.querySelector('.nx-modal__close') as HTMLElement;
+            closeIconButton.click();
+
+            viewContainerFixture.detectChanges();
+            flush();
+
+            expect(overlayContainerElement.querySelector('nx-modal-container')).toBeTruthy();
+            expect(spy).toHaveBeenCalledTimes(1);
         }));
     });
 
@@ -784,7 +835,7 @@ describe('NxDialog', () => {
         });
         viewContainerFixture.detectChanges();
 
-        expect(resolver.resolveComponentFactory).toHaveBeenCalledWith(PizzaMsg);
+        expect(resolver.resolveComponentFactory).toHaveBeenCalled();
     }));
 
     it('should return the current state of the dialog', fakeAsync(() => {
@@ -867,6 +918,7 @@ describe('NxDialog', () => {
         viewContainerFixture.detectChanges();
         flush();
 
+        expect(sibling.getAttribute('inert')).withContext('Expected sibling to be hidden').toBe('true');
         expect(sibling.getAttribute('aria-hidden')).withContext('Expected sibling to be hidden').toBe('true');
         expect(overlayContainerElement.hasAttribute('aria-hidden')).withContext('Expected overlay container not to be hidden.').toBeFalse();
 
@@ -874,6 +926,7 @@ describe('NxDialog', () => {
         viewContainerFixture.detectChanges();
         flush();
 
+        expect(sibling.hasAttribute('inert')).withContext('Expected sibling to no longer be inert.').toBeFalse();
         expect(sibling.hasAttribute('aria-hidden')).withContext('Expected sibling to no longer be hidden.').toBeFalse();
         sibling.parentNode!.removeChild(sibling);
     }));
@@ -882,6 +935,7 @@ describe('NxDialog', () => {
         const sibling = document.createElement('div');
 
         sibling.setAttribute('aria-hidden', 'true');
+        sibling.setAttribute('inert', 'true');
         overlayContainerElement.parentNode!.appendChild(sibling);
 
         const dialogRef = dialog.open(PizzaMsg, { viewContainerRef: testViewContainerRef });
@@ -889,11 +943,13 @@ describe('NxDialog', () => {
         flush();
 
         expect(sibling.getAttribute('aria-hidden')).withContext('Expected sibling to be hidden.').toBe('true');
+        expect(sibling.getAttribute('inert')).withContext('Expected sibling to be inert.').toBe('true');
 
         dialogRef.close();
         viewContainerFixture.detectChanges();
         flush();
 
+        expect(sibling.getAttribute('inert')).withContext('Expected sibling to remain inert.').toBe('true');
         expect(sibling.getAttribute('aria-hidden')).withContext('Expected sibling to remain hidden.').toBe('true');
         sibling.parentNode!.removeChild(sibling);
     }));
@@ -908,6 +964,7 @@ describe('NxDialog', () => {
         viewContainerFixture.detectChanges();
         flush();
 
+        expect(sibling.hasAttribute('inert')).withContext('Expected live element not to be inert.').toBeFalse();
         expect(sibling.hasAttribute('aria-hidden')).withContext('Expected live element not to be hidden.').toBeFalse();
         sibling.parentNode!.removeChild(sibling);
     }));
@@ -927,6 +984,29 @@ describe('NxDialog', () => {
         dialogRef.removePanelClass('custom-class-one');
         expect(pane).withContext('Expected class to be removed').not.toHaveClass('custom-class-one');
     });
+
+    it('has expert appearance', fakeAsync(() => {
+        const dialogRef = dialog.open(PizzaMsg, {
+            appearance: 'expert',
+        });
+        viewContainerFixture.detectChanges();
+        flush();
+
+        const dialogContainerElement = overlayContainerElement.querySelector('nx-modal-container')!;
+        expect(dialogContainerElement).toHaveClass('is-expert');
+    }));
+
+    it('should show correct class for status and title', fakeAsync(() => {
+        const dialogRef = dialog.open(TitleStatusDialog);
+        viewContainerFixture.detectChanges();
+        flush();
+
+        const dialogContainerElement = overlayContainerElement.querySelector('nx-modal-container')!;
+        const status = dialogContainerElement.querySelector('.nx-modal__status')!;
+        const title = dialogContainerElement.querySelector('.nx-modal__title')!;
+        expect(status).toBeTruthy();
+        expect(title).toBeTruthy();
+    }));
 
     describe('disableClose option', () => {
         it('should prevent closing via clicks on the backdrop', fakeAsync(() => {
@@ -1048,9 +1128,21 @@ describe('NxDialog', () => {
 
         afterEach(() => document.body.removeChild(overlayContainerElement));
 
+        it('should focus the first tabbable element of the dialog on open as default', fakeAsync(() => {
+            dialog.open(PizzaMsg, {
+                viewContainerRef: testViewContainerRef,
+            });
+
+            viewContainerFixture.detectChanges();
+            flushMicrotasks();
+
+            expect(document.activeElement!.tagName).withContext('Expected first tabbable element (input) in the dialog to be focused.').toBe('INPUT');
+        }));
+
         it('should focus the first tabbable element of the dialog on open', fakeAsync(() => {
             dialog.open(PizzaMsg, {
                 viewContainerRef: testViewContainerRef,
+                autoFocus: 'first-tabbable',
             });
 
             viewContainerFixture.detectChanges();
@@ -1069,6 +1161,46 @@ describe('NxDialog', () => {
             flushMicrotasks();
 
             expect(document.activeElement!.tagName).not.toBe('INPUT');
+        }));
+
+        it('should focus dialog when set autofocus to dialog ', fakeAsync(() => {
+            dialog.open(PizzaMsg, {
+                viewContainerRef: testViewContainerRef,
+                autoFocus: 'dialog',
+            });
+            const container = overlayContainerElement.querySelector('nx-modal-container')!;
+
+            viewContainerFixture.detectChanges();
+            flushMicrotasks();
+            expect(document.activeElement).withContext('Expected dialog to be focused.').toBe(container);
+        }));
+
+        it('should focus the first heading element of the dialog on open', fakeAsync(() => {
+            dialog.open(PizzaMsg, {
+                viewContainerRef: testViewContainerRef,
+                autoFocus: 'first-heading',
+            });
+
+            viewContainerFixture.detectChanges();
+            flushMicrotasks();
+
+            const firstHeader = overlayContainerElement.querySelector('h1') as HTMLInputElement;
+
+            expect(document.activeElement).withContext('Expected first heading element in the dialog to be focused.').toBe(firstHeader);
+        }));
+
+        it('should focus the custom element of the dialog on open', fakeAsync(() => {
+            dialog.open(PizzaMsg, {
+                viewContainerRef: testViewContainerRef,
+                autoFocus: '.custom',
+            });
+
+            viewContainerFixture.detectChanges();
+            flushMicrotasks();
+
+            const customElement = overlayContainerElement.querySelector('.custom') as HTMLInputElement;
+
+            expect(document.activeElement).withContext('Expected custom element in the dialog to be focused.').toBe(customElement);
         }));
 
         it('should re-focus trigger element when dialog closes', fakeAsync(() => {
@@ -1190,41 +1322,6 @@ describe('NxDialog', () => {
             expect(document.activeElement!.id).withContext('Expected focus not to have been restored.').not.toBe('dialog-trigger');
 
             document.body.removeChild(button);
-        }));
-
-        it('should not move focus if it was moved outside the dialog while animating', fakeAsync(() => {
-            // Create a element that has focus before the dialog is opened.
-            const button = document.createElement('button');
-            const otherButton = document.createElement('button');
-            const body = document.body;
-            button.id = 'dialog-trigger';
-            otherButton.id = 'other-button';
-            body.appendChild(button);
-            body.appendChild(otherButton);
-            button.focus();
-
-            const dialogRef = dialog.open(PizzaMsg, { viewContainerRef: testViewContainerRef });
-
-            flushMicrotasks();
-            viewContainerFixture.detectChanges();
-            flushMicrotasks();
-
-            expect(document.activeElement!.id).withContext('Expected the focus to change when dialog was opened.').not.toBe('dialog-trigger');
-
-            // Start the closing sequence and move focus out of dialog.
-            dialogRef.close();
-            otherButton.focus();
-
-            expect(document.activeElement!.id).withContext('Expected focus to be on the alternate button.').toBe('other-button');
-
-            flushMicrotasks();
-            viewContainerFixture.detectChanges();
-            flush();
-
-            expect(document.activeElement!.id).withContext('Expected focus to stay on the alternate button.').toBe('other-button');
-
-            body.removeChild(button);
-            body.removeChild(otherButton);
         }));
     });
 
@@ -1363,6 +1460,35 @@ describe('NxDialog', () => {
             expect(container.hasAttribute('aria-labelledby')).toBeFalse();
         }));
     });
+
+    describe('fullscreen', () => {
+        it('should have custom panelClass', () => {
+            dialog.open(PizzaMsg, {
+                fullscreen: true,
+                viewContainerRef: testViewContainerRef,
+            });
+
+            viewContainerFixture.detectChanges();
+
+            const pane = overlayContainerElement.querySelector('.cdk-overlay-pane') as HTMLElement;
+            expect(pane).toHaveClass('is-fullscreen');
+        });
+
+        it('should be shown in fullscreen', () => {
+            dialog.open(PizzaMsg, {
+                fullscreen: true,
+                viewContainerRef: testViewContainerRef,
+            });
+
+            viewContainerFixture.detectChanges();
+
+            const pane = overlayContainerElement.querySelector('.cdk-overlay-pane') as HTMLElement;
+            expect(pane.style.width).toBe('100%');
+            expect(pane.style.height).toBe('100%');
+            expect(pane.style.maxWidth).toBe('');
+            expect(pane.style.maxHeight).toBe('');
+        });
+    });
 });
 
 describe('NxDialog with a parent NxDialog', () => {
@@ -1373,8 +1499,7 @@ describe('NxDialog with a parent NxDialog', () => {
 
     beforeEach(fakeAsync(() => {
         TestBed.configureTestingModule({
-            imports: [NxModalModule, DialogTestModule],
-            declarations: [ComponentThatProvidesNxDialog],
+            imports: [NxModalModule, DialogTestModule, ComponentThatProvidesNxDialog],
             providers: [
                 {
                     provide: OverlayContainer,
@@ -1540,7 +1665,10 @@ describe('NxDialog with default options', () => {
     }));
 });
 
-@Directive({ selector: 'nx-with-view-container' })
+@Directive({
+    selector: 'nx-with-view-container',
+    standalone: true,
+})
 class DirectiveWithViewContainer {
     constructor(readonly viewContainerRef: ViewContainerRef) {}
 }
@@ -1548,6 +1676,7 @@ class DirectiveWithViewContainer {
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: 'hello',
+    standalone: true,
 })
 class ComponentWithOnPushViewContainer {
     constructor(readonly viewContainerRef: ViewContainerRef) {}
@@ -1555,6 +1684,8 @@ class ComponentWithOnPushViewContainer {
 
 @Component({
     template: `<nx-with-view-container></nx-with-view-container>`,
+    standalone: true,
+    imports: [DirectiveWithViewContainer],
 })
 class ComponentWithChildViewContainer {
     @ViewChild(DirectiveWithViewContainer) childWithViewContainer!: DirectiveWithViewContainer;
@@ -1566,6 +1697,7 @@ class ComponentWithChildViewContainer {
 
 @Component({
     template: `<ng-template let-data let-modalRef="modalRef"> Cheese {{ localValue }} {{ data?.value }}{{ setDialogRef(modalRef) }}</ng-template>`,
+    standalone: true,
 })
 class ComponentWithTemplateRef {
     localValue!: string;
@@ -1580,9 +1712,33 @@ class ComponentWithTemplateRef {
 }
 
 /** Simple component for testing ComponentPortal. */
-@Component({ template: '<p>Pizza</p> <input> <button>Close</button>' })
+@Component({
+    template: '<h1>Header</h1><p>Pizza</p><div class="custom">custom</div><input> <button>Close</button>',
+    standalone: true,
+})
 class PizzaMsg {
-    constructor(readonly dialogRef: NxModalRef<PizzaMsg>, readonly dialogInjector: Injector, readonly directionality: Directionality) {}
+    constructor(
+        readonly dialogRef: NxModalRef<PizzaMsg>,
+        readonly dialogInjector: Injector,
+        readonly directionality: Directionality,
+        @Inject(NX_MODAL_SCROLL_STRATEGY) readonly scrollStrategy: () => ScrollStrategy,
+    ) {}
+}
+
+/** Simple component for testing title and status headline. */
+@Component({
+    template: `
+        <h2 nxModalTitle status="error">
+            {{ headline }}
+        </h2>
+    `,
+    standalone: true,
+    imports: [NxModalTitleComponent],
+})
+class TitleStatusDialog {
+    headline = 'hello world';
+
+    constructor(readonly dialogRef: NxModalRef<TitleStatusDialog>, readonly dialogInjector: Injector, readonly directionality: Directionality) {}
 }
 
 @Component({
@@ -1596,6 +1752,8 @@ class PizzaMsg {
             <button class="with-submit" type="submit" nxModalClose>Should have submit</button>
         </div>
     `,
+    standalone: true,
+    imports: [NxModalContentDirective, NxModalActionsDirective, NxModalCloseDirective],
 })
 class ContentElementDialog {}
 
@@ -1612,6 +1770,8 @@ class ContentElementDialog {}
             </div>
         </ng-template>
     `,
+    standalone: true,
+    imports: [NxModalContentDirective, NxModalActionsDirective, NxModalCloseDirective],
 })
 class ComponentWithContentElementTemplateRef {
     @ViewChild(TemplateRef) templateRef!: TemplateRef<any>;
@@ -1620,23 +1780,32 @@ class ComponentWithContentElementTemplateRef {
 @Component({
     template: '',
     providers: [NxDialogService],
+    standalone: true,
+    imports: [NxModalModule, forwardRef(() => DialogTestModule)],
 })
 class ComponentThatProvidesNxDialog {
     constructor(readonly dialog: NxDialogService) {}
 }
 
 /** Simple component for testing ComponentPortal. */
-@Component({ template: '' })
+@Component({
+    template: '',
+    standalone: true,
+})
 class DialogWithInjectedData {
     constructor(@Inject(NX_MODAL_DATA) readonly data: any) {}
 }
 
-@Component({ template: '<p>Pasta</p>' })
+@Component({
+    template: '<p>Pasta</p>',
+    standalone: true,
+})
 class DialogWithoutFocusableElements {}
 
 @Component({
     template: `<button>I'm a button</button>`,
     encapsulation: ViewEncapsulation.ShadowDom,
+    standalone: true,
 })
 class ShadowDomComponent {}
 
@@ -1653,11 +1822,12 @@ const TEST_DIRECTIVES = [
     DialogWithoutFocusableElements,
     ComponentWithContentElementTemplateRef,
     ShadowDomComponent,
+    TitleStatusDialog,
 ];
 
 @NgModule({
-    imports: [NxModalModule, NoopAnimationsModule],
+    imports: [NxModalModule, ...TEST_DIRECTIVES],
     exports: TEST_DIRECTIVES,
-    declarations: TEST_DIRECTIVES,
+    providers: [provideNoopAnimations()],
 })
 class DialogTestModule {}

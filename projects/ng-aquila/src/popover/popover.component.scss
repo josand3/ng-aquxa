@@ -7,6 +7,12 @@ $popover-border-size: nx-border-size(xs);
 
 $arrow-shadow: -2px -2px -4px v(shadow-small-color);
 
+$padding-content: nx-spacer(2m) - $popover-border-size;
+
+.nx-popover {
+    position: relative;
+}
+
 .nx-popover__content {
     @include type-style(popover-content);
     background-color: v(popover-background-color);
@@ -14,8 +20,12 @@ $arrow-shadow: -2px -2px -4px v(shadow-small-color);
     border: $popover-border-size solid v(popover-border-color);
     border-radius: $popover-border-radius;
     box-shadow: v(shadow-small);
-    padding: nx-spacer(m) - $popover-border-size;
+    padding: nx-spacer(m) nx-spacer(2m);
     display: block;
+
+    &:has(.nx-popover__close-icon) {
+        padding: nx-spacer(m) nx-spacer(4m) nx-spacer(m) nx-spacer(2m);
+    }
 
     &:focus {
         outline: none;
@@ -30,8 +40,8 @@ $arrow-shadow: -2px -2px -4px v(shadow-small-color);
 .nx-popover__close-icon {
     display: flex;
     position: absolute;
-    top: nx-spacer(3xs);
-    right: nx-spacer(3xs);
+    top: nx-spacer(s);
+    right: nx-spacer(s);
     cursor: pointer;
     font-size: v(popover-close-icon-size);
     color: v(popover-close-icon-color);
@@ -51,12 +61,11 @@ $arrow-shadow: -2px -2px -4px v(shadow-small-color);
         border: 0;
     }
 
-    @media screen and (-ms-high-contrast: active) {
+    @media screen and (forced-colors: active) {
         color: buttonText;
     }
 }
 
-.nx-popover__content.cdk-keyboard-focused,
 .nx-popover__close-icon.cdk-keyboard-focused {
     @include focus-style;
 }

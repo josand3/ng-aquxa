@@ -5,6 +5,7 @@ import { getFontShorthand } from '@aposin/ng-aquila/utils';
 /** @docs-private */
 @Directive({
     selector: 'input[nxAutoResize]',
+    standalone: true,
 })
 export class NxAutoResizeDirective implements AfterViewInit, OnDestroy {
     @HostBinding('style.width.px') width!: number;
@@ -41,6 +42,9 @@ export class NxAutoResizeDirective implements AfterViewInit, OnDestroy {
         const measureCanvas = this._renderer.createElement('canvas');
 
         const ctx = measureCanvas.getContext('2d');
+        if (!ctx) {
+            return;
+        }
         const styles = window.getComputedStyle(this._element.nativeElement);
 
         ctx.font = getFontShorthand(styles);

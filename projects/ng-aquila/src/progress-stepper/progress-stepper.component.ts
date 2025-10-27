@@ -17,7 +17,7 @@ import {
     QueryList,
     SkipSelf,
 } from '@angular/core';
-import { FormGroupDirective, NgForm, UntypedFormControl } from '@angular/forms';
+import { FormControl, FormGroupDirective, NgForm } from '@angular/forms';
 import { ErrorStateMatcher } from '@aposin/ng-aquila/utils';
 import { Subject } from 'rxjs';
 import { takeUntil, takeWhile } from 'rxjs/operators';
@@ -32,6 +32,7 @@ import { takeUntil, takeWhile } from 'rxjs/operators';
     exportAs: 'nxStep',
     providers: [{ provide: ErrorStateMatcher, useExisting: NxStepComponent }],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
 })
 export class NxStepComponent extends CdkStep implements ErrorStateMatcher, OnChanges, OnDestroy {
     constructor(
@@ -52,8 +53,10 @@ export class NxStepComponent extends CdkStep implements ErrorStateMatcher, OnCha
 
     readonly _destroyed = new Subject<void>();
 
+    wasCompleted = false;
+
     /** Custom error state matcher that checks for validity of the step form. */
-    isErrorState(control: UntypedFormControl | null, form: FormGroupDirective | NgForm | null): boolean {
+    isErrorState(control: FormControl | null, form: FormGroupDirective | NgForm | null): boolean {
         const originalErrorState = this._errorStateMatcher.isErrorState(control, form);
 
         // Checks for the validity of a step form that is not submitted or touched,
@@ -77,8 +80,13 @@ export class NxStepComponent extends CdkStep implements ErrorStateMatcher, OnCha
                         takeWhile(() => this._stepControl === this.stepControl),
                         takeUntil(this._destroyed),
                     )
-                    .subscribe(() => {
-                        this.stepper._stateChanged();
+                    .subscribe((status: any) => {
+                        if (this.wasCompleted && status === 'DISABLED') {
+                            this.stepper._stateChanged();
+                        } else {
+                            this.wasCompleted = status === 'VALID';
+                            this.stepper._stateChanged();
+                        }
                     });
             }
         }
@@ -101,6 +109,7 @@ export class NxStepComponent extends CdkStep implements ErrorStateMatcher, OnCha
 @Directive({
     selector: '[nxProgressStepper]',
     exportAs: 'nxProgressStepper',
+    standalone: true,
 })
 export class NxProgressStepperDirective extends CdkStepper implements AfterContentInit {
     // Do not initialize with an empty QueryList or the hasNext() function produces

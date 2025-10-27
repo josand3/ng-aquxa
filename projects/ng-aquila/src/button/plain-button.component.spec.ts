@@ -2,16 +2,16 @@ import { Component, Directive, Type, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { NxButtonModule } from './button.module';
-import { NxPlainButtonComponent } from './plain-button.component';
+import { NxPlainButtonComponent, NxPlainButtonSize, NxPlainButtonVariant } from './plain-button.component';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class ButtonTest {
     @ViewChild('button') buttonInstance!: NxPlainButtonComponent;
 
     classNames!: string;
 }
 
-describe('NxBreadcrumbComponent', () => {
+describe('NxPlainButtonComponent', () => {
     let fixture: ComponentFixture<ButtonTest>;
     let testInstance: ButtonTest;
     let buttonElement: HTMLButtonElement;
@@ -25,8 +25,7 @@ describe('NxBreadcrumbComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [NxButtonModule],
-            declarations: [BasicButton],
+            imports: [NxButtonModule, BasicButton, ButtonBindings],
         }).compileComponents();
     }));
 
@@ -43,6 +42,20 @@ describe('NxBreadcrumbComponent', () => {
         expect(buttonElement).not.toHaveClass('nx-plain-button--danger');
     });
 
+    it('should add small class', () => {
+        createTestComponent(ButtonBindings);
+        (fixture.componentInstance as ButtonBindings).size = 'small';
+        fixture.detectChanges();
+        expect(buttonElement).toHaveClass('nx-plain-button--small');
+    });
+
+    it('should add secondary class', () => {
+        createTestComponent(ButtonBindings);
+        (fixture.componentInstance as ButtonBindings).variant = 'secondary';
+        fixture.detectChanges();
+        expect(buttonElement).toHaveClass('nx-plain-button--secondary');
+    });
+
     describe('danger', () => {
         it('displays a danger button', () => {
             createTestComponent(BasicButton);
@@ -56,10 +69,31 @@ describe('NxBreadcrumbComponent', () => {
             expect(testInstance.buttonInstance.danger).toBeFalse();
             expect(buttonElement).not.toHaveClass('nx-plain-button--danger');
         });
+
+        it('should add danger class with critical input', () => {
+            createTestComponent(ButtonBindings);
+            (fixture.componentInstance as ButtonBindings).critical = true;
+            fixture.detectChanges();
+            expect(buttonElement).toHaveClass('nx-plain-button--danger');
+        });
     });
 });
 
 @Component({
     template: `<button [nxPlainButton]="classNames" #button>Hello Button</button>`,
+    standalone: true,
+    imports: [NxButtonModule],
 })
 class BasicButton extends ButtonTest {}
+
+@Component({
+    template: `<button [nxPlainButton]="classNames" [size]="size" [variant]="variant" [critical]="critical" #button>Hello Button</button>`,
+    standalone: true,
+    imports: [NxButtonModule],
+})
+class ButtonBindings extends ButtonTest {
+    classNames = '';
+    size: NxPlainButtonSize = 'medium';
+    variant: NxPlainButtonVariant = 'primary';
+    critical = false;
+}

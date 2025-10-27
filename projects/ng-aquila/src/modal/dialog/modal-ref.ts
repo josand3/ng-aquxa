@@ -26,6 +26,12 @@ export class NxModalRef<T, R = any> {
     /** Whether the user is allowed to close the modal. */
     disableClose?: boolean = this._containerInstance._config.disableClose;
 
+    /** Define custom function to determine whether a modal can be closed  */
+    private shouldClose = this._containerInstance._config.shouldClose;
+
+    /** Stream that emits when closing modal has been denied */
+    readonly closeDenied = new Subject<void>();
+
     /** Subject for notifying the user that the modal has finished opening. */
     private readonly _afterOpened = new Subject<void>();
 
@@ -99,6 +105,12 @@ export class NxModalRef<T, R = any> {
      */
     close(modalResult?: R): void {
         this._result = modalResult;
+
+        const shouldClose = this.shouldClose?.(modalResult) ?? true;
+        if (!shouldClose) {
+            this.closeDenied.next();
+            return;
+        }
 
         // Transition the backdrop in parallel to the modal.
         this._containerInstance._animationStateChanged

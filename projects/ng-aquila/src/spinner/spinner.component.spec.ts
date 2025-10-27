@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { NxSpinnerComponent, SpinnerSize } from './spinner.component';
 import { NxSpinnerModule } from './spinner.module';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class SpinnerTest {
     @ViewChild(NxSpinnerComponent) spinnerInstance!: NxSpinnerComponent;
 
@@ -28,8 +28,7 @@ describe('nxSpinnerComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [BasicTestSpinner, OnPushSpinner, ConfigurableSpinner],
-            imports: [NxSpinnerModule],
+            imports: [NxSpinnerModule, BasicTestSpinner, OnPushSpinner, ConfigurableSpinner],
         }).compileComponents();
     }));
 
@@ -95,20 +94,76 @@ describe('nxSpinnerComponent', () => {
             await expectAsync(fixture.nativeElement).toBeAccessible();
         });
     });
+
+    describe('AriaLive attribute', () => {
+        beforeEach(waitForAsync(() => {
+            createTestComponent(BasicTestSpinner);
+        }));
+
+        it('should set aria-live to assertive by default', () => {
+            expect(spinnerNativeElement.getAttribute('aria-live')).toBe('assertive');
+        });
+
+        it('should set aria-live to polite', () => {
+            componentInstance.ariaPoliteness = 'polite';
+            fixture.detectChanges();
+            expect(spinnerNativeElement.getAttribute('aria-live')).toBe('polite');
+        });
+
+        it('should set aria-live to off', () => {
+            componentInstance.ariaPoliteness = 'off';
+            fixture.detectChanges();
+            expect(spinnerNativeElement.getAttribute('aria-live')).toBe('off');
+        });
+
+        it('should set aria-live to assertive', () => {
+            componentInstance.ariaPoliteness = 'assertive';
+            fixture.detectChanges();
+            expect(spinnerNativeElement.getAttribute('aria-live')).toBe('assertive');
+        });
+
+        it('should update aria-live when ariaLive input changes', () => {
+            componentInstance.ariaPoliteness = 'polite';
+            fixture.detectChanges();
+            expect(spinnerNativeElement.getAttribute('aria-live')).toBe('polite');
+
+            componentInstance.ariaPoliteness = 'off';
+            fixture.detectChanges();
+            expect(spinnerNativeElement.getAttribute('aria-live')).toBe('off');
+        });
+
+        it('should set aria-live to off', () => {
+            createTestComponent(TestAriaLiveSpinnerComponent);
+            expect(spinnerNativeElement.getAttribute('aria-live')).toBe('off');
+        });
+    });
 });
 
 @Component({
     template: `<nx-spinner></nx-spinner>`,
+    standalone: true,
+    imports: [NxSpinnerModule],
 })
 class BasicTestSpinner extends SpinnerTest {}
 
 @Component({
-    template: `<nx-spinner [nxSize]="size" [negative]="negative"></nx-spinner>`,
+    template: `<nx-spinner [size]="size" [negative]="negative"></nx-spinner>`,
+    standalone: true,
+    imports: [NxSpinnerModule],
 })
 class ConfigurableSpinner extends SpinnerTest {}
 
 @Component({
-    template: `<nx-spinner [nxSize]="size" [negative]="negative"></nx-spinner>`,
+    template: `<nx-spinner [size]="size" [negative]="negative"></nx-spinner>`,
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxSpinnerModule],
 })
 class OnPushSpinner extends SpinnerTest {}
+
+@Component({
+    template: ` <nx-spinner [ariaPoliteness]="'off'"></nx-spinner> `,
+    standalone: true,
+    imports: [NxSpinnerModule],
+})
+class TestAriaLiveSpinnerComponent extends SpinnerTest {}

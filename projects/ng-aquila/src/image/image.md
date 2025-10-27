@@ -4,7 +4,17 @@ category: components
 b2c: true
 expert: true
 stable: done
+a1: true
 ---
+
+### NgOptimizedImage
+
+You have the possibility to use optimized images with the [new Angular Image Directive capabilities](https://developer.chrome.com/blog/angular-image-directive/). In order to take advantage of `NgOptimizedImage`, make sure to [import it into your module](https://angular.io/api/common/NgOptimizedImage#description).
+
+```ts
+import { NgOptimizedImage } from '@angular/common';
+```
+
 
 ### Default images
 

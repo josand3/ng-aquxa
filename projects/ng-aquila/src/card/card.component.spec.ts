@@ -4,9 +4,11 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { NxCardComponent } from './card.component';
 import { NxCardModule } from './card.module';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class CardTest {
     @ViewChild(NxCardComponent) cardInstance!: NxCardComponent;
+    isDisabled = false;
+    isClickable = false;
 }
 
 describe('NxCardComponent', () => {
@@ -25,8 +27,7 @@ describe('NxCardComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [BasicCard],
-            imports: [NxCardModule],
+            imports: [NxCardModule, BasicCard, ClickableCardTest],
         }).compileComponents();
     }));
 
@@ -45,6 +46,31 @@ describe('NxCardComponent', () => {
         });
     });
 
+    describe('clickable card', () => {
+        beforeEach(() => {
+            createTestComponent(ClickableCardTest);
+        });
+
+        it('has is-clickable class when clickable & disabled is false', () => {
+            const card = fixture.nativeElement.querySelector('nx-card');
+
+            testInstance.isClickable = true;
+            testInstance.isDisabled = false;
+            fixture.detectChanges();
+
+            expect(card).toHaveClass('is-clickable');
+            expect(card).not.toHaveClass('is-disabled');
+        });
+
+        it('should set aria-disabled on the main link', () => {
+            testInstance.isDisabled = true;
+            fixture.detectChanges();
+            const link = fixture.nativeElement.querySelector('[nxcardmainlink');
+            expect(link.getAttribute('aria-disabled')).toBe('true');
+            expect(link.getAttribute('role')).toBe('link');
+        });
+    });
+
     describe('a11y', () => {
         it('expert card has no accessibility violations', async () => {
             createTestComponent(BasicCard);
@@ -56,5 +82,17 @@ describe('NxCardComponent', () => {
 @Component({
     template: `<nx-card>Hello Text</nx-card>`,
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxCardModule],
 })
 class BasicCard extends CardTest {}
+
+@Component({
+    template: `<nx-card [clickable]="isClickable" [disabled]="isDisabled"
+        ><a href="/" nxCardMainLink>Card title</a>
+        <p>Hello Text</p></nx-card
+    >`,
+    standalone: true,
+    imports: [NxCardModule],
+})
+class ClickableCardTest extends CardTest {}

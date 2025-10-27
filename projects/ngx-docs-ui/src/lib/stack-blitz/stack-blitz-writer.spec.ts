@@ -1,4 +1,5 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, flushMicrotasks, inject, TestBed, waitForAsync } from '@angular/core/testing';
 
 import { ExampleData } from './example-data';
@@ -13,9 +14,9 @@ describe('StackBlitzWriter', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             declarations: [],
-            providers: [StackBlitzWriter],
+            imports: [],
+            providers: [StackBlitzWriter, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents();
     }));
 
@@ -36,11 +37,11 @@ describe('StackBlitzWriter', () => {
         const currentYear = new Date().getFullYear();
         expect(stackBlitzWriter._appendCopyright('test.ts', 'NoContent')).toBe(`NoContent
 
-/**  Copyright ALLIANZ ${currentYear} */`);
+/**  Copyright ${currentYear} ALLIANZ */`);
 
         expect(stackBlitzWriter._appendCopyright('test.html', 'NoContent')).toBe(`NoContent
 
-<!-- Copyright ALLIANZ ${currentYear} -->`);
+<!-- Copyright ${currentYear} ALLIANZ -->`);
     });
 
     it('should create form element', () => {

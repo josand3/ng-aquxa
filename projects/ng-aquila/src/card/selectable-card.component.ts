@@ -1,5 +1,6 @@
 import { FocusMonitor } from '@angular/cdk/a11y';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     AfterContentInit,
     AfterViewInit,
@@ -10,6 +11,7 @@ import {
     DoCheck,
     ElementRef,
     EventEmitter,
+    forwardRef,
     HostBinding,
     Inject,
     InjectionToken,
@@ -21,8 +23,9 @@ import {
     Self,
     ViewChild,
 } from '@angular/core';
-import { ControlValueAccessor, FormGroupDirective, NgControl, NgForm, UntypedFormControl } from '@angular/forms';
+import { ControlValueAccessor, FormControl, FormGroupDirective, NgControl, NgForm } from '@angular/forms';
 import { NxErrorComponent } from '@aposin/ng-aquila/base';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
 import { ErrorStateMatcher } from '@aposin/ng-aquila/utils';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -47,6 +50,121 @@ export interface SelectableCardDefaultOptions {
 export const SELECTABLE_CARD_DEFAULT_OPTIONS = new InjectionToken<SelectableCardDefaultOptions>('SELECTABLE_CARD_DEFAULT_OPTIONS');
 
 @Component({
+    selector: 'nx-selectable-card-group',
+    templateUrl: './selectable-card-group.html',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        role: 'radiogroup',
+        '[attr.id]': 'id',
+        '[attr.aria-labelledby]': 'this._label?.id  || null',
+        '[class.has-error]': 'errorState',
+    },
+    styleUrls: ['./selectable-card-group.scss'],
+    standalone: true,
+    imports: [],
+})
+export class NxSelectableCardGroupComponent implements ControlValueAccessor, AfterContentInit, DoCheck {
+    @ContentChildren(forwardRef(() => NxSelectableCardComponent), { descendants: true }) _cards!: QueryList<NxSelectableCardComponent>;
+    _selected: NxSelectableCardComponent | null = null;
+    errorState = false;
+
+    ngAfterContentInit(): void {
+        setTimeout(() => {
+            this._updateSelectedRadioFromValue();
+            this._checkSelectedRadioButton();
+        });
+    }
+    change(value: any) {
+        this.value = value;
+        this._onChange(value);
+    }
+
+    private _value: any = null;
+    @Input() set value(newValue: any) {
+        if (this._value !== newValue) {
+            // Set this before proceeding to ensure no circular loop occurs with selection.
+            this._value = newValue;
+
+            this._updateSelectedRadioFromValue();
+            this._checkSelectedRadioButton();
+        }
+    }
+    get value() {
+        return this._value;
+    }
+    private _onChange: (value: any) => void = () => {};
+    private _onTouched: () => void = () => {};
+    constructor(
+        private readonly _cdr: ChangeDetectorRef,
+        @Optional() @Self() readonly ngControl: NgControl | null,
+        @Optional() readonly _parentForm: NgForm | null,
+        @Optional() readonly _parentFormGroup: FormGroupDirective | null,
+        readonly _errorStateMatcher: ErrorStateMatcher,
+    ) {
+        if (this.ngControl) {
+            // Note: we provide the value accessor through here, instead of
+            // the `providers` to avoid running into a circular import.
+            this.ngControl.valueAccessor = this;
+        }
+    }
+
+    writeValue(value: any): void {
+        this.value = value;
+    }
+    registerOnChange(fn: (value: any) => void) {
+        this._onChange = fn;
+    }
+    registerOnTouched(fn: () => void): void {
+        this._onTouched = fn;
+    }
+
+    private _updateSelectedRadioFromValue(): void {
+        // If the value already matches the selected radio, do nothing.
+        // const isAlreadySelected = this._selected != null && this._selected.value === this._value;
+        if (this._cards != null) {
+            this._selected = null;
+            this._cards.forEach(card => {
+                card.checked = this.value === card.value;
+                if (card.checked) {
+                    this._selected = card;
+                }
+            });
+        }
+    }
+
+    _checkSelectedRadioButton() {
+        if (this._selected && !this._selected.checked) {
+            this._selected.checked = true;
+        }
+    }
+
+    ngDoCheck(): void {
+        if (this.ngControl) {
+            // We need to re-evaluate this on every change detection cycle, because there are some
+            // error triggers that we can't subscribe to (e.g. parent form submissions). This means
+            // that whatever logic is in here has to be super lean or we risk destroying the performance.
+            this.updateErrorState();
+        }
+    }
+
+    updateErrorState() {
+        const oldState = this.errorState;
+        const parent = this._parentFormGroup || this._parentForm;
+        const control = this.ngControl ? (this.ngControl.control as FormControl) : null;
+        const newState = this._errorStateMatcher.isErrorState(control, parent);
+
+        if (newState !== oldState) {
+            this.errorState = newState;
+
+            this._cards.forEach(card => {
+                card._errorState = newState;
+            });
+            this._cdr.markForCheck();
+        }
+    }
+}
+
+@Component({
     selector: 'nx-selectable-card',
     templateUrl: './selectable-card.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,13 +172,15 @@ export const SELECTABLE_CARD_DEFAULT_OPTIONS = new InjectionToken<SelectableCard
     host: {
         '[class.is-disabled]': 'disabled',
         '[class.has-error]': '_errorState',
-        '[attr.aria-invalid]': '_errorState',
-        'attr.role': 'checkbox',
-        '[attr.aria-checked]': 'checked',
+        '[class.is-highlight]': 'highlight',
     },
+    standalone: true,
+    imports: [NgTemplateOutlet, NxIconModule],
 })
 export class NxSelectableCardComponent implements ControlValueAccessor, DoCheck, AfterContentInit, OnDestroy, AfterViewInit {
     _errorListIds = '';
+
+    inputType: 'checkbox' | 'radio' = 'checkbox';
 
     @ContentChildren(NxErrorComponent) _errorList!: QueryList<NxErrorComponent>;
 
@@ -193,6 +313,19 @@ export class NxSelectableCardComponent implements ControlValueAccessor, DoCheck,
     }
     private _tabindex = '0';
 
+    /** Whether the selectable card  is highlight. */
+    @Input() set highlight(value: BooleanInput) {
+        const newValue = coerceBooleanProperty(value);
+        if (newValue !== this._highlight) {
+            this._highlight = newValue;
+            this._cdr.markForCheck();
+        }
+    }
+    get highlight(): boolean {
+        return this._highlight;
+    }
+    private _highlight = false;
+
     @HostBinding('class.is-expert') get _isExpert() {
         return this.appearance === 'expert';
     }
@@ -207,6 +340,7 @@ export class NxSelectableCardComponent implements ControlValueAccessor, DoCheck,
         @Optional() private readonly _parentFormGroup: FormGroupDirective | null,
         private readonly _focusMonitor: FocusMonitor,
         @Optional() @Inject(SELECTABLE_CARD_DEFAULT_OPTIONS) private readonly _defaultOptions: SelectableCardDefaultOptions | null,
+        @Optional() readonly cardGroup: NxSelectableCardGroupComponent | null,
     ) {
         if (this.ngControl) {
             // Note: we provide the value accessor through here, instead of
@@ -226,6 +360,10 @@ export class NxSelectableCardComponent implements ControlValueAccessor, DoCheck,
         });
 
         this._errorListIds = this._getErrorListIds();
+
+        if (this.cardGroup) {
+            this.inputType = 'radio';
+        }
     }
 
     ngOnDestroy(): void {
@@ -267,7 +405,7 @@ export class NxSelectableCardComponent implements ControlValueAccessor, DoCheck,
     _updateErrorState() {
         const oldState = this._errorState;
         const parent = this._parentFormGroup || this._parentForm;
-        const control = this.ngControl ? (this.ngControl.control as UntypedFormControl) : null;
+        const control = this.ngControl ? (this.ngControl.control as FormControl) : null;
         const newState = this._errorStateMatcher.isErrorState(control, parent);
 
         if (newState !== oldState) {
@@ -279,7 +417,13 @@ export class NxSelectableCardComponent implements ControlValueAccessor, DoCheck,
     /** Toggles the checked state of the selectable card . */
     toggle() {
         if (!this.disabled) {
-            this.checked = !this.checked;
+            if (this.cardGroup) {
+                // for radio behavior that can't toggle off
+                this.checked = true;
+            } else {
+                // checkbox
+                this.checked = !this.checked;
+            }
         }
     }
 
@@ -307,6 +451,7 @@ export class NxSelectableCardComponent implements ControlValueAccessor, DoCheck,
         this.onChangeCallback(this.checked);
         this.selectionChange.emit(event);
         this.checkedChange.emit(this.checked);
+        this.cardGroup?.change(this.value);
     }
 
     private _getErrorListIds(): string {

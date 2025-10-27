@@ -7,20 +7,22 @@
         <nx-label [size]="'small'" class="nx-margin-bottom-s"
             >What do you prefer?</nx-label
         >
-        <nx-error appearance="text"> Please make a choice. </nx-error>
+        <nx-error appearance="text" class="nx-margin-top-s">
+            Please make a choice.
+        </nx-error>
         <nx-radio
-            nxValue="coffee"
+            value="coffee"
             [labelSize]="'small'"
             class="radio-item nx-margin-bottom-s"
             >Coffee</nx-radio
         >
         <nx-radio
-            nxValue="tea"
+            value="tea"
             [labelSize]="'small'"
             class="radio-item nx-margin-bottom-s"
             >Tea</nx-radio
         >
-        <nx-radio nxValue="water" [labelSize]="'small'" class="radio-item"
+        <nx-radio value="water" [labelSize]="'small'" class="radio-item"
             >Water</nx-radio
         >
     </nx-radio-group>

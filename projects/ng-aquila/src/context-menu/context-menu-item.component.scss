@@ -11,6 +11,7 @@
     border: none;
     outline: none;
     background: transparent;
+    position: relative;
     padding: nx-spacer(2xs) nx-spacer(2m) nx-spacer(2xs) nx-spacer(2m);
     color: v(context-menu-item-text-color);
 
@@ -18,30 +19,32 @@
         padding: nx-spacer(2xs) nx-spacer(2m) nx-spacer(2xs) nx-spacer(2m);
     }
 
-    @media screen and (-ms-high-contrast: active) {
-        -ms-high-contrast-adjust: none;
+    @media screen and (forced-colors: active) {
+        forced-color-adjust: none;
         background-color: buttonFace;
         color: buttonText;
     }
 
-    &:not(:disabled) {
+    &:not(.is-disabled) {
         &:hover,
         &:active,
         &.is-highlighted {
             color: v(context-menu-item-active-color);
 
-            @media screen and (-ms-high-contrast: active) {
+            @media screen and (forced-colors: active) {
+                forced-color-adjust: none;
                 background-color: highlight;
                 color: highlightText;
             }
         }
     }
 
-    &:disabled {
+    &.is-disabled {
         cursor: not-allowed;
+        pointer-events: none;
         color: v(context-menu-item-disabled-color);
 
-        @media screen and (-ms-high-contrast: active) {
+        @media screen and (forced-colors: active) {
             color: GrayText;
         }
     }
@@ -67,6 +70,16 @@
         [dir='rtl'] & {
             margin-right: initial;
             margin-left: nx-spacer(2xs);
+        }
+    }
+
+    &.is-selectable .nx-context-menu-item__content-wrapper ::ng-deep > nx-icon:not(.nx-context-menu-item__expand) {
+        position: absolute;
+        left: 8px;
+
+        [dir='rtl'] & {
+            left: initial;
+            right: 8px;
         }
     }
 

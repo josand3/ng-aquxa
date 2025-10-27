@@ -5,6 +5,7 @@ b2c: true
 expert: true
 stable: done
 alias: control
+a1: true
 ---
 
 In most cases it is sufficient to only import the nxInputModule - this **already includes the NxFormfieldModule module**.
@@ -23,6 +24,8 @@ The formfield component is only usable in combination with a compatible input li
 
 You can't use the formfield without a matching input. A matching input fulfills the requirements of the `NxFormfieldControl` interface.
 
+**Changes to formfield paddings:** Starting v16, bottom padding is now applied to both Error and Hint messages. The new bottom padding for Expert is 16px, Retail (Desktop) 32px and Retail (Mobile) 24px. If you would like to keep the old padding values, include `@aposin/ng-aquila/css/compatibility/formfield-padding.css` in your `angular.json`.
+
 ### Basic Example
 
 <!-- example(formfield-basic) -->
@@ -39,13 +42,13 @@ The formfield width depends only on the grid column it is placed in and expands 
 
 ### Floating
 
-By default the label will float once the input is focused or filled. By specifying `nxFloatLabel` with a value of always you can make this formfield appear as a static input + label combination.
+By default the label will float once the input is focused or filled. By specifying `floatLabel` with a value of always you can make this formfield appear as a static input + label combination.
 
 <!-- example(formfield-floating) -->
 
 ### Custom formfield label
 
-You can pass text label content via the input `nxLabel`. If you need a more complex label you an use the directive `nx-formfield-label` as shown in the code example below. If both are defined, then `nx-formfield-label` will take precedence.
+You can pass text label content via the input `label`. If you need a more complex label you an use the directive `nx-formfield-label` as shown in the code example below. If both are defined, then `nx-formfield-label` will take precedence.
 
 <!-- example(formfield-custom-label) -->
 
@@ -161,7 +164,7 @@ If you want you can create custom form field controls and add custom logic to it
 The HTML code below shows how we can consume our custom control.
 
 ```html
-<nx-formfield nxLabel="Phone number">
+<nx-formfield label="Phone number">
     <formfield-custom-tel-input-example></formfield-custom-tel-input-example>
 </nx-formfield>
 ```
@@ -183,3 +186,22 @@ You could also use [default formfield settings](./documentation/formfield/overvi
 The implementation is similar to Angular Material and can be checked for reference [Angular Material - Custom Formfield Controls](https://material.angular.io/guide/creating-a-custom-form-field-control)
 
 <!-- example(formfield-custom-tel-input) -->
+
+### Showing optional label
+<!-- example(formfield-optional-label) -->
+ 
+### Customizing Form Field Spacing with CSS Variables 
+
+To customize the spacing of form fields, you can adjust the existing CSS variables. This allows for flexibility when applying styles, whether you need to remove or modify the spacing across specific forms, individual form fields, or the entire application.
+
+We provide default spacing for form fields, but in cases where you need to adjust it, you can use the following CSS variables:
+
+```scss
+--formfield-bottom-padding: 0;
+--formfield-outline-bottom-padding: 0;
+--formfield-mobile-bottom-padding: 0;
+```
+
+Here’s an example of how to remove bottom spacing for a whole form:
+
+<!-- example(formfield-spacing-adjuster) -->

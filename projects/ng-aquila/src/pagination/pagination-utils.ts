@@ -9,11 +9,15 @@ interface PaginationItem {
 }
 
 /** @docs-private */
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class NxPaginationUtils {
     private readonly _pagesMobile = 3;
     private readonly _elipsisText = '...';
     private readonly _classExpanded = 'expanded-view';
+
+    getSlides(totalSlides: number): any[] {
+        return Array.from(Array(totalSlides).keys()).map(item => this.createPaginationItem(item + 1, item + 1));
+    }
 
     getPages(currentPage: number, totalPages: number): Page[] {
         let pages = [];
@@ -67,7 +71,7 @@ export class NxPaginationUtils {
         while (counterPages < maxSizeArray && counterPages < totalPages) {
             const startItem =
                 counterPages === 2 && currentPage > 5
-                    ? this.createPaginationItem(this._elipsisText, counterPages, true)
+                    ? this.createPaginationItem(this._elipsisText, counterPages + 1, true)
                     : this.createPaginationItem(counterPages + 1, counterPages + 1, true);
 
             start.push(startItem);

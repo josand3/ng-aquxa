@@ -1,9 +1,23 @@
+import { JsonPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import {
-    UntypedFormBuilder,
-    UntypedFormControl,
+    FormBuilder,
+    FormControl,
+    FormsModule,
+    ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
+import { NxButtonComponent } from '@aposin/ng-aquila/button';
+import {
+    NxDropdownComponent,
+    NxDropdownItemComponent,
+} from '@aposin/ng-aquila/dropdown';
+import { NxFormfieldErrorDirective } from '@aposin/ng-aquila/formfield';
+import { NxInputDirective } from '@aposin/ng-aquila/input';
+import {
+    NxNaturalLanguageFormComponent,
+    NxWordComponent,
+} from '@aposin/ng-aquila/natural-language-form';
 
 /**
  * @title Extended example
@@ -12,18 +26,31 @@ import {
     selector: 'natural-language-form-extended-example',
     templateUrl: './natural-language-form-extended-example.html',
     styleUrls: ['./natural-language-form-extended-example.css'],
+    standalone: true,
+    imports: [
+        FormsModule,
+        NxNaturalLanguageFormComponent,
+        ReactiveFormsModule,
+        NxWordComponent,
+        NxDropdownComponent,
+        NxDropdownItemComponent,
+        NxFormfieldErrorDirective,
+        NxInputDirective,
+        NxButtonComponent,
+        JsonPipe,
+    ],
 })
 export class NaturalLanguageFormExtendedExampleComponent {
     readonly naturalForm = this.fb.group({
-        who: new UntypedFormControl('', [Validators.required]),
-        city: new UntypedFormControl('', [Validators.required]),
-        spots: new UntypedFormControl('', [
+        who: new FormControl('', [Validators.required]),
+        city: new FormControl('', [Validators.required]),
+        spots: new FormControl('', [
             Validators.pattern('[0-9]*'),
             Validators.required,
         ]),
     });
 
-    constructor(private readonly fb: UntypedFormBuilder) {}
+    constructor(private readonly fb: FormBuilder) {}
 
     validate() {
         Object.values(this.naturalForm.controls).forEach(control => {

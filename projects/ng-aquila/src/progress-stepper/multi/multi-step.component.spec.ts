@@ -1,7 +1,7 @@
 import { DOWN_ARROW, ENTER, LEFT_ARROW, RIGHT_ARROW, SPACE, UP_ARROW } from '@angular/cdk/keycodes';
 import { Component, Directive, ElementRef, Type, ViewChild } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, waitForAsync } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { NxDropdownModule } from '@aposin/ng-aquila/dropdown';
 import { NxFormfieldModule } from '@aposin/ng-aquila/formfield';
@@ -12,7 +12,7 @@ import { NxMultiStepperDirection } from '../progress-stepper.models';
 import { NxProgressStepperModule } from '../progress-stepper.module';
 import { NxMultiStepperComponent } from './multi-step.component';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class MultiStepTest {
     @ViewChild(NxMultiStepperComponent) componentInstance!: NxMultiStepperComponent;
     @ViewChild(NxMultiStepperComponent, { read: ElementRef }) componentInstanceRef!: ElementRef;
@@ -42,7 +42,13 @@ describe('NxMultiStepperComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
+            imports: [
+                NxProgressStepperModule,
+                NxInputModule,
+                NxFormfieldModule,
+                FormsModule,
+                ReactiveFormsModule,
+                NxDropdownModule,
                 MultiStepBasicTest,
                 LinearStepBasicTest,
                 MultiStepCompletionTest,
@@ -50,7 +56,6 @@ describe('NxMultiStepperComponent', () => {
                 MultiStepDirectionTest,
                 MultiStepGroupTest,
             ],
-            imports: [NxProgressStepperModule, NxInputModule, NxFormfieldModule, FormsModule, ReactiveFormsModule, NxDropdownModule],
         }).compileComponents();
     }));
 
@@ -318,6 +323,38 @@ describe('NxMultiStepperComponent', () => {
                 expect(step).toHaveClass('is-completed');
             });
         });
+
+        describe('form disable', () => {
+            beforeEach(() => {
+                createTestComponent(MultiStepValidationTest);
+            });
+
+            it('should be complete when form is valid then disabled', () => {
+                const comp: MultiStepValidationTest = fixture.componentInstance as MultiStepValidationTest;
+                comp.manualCompletionForm.setValue({
+                    name: 'Joestar',
+                    fruit: 'Locacaca',
+                });
+                comp.manualCompletionForm.get('name')?.disable();
+                comp.manualCompletionForm.get('fruit')?.disable();
+
+                fixture.detectChanges();
+
+                const step = fixture.nativeElement.querySelector('nx-multi-step-item');
+                expect(step).toHaveClass('is-completed');
+            });
+
+            it('should be incomplete when form is disabled and not valid', () => {
+                const comp: MultiStepValidationTest = fixture.componentInstance as MultiStepValidationTest;
+                comp.manualCompletionForm.get('name')?.disable();
+                comp.manualCompletionForm.get('fruit')?.disable();
+
+                fixture.detectChanges();
+
+                const step = fixture.nativeElement.querySelector('nx-multi-step-item');
+                expect(step).not.toHaveClass('is-completed');
+            });
+        });
     });
 
     describe('programmatic', () => {
@@ -364,6 +401,8 @@ describe('NxMultiStepperComponent', () => {
             <nx-step label="Step 2"> step 2 content </nx-step>
         </nx-multi-stepper>
     `,
+    standalone: true,
+    imports: [NxProgressStepperModule, NxInputModule, NxFormfieldModule, FormsModule, ReactiveFormsModule, NxDropdownModule],
 })
 class MultiStepDirectionTest extends MultiStepTest {
     direction!: NxMultiStepperDirection;
@@ -374,7 +413,7 @@ class MultiStepDirectionTest extends MultiStepTest {
         <nx-multi-stepper [linear]="true" currentStepLabel="Step">
             <nx-step label="Step1" [stepControl]="manualCompletionForm">
                 <form [formGroup]="manualCompletionForm">
-                    <nx-formfield nxLabel="Name">
+                    <nx-formfield label="Name">
                         <input nxInput required formControlName="form1" />
                     </nx-formfield>
                 </form>
@@ -382,9 +421,11 @@ class MultiStepDirectionTest extends MultiStepTest {
             <nx-step label="Step2"></nx-step>
         </nx-multi-stepper>
     `,
+    standalone: true,
+    imports: [NxProgressStepperModule, NxInputModule, NxFormfieldModule, FormsModule, ReactiveFormsModule, NxDropdownModule],
 })
 class LinearStepBasicTest extends MultiStepTest {
-    _formBuilder: UntypedFormBuilder = new UntypedFormBuilder();
+    _formBuilder: FormBuilder = new FormBuilder();
     manualCompletionForm = this._formBuilder.group({ form1: ['', Validators.required] });
 }
 
@@ -395,6 +436,8 @@ class LinearStepBasicTest extends MultiStepTest {
             <nx-step label="Step 2" [completed]="completedTwo"> step 2 content </nx-step>
         </nx-multi-stepper>
     `,
+    standalone: true,
+    imports: [NxProgressStepperModule, NxInputModule, NxFormfieldModule, FormsModule, ReactiveFormsModule, NxDropdownModule],
 })
 class MultiStepCompletionTest extends MultiStepTest {
     completedOne = false;
@@ -406,12 +449,12 @@ class MultiStepCompletionTest extends MultiStepTest {
         <nx-multi-stepper [linear]="true">
             <nx-step label="Your name" [stepControl]="manualCompletionForm">
                 <form [formGroup]="manualCompletionForm">
-                    <nx-formfield nxLabel="Name">
+                    <nx-formfield label="Name">
                         <input nxInput formControlName="name" />
                     </nx-formfield>
-                    <nx-formfield nxLabel="Name">
+                    <nx-formfield label="Name">
                         <nx-dropdown formControlName="fruit">
-                            <nx-dropdown-item nxValue="banana">Banana</nx-dropdown-item>
+                            <nx-dropdown-item value="banana">Banana</nx-dropdown-item>
                         </nx-dropdown>
                     </nx-formfield>
                     <button type="button" nxStepperNext>Next</button>
@@ -420,11 +463,13 @@ class MultiStepCompletionTest extends MultiStepTest {
             <nx-step label="Done"> asdf </nx-step>
         </nx-multi-stepper>
     `,
+    standalone: true,
+    imports: [NxProgressStepperModule, NxInputModule, NxFormfieldModule, FormsModule, ReactiveFormsModule, NxDropdownModule],
 })
 class MultiStepValidationTest extends MultiStepTest {
-    manualCompletionForm = new UntypedFormGroup({
-        name: new UntypedFormControl('', Validators.required),
-        fruit: new UntypedFormControl('', Validators.required),
+    manualCompletionForm = new FormGroup({
+        name: new FormControl('', Validators.required),
+        fruit: new FormControl('', Validators.required),
     });
 }
 
@@ -435,6 +480,8 @@ class MultiStepValidationTest extends MultiStepTest {
             <nx-step label="Step 2"> step 2 content </nx-step>
         </nx-multi-stepper>
     `,
+    standalone: true,
+    imports: [NxProgressStepperModule, NxInputModule, NxFormfieldModule, FormsModule, ReactiveFormsModule, NxDropdownModule],
 })
 class MultiStepBasicTest extends MultiStepTest {}
 
@@ -451,6 +498,8 @@ class MultiStepBasicTest extends MultiStepTest {}
             </nx-step-group>
         </nx-multi-stepper>
     `,
+    standalone: true,
+    imports: [NxProgressStepperModule, NxInputModule, NxFormfieldModule, FormsModule, ReactiveFormsModule, NxDropdownModule],
 })
 class MultiStepGroupTest extends MultiStepTest {
     completedOne = false;

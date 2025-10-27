@@ -1,14 +1,14 @@
 name: Deploy documentation app to github pages
 on: workflow_dispatch
 env:
-    NODE_VERSION: '16.x'
+    NODE_VERSION: '18.x'
 jobs:
     deploy:
         runs-on: ubuntu-latest
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
               with:
                   persist-credentials: false
 
@@ -26,12 +26,12 @@ jobs:
                   npm run build:lib
                   npm run library:generate:docs
                   npm run build:docs -- --base-href=/ng-aquila/ --no-progress
-                  cp projects/opensource-documentation/src/404.html dist/opensource-documentation
+                  cp projects/opensource-documentation/src/404.html dist/opensource-documentation/browser
 
             - name: Deploy 🚀
               uses: JamesIves/github-pages-deploy-action@3.7.1
               with:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   BRANCH: gh-pages
-                  FOLDER: dist/opensource-documentation
+                  FOLDER: dist/opensource-documentation/browser
                   CLEAN: true

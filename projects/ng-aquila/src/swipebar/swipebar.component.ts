@@ -1,10 +1,17 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostListener, Input, NgZone, ViewChild } from '@angular/core';
+import { NxCopytextModule } from '@aposin/ng-aquila/copytext';
 
+/**
+ * @deprecated This component is deprecated. Use the native scroll bar instead.
+ * @deletion-target v20.0.0
+ */
 @Component({
     selector: 'nx-swipebar',
     templateUrl: 'swipebar.component.html',
     styleUrls: ['swipebar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxCopytextModule],
 })
 export class NxSwipebarComponent implements AfterViewInit {
     @ViewChild('element') private _element!: ElementRef;
@@ -33,6 +40,7 @@ export class NxSwipebarComponent implements AfterViewInit {
         this._onMousemove = this._onMousemove.bind(this);
         this._onMouseup = this._onMouseup.bind(this);
         this._onScroll = this._onScroll.bind(this);
+        console.warn('The SwipeBar component is deprecated. Please use native scroll bars instead.');
     }
 
     ngAfterViewInit(): void {

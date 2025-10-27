@@ -13,16 +13,25 @@
     border-radius: nx-border-radius(s);
     background: v(ui-01);
 
+    .filter {
+        --formfield-label-height: 6px;
+        --formfield-bottom-padding: 4px;
+    }
+
     &.is-outline {
         .filter {
             --formfield-label-height: 8px;
-            --formfield-bottom-padding: 8px;
+            --formfield-bottom-padding: 3px;
         }
 
         .items {
             padding-bottom: 8px;
             max-height: 200px;
         }
+    }
+
+    &:focus {
+        outline: none;
     }
 }
 
@@ -44,6 +53,18 @@
 }
 
 :host-context(.nx-formfield.is-disabled) {
+    .value {
+        cursor: not-allowed;
+    }
+}
+
+:host(.is-readonly) {
+    .indicator {
+        color: v(formfield-disabled-text-color);
+        @media screen and (forced-colors: active) {
+            color: GrayText !important;
+        }
+    }
     .value {
         cursor: not-allowed;
     }
@@ -89,7 +110,7 @@
 }
 
 .filter-wrapper {
-    padding: 0px 32px;
+    padding: 8px 32px 0 32px;
 }
 
 .filter {
@@ -111,18 +132,12 @@
     display: flex;
     justify-content: space-between;
     white-space: nowrap;
-    padding: 8px 32px;
+    padding: 16px 32px;
 }
-
-.clear {
-    cursor: pointer;
+.select-all {
+    border-bottom: 1px solid v(dropdown-item-divider);
 }
 
 .hidden {
     display: none;
-}
-.divider {
-    border-bottom: 1px solid v(dropdown-item-divider);
-    margin-bottom: 8px;
-    padding-bottom: 16px;
 }

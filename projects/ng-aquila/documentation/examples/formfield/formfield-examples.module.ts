@@ -28,12 +28,15 @@ import { FormfieldMultipleErrorsExampleComponent } from './formfield-multiple-er
 import { FormfieldNegativeExampleComponent } from './formfield-negative/formfield-negative-example';
 import { FormfieldNoteExampleComponent } from './formfield-note/formfield-note-example';
 import { FormfieldNoteAndErrorExampleComponent } from './formfield-note-and-error/formfield-note-and-error-example';
+import { FormfieldOptionalLabelExampleComponent } from './formfield-optional-label/formfield-optional-label-example';
 import { FormfieldPasswordVisibilityExampleComponent } from './formfield-password-visibility/formfield-password-visibility-example';
 import { FormfieldPlaceholderExampleComponent } from './formfield-placeholder/formfield-placeholder-example';
 import { FormfieldPrefixSuffixAppendixExampleComponent } from './formfield-prefix-suffix-appendix/formfield-prefix-suffix-appendix-example';
 import { FormfieldSimpleFormExampleComponent } from './formfield-simple-form/formfield-simple-form-example';
+import { FormfieldSpacingAdjusterExampleComponent } from './formfield-spacing-adjuster/formfield-spacing-adjuster-example';
 
 const EXAMPLES = [
+    FormfieldSpacingAdjusterExampleComponent,
     FormfieldAppearanceExampleComponent,
     FormfieldBasicExampleComponent,
     FormfieldCharacterCountExampleComponent,
@@ -55,6 +58,7 @@ const EXAMPLES = [
     FormfieldPrefixSuffixAppendixExampleComponent,
     FormfieldSimpleFormExampleComponent,
     FormfieldChangedetectionExampleComponent,
+    FormfieldOptionalLabelExampleComponent,
 ];
 
 @NgModule({
@@ -68,13 +72,15 @@ const EXAMPLES = [
         NxNativeDateModule,
         NxMessageModule,
         ExamplesSharedModule,
+        EXAMPLES,
     ],
-    declarations: [EXAMPLES],
     exports: [EXAMPLES],
 })
 export class FormfieldExamplesModule {
     static components() {
         return {
+            'formfield-spacing-adjuster':
+                FormfieldSpacingAdjusterExampleComponent,
             'formfield-appearance': FormfieldAppearanceExampleComponent,
             'formfield-basic': FormfieldBasicExampleComponent,
             'formfield-character-count':
@@ -103,6 +109,7 @@ export class FormfieldExamplesModule {
             'formfield-simple-form': FormfieldSimpleFormExampleComponent,
             'formfield-changedetection':
                 FormfieldChangedetectionExampleComponent,
+            'formfield-optional-label': FormfieldOptionalLabelExampleComponent,
         };
     }
 }

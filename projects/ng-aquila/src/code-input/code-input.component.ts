@@ -1,7 +1,9 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { BACKSPACE, DOWN_ARROW, LEFT_ARROW, RIGHT_ARROW, SPACE, UP_ARROW } from '@angular/cdk/keycodes';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DoCheck, ElementRef, Input, Optional, Self } from '@angular/core';
-import { ControlValueAccessor, FormGroupDirective, NgControl, NgForm, UntypedFormControl } from '@angular/forms';
+import { NgClass } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, DoCheck, ElementRef, Input, Optional, Self } from '@angular/core';
+import { ControlValueAccessor, FormControl, FormGroupDirective, FormsModule, NgControl, NgForm } from '@angular/forms';
+import { NxErrorComponent } from '@aposin/ng-aquila/base';
 import { ErrorStateMatcher } from '@aposin/ng-aquila/utils';
 
 import { NxCodeInputIntl } from './code-input-intl';
@@ -23,10 +25,17 @@ export type NxConversionTypes = 'lower' | 'upper';
         '[class.is-negative]': 'negative',
         '[class.is-disabled]': 'disabled',
         '[attr.tabindex]': '-1',
+        role: 'group',
+        '[attr.aria-describedby]': 'error?.id || null',
+        '[attr.aria-label]': '_intl.inputFieldAriaLabel',
     },
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [FormsModule, NgClass],
 })
 export class NxCodeInputComponent implements ControlValueAccessor, DoCheck {
+    @ContentChild(NxErrorComponent) error!: NxErrorComponent;
+
     /** Whether the current input of the component has an error. */
     errorState = false;
 
@@ -34,7 +43,6 @@ export class NxCodeInputComponent implements ControlValueAccessor, DoCheck {
     @Input('length') set codeLength(value: number) {
         this._codeLength = value;
         this.setInputLength();
-        this._cdr.markForCheck();
     }
     get codeLength() {
         return this._codeLength;
@@ -44,7 +52,6 @@ export class NxCodeInputComponent implements ControlValueAccessor, DoCheck {
     /** The type of HTML input */
     @Input() set type(value: string) {
         this._type = value;
-        this._cdr.markForCheck();
     }
     get type() {
         return this._type;
@@ -54,7 +61,6 @@ export class NxCodeInputComponent implements ControlValueAccessor, DoCheck {
     /** Sets the tabindex of the contained input elements. */
     @Input() set tabindex(value: number) {
         this._tabindex = value;
-        this._cdr.markForCheck();
     }
     get tabindex(): number {
         return this._tabindex;
@@ -62,9 +68,8 @@ export class NxCodeInputComponent implements ControlValueAccessor, DoCheck {
     private _tabindex = 0;
 
     /** Whether the form should auto capitalize or lowercase (optional). */
-    @Input('nxConvertTo') set convertTo(value: NxConversionTypes) {
+    @Input() set convertTo(value: NxConversionTypes) {
         this._convertTo = value;
-        this._cdr.markForCheck();
     }
     get convertTo() {
         return this._convertTo!;
@@ -72,7 +77,7 @@ export class NxCodeInputComponent implements ControlValueAccessor, DoCheck {
     private _convertTo?: NxConversionTypes;
 
     /** The user input in array form */
-    _keyCode: string[] = new Array(DEFAULT_INPUT_LENGTH);
+    _keyCode: string[] = new Array(DEFAULT_INPUT_LENGTH).fill('');
     private _focused = false;
 
     /** Whether the code input uses the negative set of styling. */
@@ -80,7 +85,6 @@ export class NxCodeInputComponent implements ControlValueAccessor, DoCheck {
         const newValue = coerceBooleanProperty(value);
         if (this._negative !== newValue) {
             this._negative = newValue;
-            this._cdr.markForCheck();
         }
     }
     get negative() {
@@ -93,7 +97,6 @@ export class NxCodeInputComponent implements ControlValueAccessor, DoCheck {
         const newValue = coerceBooleanProperty(value);
         if (this._disabled !== newValue) {
             this._disabled = newValue;
-            this._cdr.markForCheck();
         }
     }
     get disabled() {
@@ -118,7 +121,6 @@ export class NxCodeInputComponent implements ControlValueAccessor, DoCheck {
             this._control.valueAccessor = this;
         }
     }
-
     ngDoCheck(): void {
         if (this._control) {
             // We need to re-evaluate this on every change detection cycle, because there are some
@@ -135,10 +137,11 @@ export class NxCodeInputComponent implements ControlValueAccessor, DoCheck {
         } else {
             this._keyCode = new Array(DEFAULT_INPUT_LENGTH);
         }
+        this._keyCode.fill('');
     }
 
     /** Converts to upper or lowercase when enabled. */
-    _convertLetterSize(value: any): string | undefined {
+    _convertLetterSize(value: any): string {
         if (value === 'ß') {
             return value;
         }
@@ -152,11 +155,11 @@ export class NxCodeInputComponent implements ControlValueAccessor, DoCheck {
 
             return value;
         }
-        return undefined;
+        return '';
     }
 
     /** Reacts to keydown event. */
-    _keydownAction(event: KeyboardEvent): void | false {
+    _keydownAction(event: KeyboardEvent) {
         const targetElement: HTMLInputElement = event.target as HTMLInputElement;
         const previousInputField: HTMLInputElement = targetElement.previousElementSibling as HTMLInputElement;
         const nextInputField: HTMLInputElement = targetElement.nextElementSibling as HTMLInputElement;
@@ -202,70 +205,71 @@ export class NxCodeInputComponent implements ControlValueAccessor, DoCheck {
                 break;
 
             default:
+                this.selectInput(targetElement);
                 break;
         }
+        return true;
     }
 
     /** Selects the value on click of an input field. */
     _selectText(event: Event): void {
         this.selectInput(event.target as HTMLInputElement);
+        event.preventDefault();
     }
 
     /** Automatically focuses and selects the next input on key input. */
-    _selectNextInput(event: Event): void {
+    _handleInput(event: Event): void {
         const eventTarget: HTMLInputElement = event.target as HTMLInputElement;
-        eventTarget.value = this._convertLetterSize(eventTarget.value.slice(0, 1))!;
+
+        // some event types have the data property populated, e.g. "inputType: insertCompositionText"
+        // these type of events should be fired e.g. when using the clipboard on an android device
+        // so we can either use the data property or the target value as fallback
+        const eventData = (event as InputEvent).data?.trim() || eventTarget.value.trim();
+        const filteredData = this.type === 'number' ? this._filterNumbers(eventData) : eventData;
         const currentIndex = Number(this._getFocusedInputIndex(event));
-        // save in model with uppercase if needed
-        this._keyCode[currentIndex] = eventTarget.value;
+
+        this._setKeyCodes(currentIndex, filteredData);
+
+        // needed that we do not end up with multiple characters in one input field as
+        // we had to remove the maxlength="1" attribute
+        eventTarget.value = this._keyCode[currentIndex] ?? '';
         this.propagateChange(this._keyCode.join(''));
 
-        // don't jump to next input if the user uses UP/DOWn arrow (native behaviour)
-        const focusNextInput = !(this._isUpDown && this.type === 'number');
+        // don't jump to next input if the user uses UP/DOWN arrow (native behaviour)
+        const shouldMoveFocus = !(this._isUpDown && this.type === 'number');
 
-        if (eventTarget.value && focusNextInput) {
-            const nextInputField = eventTarget.nextSibling as HTMLInputElement;
-
-            if (nextInputField !== null && nextInputField.tagName === TAG_NAME_INPUT) {
-                nextInputField.focus();
-                if (nextInputField.value !== '') {
-                    this.selectInput(nextInputField);
-                }
-            }
+        if (filteredData && shouldMoveFocus) {
+            this.moveFocus(currentIndex, filteredData.length);
         }
 
         this._isUpDown = false;
     }
 
-    /** Paste event to distribute content in input fields. */
-    _pasteClipboard(event: ClipboardEvent): void {
-        let copiedText = (event.clipboardData || (window as any).clipboardData).getData('text');
-        let copiedTextIndex = 0;
-        const inputIndex = Number(this._getFocusedInputIndex(event));
-
-        copiedText = this.type === 'number' ? this._formatNumberInput(copiedText) : copiedText;
-
-        for (let i: number = inputIndex; i < this.codeLength; i++) {
-            this._keyCode[i] = this._convertLetterSize(copiedText[copiedTextIndex])!;
-            copiedTextIndex++;
+    private _setKeyCodes(start: number, value: string) {
+        if (value.length <= 1) {
+            this._keyCode[start] = this._convertLetterSize(value);
+        } else {
+            for (let i = start, valueIndex = 0; i < this.codeLength; i++, valueIndex++) {
+                this._keyCode[i] = this._convertLetterSize(value[valueIndex]?.[0] ?? '');
+                this._el.nativeElement.children[i].value = this._keyCode[i];
+            }
         }
+    }
 
-        this.propagateChange(this._keyCode.join(''));
-
-        if (inputIndex + copiedText.length < this.codeLength) {
-            this._el.nativeElement.children.item(inputIndex + copiedText.length).focus();
+    /** Focus the next input depending on the the currently focused index and the length of the value that gets added. */
+    private moveFocus(start: number, valueLength: number) {
+        if (start + valueLength < this.codeLength) {
+            this.selectInput(this._el.nativeElement.children.item(start + valueLength));
         } else {
             this._el.nativeElement.children.item(this.codeLength - 1).focus();
         }
-
-        event.preventDefault();
     }
 
     /** Returns the index of the code input, which is currently focused. */
     private _getFocusedInputIndex(event: Event) {
         let inputIndex;
         for (let i = 0; i < this._el.nativeElement.children.length; i++) {
-            if (event.srcElement === this._el.nativeElement.children.item(i)) {
+            if (event.target === this._el.nativeElement.children.item(i)) {
                 inputIndex = i;
             }
         }
@@ -273,11 +277,11 @@ export class NxCodeInputComponent implements ControlValueAccessor, DoCheck {
     }
 
     /** Removes all characters from the input except for numbers [0-9]. */
-    private _formatNumberInput(copiedText: string) {
+    private _filterNumbers(value: string) {
         let formattedInput = '';
-        for (let i = 0; i < copiedText.length; i++) {
-            if (copiedText[i].match(/\d$/)) {
-                formattedInput += copiedText[i];
+        for (const char of value) {
+            if (char.match(/\d$/)) {
+                formattedInput += char;
             }
         }
 
@@ -364,16 +368,17 @@ export class NxCodeInputComponent implements ControlValueAccessor, DoCheck {
     updateErrorState() {
         const oldState = this.errorState;
         const parent = this._parentFormGroup || this._parentForm;
-        const control = this._control ? (this._control.control as UntypedFormControl) : null;
+        const control = this._control ? (this._control.control as FormControl) : null;
         const newState = this._errorStateMatcher.isErrorState(control, parent);
 
         if (newState !== oldState) {
             this.errorState = newState;
+            this._cdr.markForCheck();
         }
     }
 
     getAriaLabel(keyIndex: number) {
-        return `${this._intl.inputFieldAriaLabel} ${keyIndex + 1} ${this._intl.ofLabel} ${this._keyCode.length}`;
+        return `${keyIndex + 1} ${this._intl.ofLabel} ${this._keyCode.length}`;
     }
 
     /**

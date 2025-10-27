@@ -1,5 +1,8 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Injectable, InjectionToken, Input, OnDestroy, Optional } from '@angular/core';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
+import { NxMessageModule } from '@aposin/ng-aquila/message';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -33,9 +36,10 @@ export const ERROR_DEFAULT_OPTIONS = new InjectionToken<ErrorDefaultOptions>('ER
     styleUrls: ['./error.component.scss'],
     host: {
         '[attr.role]': '"alert"',
-        '[attr.id]': 'id',
         '[class.nx-error--message]': 'appearance == "message"',
     },
+    standalone: true,
+    imports: [NxIconModule, NgTemplateOutlet, NxMessageModule],
 })
 export class NxErrorComponent implements OnDestroy {
     /** Whether an icon should be displayed. Only has an effect for type 'text' */
@@ -69,9 +73,9 @@ export class NxErrorComponent implements OnDestroy {
      *
      * Default: `'message'`.
      */
-    @Input() set appearance(value: ErrorStyleType) {
+    @Input() set appearance(value: ErrorStyleType | undefined | '') {
         if (value !== this.appearance) {
-            this._appearance = value;
+            this._appearance = value ? value : 'message';
             this._cdr.markForCheck();
         }
     }

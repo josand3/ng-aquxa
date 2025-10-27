@@ -4,7 +4,7 @@ import { ComponentFixture, inject, TestBed, waitForAsync } from '@angular/core/t
 
 import { dispatchKeyboardEvent } from '../../cdk-test-utils';
 import { NxTableModule } from '../table.module';
-import { SortDirection, SortEvent } from './sort.directive';
+import { NxSortDirective, SortDirection, SortEvent } from './sort.directive';
 import { NxSortHeaderComponent } from './sort-header.component';
 import { NxSortHeaderIntl } from './sort-header-intl';
 
@@ -21,10 +21,11 @@ class MyIntl extends NxSortHeaderIntl {
     sortedDescendingAriaLabel = 'absteigend sortiert';
 }
 
-@Directive()
+@Directive({ standalone: true })
 abstract class SortHeaderTest {
     @ViewChild('nameHeader') nameHeader!: NxSortHeaderComponent;
     @ViewChild('countHeader') countHeader!: NxSortHeaderComponent;
+    @ViewChild(NxSortDirective) tableSort!: NxSortDirective;
 
     active = 'name';
     direction: SortDirection = 'desc';
@@ -68,8 +69,7 @@ describe('NxSort', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [BasicSortTableComponent, ConfigurableSortTableComponent],
-            imports: [NxTableModule],
+            imports: [NxTableModule, BasicSortTableComponent, ConfigurableSortTableComponent],
             providers: [{ provide: NxSortHeaderIntl, useClass: MyIntl }],
         }).compileComponents();
     }));
@@ -124,77 +124,104 @@ describe('NxSort', () => {
         it('shows both icons for a unsorted column', () => {
             createTestComponent(BasicSortTableComponent);
             const nameHeaderElement = fixture.nativeElement.querySelector('#nameHeader');
-            const chevronUpElement = nameHeaderElement.querySelector('.nx-sort-header__icon-up') as HTMLElement;
-            const chevronDownElement = nameHeaderElement.querySelector('.nx-sort-header__icon-down') as HTMLElement;
+            const chevrons = nameHeaderElement.querySelectorAll('.nx-sort-header__unsorted');
 
-            expect(chevronUpElement).not.toHaveClass('.nx-sort-header__hidden-icon');
-            expect(chevronDownElement).not.toHaveClass('.nx-sort-header__hidden-icon');
+            expect(chevrons.length).toEqual(2);
 
             const countHeaderElement = fixture.nativeElement.querySelector('#countHeader');
             countHeaderElement.click();
             fixture.detectChanges();
-
-            expect(chevronUpElement).not.toHaveClass('nx-sort-header__hidden-icon');
-            expect(chevronDownElement).not.toHaveClass('nx-sort-header__hidden-icon');
+            expect(chevrons.length).toEqual(2);
         });
 
-        it('hides one icon when sorted', () => {
+        it('show ascending icon', () => {
             createTestComponent(BasicSortTableComponent);
-
             const nameHeaderElement = fixture.nativeElement.querySelector('#nameHeader');
-            const chevronUpElement = nameHeaderElement.querySelector('.nx-sort-header__icon-up') as HTMLElement;
-            const chevronDownElement = nameHeaderElement.querySelector('.nx-sort-header__icon-down') as HTMLElement;
 
             // sort ascending
             nameHeaderElement.click();
             fixture.detectChanges();
-            expect(chevronUpElement).not.toHaveClass('nx-sort-header__hidden-icon');
-            expect(chevronDownElement).toHaveClass('nx-sort-header__hidden-icon');
+            const arrowUp = nameHeaderElement.querySelector('.nx-sort-header__ascend') as HTMLElement;
+            const arrowDown = nameHeaderElement.querySelector('.nx-sort-header__descend') as HTMLElement;
+            const chevrons = nameHeaderElement.querySelectorAll('.nx-sort-header__unsorted');
+
+            expect(arrowUp).not.toBeNull();
+            expect(arrowDown).toBeNull();
+            expect(chevrons.length).toEqual(0);
+        });
+
+        it('show descending icon', () => {
+            createTestComponent(BasicSortTableComponent);
+            const nameHeaderElement = fixture.nativeElement.querySelector('#nameHeader');
 
             // sort descending
             nameHeaderElement.click();
+            nameHeaderElement.click();
             fixture.detectChanges();
-            expect(chevronUpElement).toHaveClass('nx-sort-header__hidden-icon');
-            expect(chevronDownElement).not.toHaveClass('nx-sort-header__hidden-icon');
+            const arrowUp = nameHeaderElement.querySelector('.nx-sort-header__ascend') as HTMLElement;
+            const arrowDown = nameHeaderElement.querySelector('.nx-sort-header__descend') as HTMLElement;
+            const chevrons = nameHeaderElement.querySelectorAll('.nx-sort-header__unsorted');
 
-            const countHeaderElement = fixture.nativeElement.querySelector('#countHeader');
-            countHeaderElement.click();
-            fixture.detectChanges();
-            expect(chevronUpElement).not.toHaveClass('nx-sort-header__hidden-icon');
-            expect(chevronDownElement).not.toHaveClass('nx-sort-header__hidden-icon');
+            expect(arrowDown).not.toBeNull();
+            expect(arrowUp).toBeNull();
+            expect(chevrons.length).toEqual(0);
         });
     });
 
     describe('configurable tests', () => {
-        it('creates table with initial sorting', () => {
+        it('should not sort when initialize', () => {
             createTestComponent(ConfigurableSortTableComponent);
+
             expect(testInstance.data).toEqual([
                 { name: 'rabbit', count: 5 },
-                { name: 'coney', count: 1000 },
                 { name: 'bunny', count: 15 },
+                { name: 'coney', count: 1000 },
             ]);
         });
 
-        it('sorts after active change', () => {
+        it('sorts after click column header', () => {
             createTestComponent(ConfigurableSortTableComponent);
+
             testInstance.active = 'count';
+            testInstance.direction = 'desc';
             fixture.detectChanges();
+
+            // sort by count asc
             expect(testInstance.data).toEqual([
-                { name: 'coney', count: 1000 },
-                { name: 'bunny', count: 15 },
                 { name: 'rabbit', count: 5 },
+                { name: 'bunny', count: 15 },
+                { name: 'coney', count: 1000 },
             ]);
         });
 
-        it('sorts after direction change', () => {
+        it('should not emit sortChange when set active, direction', () => {
             createTestComponent(ConfigurableSortTableComponent);
-            testInstance.direction = 'asc';
+            const sortChange = spyOn(testInstance.tableSort.sortChange, 'emit');
+
+            testInstance.active = 'count';
+            testInstance.direction = 'desc';
             fixture.detectChanges();
-            expect(testInstance.data).toEqual([
-                { name: 'bunny', count: 15 },
-                { name: 'coney', count: 1000 },
-                { name: 'rabbit', count: 5 },
-            ]);
+
+            expect(sortChange).not.toHaveBeenCalled();
+        });
+
+        it('should not emit sortChange on initialization', () => {
+            createTestComponent(ConfigurableSortTableComponent);
+            const sortChange = spyOn(testInstance.tableSort.sortChange, 'emit');
+
+            expect(sortChange).not.toHaveBeenCalled();
+            fixture.detectChanges();
+        });
+
+        it('should emit sortChange when interact with header', () => {
+            createTestComponent(ConfigurableSortTableComponent);
+            const sortChange = spyOn(testInstance.tableSort.sortChange, 'emit');
+            const nameHeaderElement = fixture.nativeElement.querySelector('#nameHeader');
+            nameHeaderElement.click();
+            fixture.detectChanges();
+
+            expect(sortChange).toHaveBeenCalled();
+            fixture.detectChanges();
         });
 
         it('still sorts on click when inputs are set in code', () => {
@@ -217,7 +244,7 @@ describe('NxSort', () => {
         it('has the correct aria label for an unsorted column', () => {
             createTestComponent(BasicSortTableComponent);
             const nameHeaderElement = fixture.nativeElement.querySelector('#nameHeader .nx-sort-header__icons-container');
-            expect(nameHeaderElement.getAttribute('aria-label')).toBe('');
+            expect(nameHeaderElement.getAttribute('aria-label')).toBeNull();
         });
 
         it('has the correct aria label for a sorted column', () => {
@@ -287,6 +314,8 @@ describe('NxSort', () => {
             </thead>
         </table>
     `,
+    standalone: true,
+    imports: [NxTableModule],
 })
 class BasicSortTableComponent extends SortHeaderTest {}
 
@@ -301,5 +330,7 @@ class BasicSortTableComponent extends SortHeaderTest {}
             </thead>
         </table>
     `,
+    standalone: true,
+    imports: [NxTableModule],
 })
 class ConfigurableSortTableComponent extends SortHeaderTest {}

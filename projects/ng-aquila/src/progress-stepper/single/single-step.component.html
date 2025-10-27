@@ -3,7 +3,7 @@
         <ng-content select="nx-label"></ng-content>
     </span>
 
-    <nx-progressbar [value]="progress"></nx-progressbar>
+    <nx-progressbar [value]="progress" [ariaLabel]="progressbarAriaLabel" [ariaLabelledBy]="progressbarAriaLabeledBy"></nx-progressbar>
 
     <div class="nx-single-step__infos">
         <div class="nx-single-step__current">
@@ -19,8 +19,8 @@
     </div>
 </div>
 
+@for (step of steps; track step; let i = $index) {
 <div
-    *ngFor="let step of steps; let i = index"
     class="nx-progress-stepper__content"
     role="tabpanel"
     [id]="_getStepContentId(i)"
@@ -29,3 +29,4 @@
 >
     <ng-container [ngTemplateOutlet]="step.content"></ng-container>
 </div>
+}

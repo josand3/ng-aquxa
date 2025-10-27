@@ -4,6 +4,7 @@ category: components
 b2c: true
 expert: true
 stable: done
+a1: true
 ---
 
 <div class="docs-private">
@@ -12,7 +13,32 @@ stable: done
 
 The icons are comprised of two general types: **functional** and **product icons**. **Functional icons** are used to indicate important actions and functions like search, close or links. In most cases, functional icons will have a size of 24x24px (**s**). **Product icons** are a visual expression of aspects of our products. They are, for instance, used to select product options or in claims use cases. To make both icons distinguishable, the name of all product icons starts with `product-*`. The outline and fill options should only be used in combination with **product** icons.
 
-The general functionality of the icons is provided with the `NxIconModule` of `ng-aquila`. The Allianz Icons are provided with the additional `NdbxIconModule` of `@allianz/ngx-ndbx`. To use it, import it in the `app.module.ts` or in any other module:
+The general functionality of the icons is provided with the `NxIconModule` of `ng-aquila`. The Allianz Icons are provided with the additional `NdbxIconModule` of `@allianz/ngx-ndbx` for usage in modules or component imports or with `provideNdbxIcons()` as a global provider for standalone app configs.
+
+Current icon version: **2.29.0** --- from [Global Allianz Icons](https://github.developer.allianz.io/oneMarketing/allianz-icons)
+
+#### Standalone projects
+
+Please note that `provideNdbxIcons()` has to be used on the root level, so in the `bootstrapApplication` call.
+
+
+```ts
+import { NxIconModule } from '@aposin/ng-aquila/icon';
+import { provideNdbxIcons } from '@allianz/ngx-ndbx/icon';
+
+// in app.config.ts
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideNdbxIcons()
+  ],
+};
+```
+
+
+#### Module import usage
+
+Instead of the global provider you can continue to use the `NdbxIconModule` and import it anywhere in your modules or standalone component imports, but it is recommended to do this at the root level of your application and not in sub components or routes.
+
 
 ```ts
 import { NxIconModule } from '@aposin/ng-aquila/icon';
@@ -51,7 +77,7 @@ add it to your AppModule and include the `node_modules/@fortawesome/fontawesome-
 </div>
 
 <div class="docs-private">
-⚠️ **NDBX/Aquila conflict**: please make sure **not** to import the opensource(aquila) **NxDocumentationIconModule** into NDBX projects, since it's only supposed to be used in opensource(aquila) projects and would lead to conflicts with **NdbxIconModule** 
+⚠️ **NDBX/Aquila conflict**: please make sure **not** to import the opensource(aquila) **NxDocumentationIconModule** into NDBX projects, since it's only supposed to be used in opensource(aquila) projects and would lead to conflicts with **NdbxIconModule**
 recommend to use either module and register custom font yourself if need.
 </div>
 
@@ -93,6 +119,9 @@ The filled option should only be used with **product** icons.
 </div>
 <!-- example(icon-filled) -->
 
+### Status icon
+<!-- example(status-icon) -->
+
 <div class="docs-private">
 
 ### Functional icons
@@ -115,7 +144,7 @@ To use the icons shown here, please make sure to import the `NdbxIconModule` (se
 
 Custom icons can be registered via the `NxIconRegistry` injectable service. With the `NxIconRegistry` you can associate icon names with SVG, URL and HTML strings and define a CSS font class. When you are registering an icon by URL please make sure to import the `HttpClientModule` from `@angular/common/http`.
 
-💡 When registering multiple font sets, 
+💡 When registering multiple font sets,
 you can use `font` attribute to specify font set (`<nx-icon font="FONT_SET_NAME" name="ICON_NAME">`)
 
 <div class="docs-private">

@@ -16,9 +16,26 @@ import {
 import { Platform } from '@angular/cdk/platform';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { ScrollDispatcher } from '@angular/cdk/scrolling';
-import { ComponentRef, Directive, ElementRef, Inject, InjectionToken, Input, NgZone, OnDestroy, OnInit, Optional, ViewContainerRef } from '@angular/core';
+import {
+    afterNextRender,
+    AfterRenderPhase,
+    AfterViewInit,
+    ComponentRef,
+    Directive,
+    ElementRef,
+    Inject,
+    inject,
+    InjectionToken,
+    Injector,
+    Input,
+    NgZone,
+    OnDestroy,
+    OnInit,
+    Optional,
+    ViewContainerRef,
+} from '@angular/core';
 import { Subject } from 'rxjs';
-import { take, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
 import { NxTooltipComponent } from './tooltip.component';
 
@@ -32,14 +49,28 @@ export type TooltipHorizontalPosition = 'left' | 'right';
 export type TooltipVerticalPosition = 'top' | 'bottom';
 
 /** Injection token that determines the scroll handling while a tooltip is open. */
-export const NX_TOOLTIP_SCROLL_STRATEGY = new InjectionToken<() => ScrollStrategy>('nx-tooltip-scroll-strategy');
+export const NX_TOOLTIP_SCROLL_STRATEGY = new InjectionToken<() => ScrollStrategy>('nx-tooltip-scroll-strategy', {
+    providedIn: 'root',
+    factory: () => {
+        const overlay = inject(Overlay);
+        return () => overlay.scrollStrategies.reposition();
+    },
+});
 
-/** @docs-private */
+/**
+ * @docs-private
+ * @deprecated No longer used.
+ * @deletion-target 18.0.0
+ */
 export function NX_TOOLTIP_SCROLL_STRATEGY_PROVIDER_FACTORY(overlay: Overlay): () => ScrollStrategy {
     return () => overlay.scrollStrategies.reposition();
 }
 
-/** @docs-private */
+/**
+ * @docs-private
+ * @deprecated No longer used.
+ * @deletion-target 18.0.0
+ */
 export const NX_TOOLTIP_SCROLL_STRATEGY_PROVIDER = {
     provide: NX_TOOLTIP_SCROLL_STRATEGY,
     useFactory: NX_TOOLTIP_SCROLL_STRATEGY_PROVIDER_FACTORY,
@@ -102,10 +133,13 @@ export function NX_TOOLTIP_DEFAULT_OPTIONS_FACTORY(): NxTooltipDefaultOptions {
         '(keydown)': '_handleKeydown($event)',
         '(touchend)': '_handleTouchend()',
     },
+    standalone: true,
 })
-export class NxTooltipDirective implements OnDestroy, OnInit {
+export class NxTooltipDirective implements OnDestroy, OnInit, AfterViewInit {
     _overlayRef!: OverlayRef | null;
     _tooltipInstance!: NxTooltipComponent | null;
+
+    private _injector = inject(Injector);
 
     private _portal!: ComponentPortal<NxTooltipComponent>;
     private _embeddedViewRef!: ComponentRef<NxTooltipComponent>;
@@ -225,18 +259,6 @@ export class NxTooltipDirective implements OnDestroy, OnInit {
 
         this._manualListeners.forEach((listener, event) => element.addEventListener(event, listener));
 
-        _focusMonitor
-            .monitor(_elementRef)
-            .pipe(takeUntil(this._destroyed))
-            .subscribe(origin => {
-                // Note that the focus monitor runs outside the Angular zone.
-                if (!origin) {
-                    _ngZone.run(() => this.hide(0));
-                } else if (origin === 'keyboard') {
-                    _ngZone.run(() => this.show());
-                }
-            });
-
         if (_defaultOptions?.position) {
             this.position = _defaultOptions.position;
         }
@@ -244,6 +266,20 @@ export class NxTooltipDirective implements OnDestroy, OnInit {
 
     ngOnInit(): void {
         this._updateSelectabilityStyles();
+    }
+
+    ngAfterViewInit(): void {
+        this._focusMonitor
+            .monitor(this._elementRef)
+            .pipe(takeUntil(this._destroyed))
+            .subscribe(origin => {
+                // Note that the focus monitor runs outside the Angular zone.
+                if (!origin) {
+                    this._ngZone.run(() => this.hide(0));
+                } else if (origin === 'keyboard') {
+                    this._ngZone.run(() => this.show());
+                }
+            });
     }
 
     /**
@@ -594,14 +630,17 @@ export class NxTooltipDirective implements OnDestroy, OnInit {
         if (this._tooltipInstance) {
             this._tooltipInstance.message = this.message;
 
-            this._ngZone.onMicrotaskEmpty
-                .asObservable()
-                .pipe(take(1), takeUntil(this._destroyed))
-                .subscribe(() => {
+            afterNextRender(
+                () => {
                     if (this._tooltipInstance && this._overlayRef) {
                         this._overlayRef.updatePosition();
                     }
-                });
+                },
+                {
+                    injector: this._injector,
+                    phase: AfterRenderPhase.Write,
+                },
+            );
         }
     }
 

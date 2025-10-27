@@ -1,7 +1,24 @@
 import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { NX_DATE_LOCALE, NxDateAdapter } from '@aposin/ng-aquila/datefield';
-import * as moment from 'moment';
-import { Moment } from 'moment';
+import { FormsModule } from '@angular/forms';
+import { NxErrorComponent } from '@aposin/ng-aquila/base';
+import {
+    NX_DATE_LOCALE,
+    NxDateAdapter,
+    NxDatefieldDirective,
+} from '@aposin/ng-aquila/datefield';
+import {
+    NxFormfieldComponent,
+    NxFormfieldErrorDirective,
+} from '@aposin/ng-aquila/formfield';
+import {
+    NxColComponent,
+    NxLayoutComponent,
+    NxRowComponent,
+} from '@aposin/ng-aquila/grid';
+import { NxHeadlineComponent } from '@aposin/ng-aquila/headline';
+import { NxInputDirective } from '@aposin/ng-aquila/input';
+import { NxSwitcherComponent } from '@aposin/ng-aquila/switcher';
+import moment, { Moment } from 'moment';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -12,6 +29,20 @@ import { takeUntil } from 'rxjs/operators';
     selector: 'datefield-parsing-example',
     templateUrl: './datefield-parsing-example.html',
     styleUrls: ['./datefield-parsing-example.css'],
+    standalone: true,
+    imports: [
+        NxLayoutComponent,
+        NxRowComponent,
+        NxColComponent,
+        NxHeadlineComponent,
+        NxFormfieldComponent,
+        NxDatefieldDirective,
+        NxInputDirective,
+        FormsModule,
+        NxSwitcherComponent,
+        NxErrorComponent,
+        NxFormfieldErrorDirective,
+    ],
 })
 export class DatefieldParsingExampleComponent implements OnInit, OnDestroy {
     strictDate = moment();

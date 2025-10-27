@@ -5,6 +5,7 @@ b2c: true
 expert: true
 stable: done
 alias: page banner
+a1: true
 ---
 
 
@@ -43,6 +44,7 @@ Let's take a closer look at various parts of small stage:
 -   `[nxSmallStageImageBottom]`
 
 Images can be placed in all three slots using the `nx-small-stage-image` tag. It accepts an `src` input, where you should pass a url address of the image to be loaded. Notice that start and end images an used around the content on bigger screens, but when viewport gets narrower than 704px only the bottom image is displayed.
+
 
 #### Header
 

@@ -13,8 +13,10 @@ import { TooltipPositionsExampleComponent } from './tooltip-positions/tooltip-po
 import { TooltipProgrammaticExampleComponent } from './tooltip-programmatic/tooltip-programmatic-example';
 import { TooltipScrollStrategyProviderExampleComponent } from './tooltip-scroll-strategy-provider/tooltip-scroll-strategy-provider-example';
 import { TooltipSettingsExampleComponent } from './tooltip-settings/tooltip-settings-example';
+import { TooltipTrimTextExampleComponent } from './tooltip-trim-text/tooltip-trim-text-example';
 
 const EXAMPLES = [
+    TooltipTrimTextExampleComponent,
     TooltipBasicExampleComponent,
     TooltipDelayExampleComponent,
     TooltipDisabledExampleComponent,
@@ -32,13 +34,14 @@ const EXAMPLES = [
         CommonModule,
         NxButtonModule,
         NxBadgeModule,
+        EXAMPLES,
     ],
-    declarations: [EXAMPLES],
     exports: [EXAMPLES],
 })
 export class TooltipExamplesModule {
     static components() {
         return {
+            'tooltip-trim-text': TooltipTrimTextExampleComponent,
             'tooltip-basic': TooltipBasicExampleComponent,
             'tooltip-delay': TooltipDelayExampleComponent,
             'tooltip-disabled': TooltipDisabledExampleComponent,

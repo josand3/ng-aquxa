@@ -1,7 +1,7 @@
-import { ENTER, LEFT_ARROW, RIGHT_ARROW } from '@angular/cdk/keycodes';
-import { ChangeDetectionStrategy, Component, Directive, Type, ViewChild } from '@angular/core';
+import { ENTER } from '@angular/cdk/keycodes';
+import { ChangeDetectionStrategy, Component, Directive, signal, Type, ViewChild } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormControl } from '@angular/forms';
+import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { dispatchKeyboardEvent, dispatchMouseEvent } from '../cdk-test-utils';
@@ -14,6 +14,7 @@ describe('NxRatingComponent', () => {
     let startLabel: HTMLSpanElement;
     let endLabel: HTMLSpanElement;
     let icons: HTMLElement[];
+    let inputs: HTMLElement[];
     let testComponent: NxRatingComponent;
     let iconNativeElement: HTMLElement;
 
@@ -24,14 +25,17 @@ describe('NxRatingComponent', () => {
         startLabel = fixture.nativeElement.querySelector('.nx-rating__label--start');
         endLabel = fixture.nativeElement.querySelector('.nx-rating__label--end');
         icons = Array.from(fixture.nativeElement.querySelectorAll('nx-icon'));
+        inputs = Array.from(fixture.nativeElement.querySelectorAll('input'));
         iconNativeElement = fixture.nativeElement.querySelector('nx-icon') as HTMLButtonElement;
         testComponent = testInstance.rating;
     }
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [FormsModule, ReactiveFormsModule, NxRatingModule],
-            declarations: [
+            imports: [
+                FormsModule,
+                ReactiveFormsModule,
+                NxRatingModule,
                 SizeRatingComponent,
                 SimpleRatingComponent,
                 SimpleBindingRatingComponent,
@@ -51,9 +55,15 @@ describe('NxRatingComponent', () => {
         return getIcons().filter(dbgEl => dbgEl.componentInstance.name === 'star');
     }
 
-    function checkSelection(...expected: boolean[]) {
+    function checkVisualSelection(...expected: boolean[]) {
         expected.forEach((value, index) => {
             expect(testComponent.getIconName(index + 1)).toBe(value ? 'star' : 'star-o');
+        });
+    }
+
+    function checkSelection(...expected: boolean[]) {
+        expected.forEach((value, index) => {
+            expect(testComponent.isSelected(index + 1)).toBe(value);
         });
     }
 
@@ -66,7 +76,7 @@ describe('NxRatingComponent', () => {
     describe('basic', () => {
         it('should display five unchecked stars in default', fakeAsync(() => {
             createTestComponent(SimpleRatingComponent);
-            checkSelection(false, false, false, false, false);
+            checkVisualSelection(false, false, false, false, false);
         }));
 
         it('should render the labels correctly', fakeAsync(() => {
@@ -80,12 +90,12 @@ describe('NxRatingComponent', () => {
             createTestComponent(SimpleRatingComponent);
             click(1);
             expect(testComponent.value).toBe(1);
-            checkSelection(true, false, false, false, false);
+            checkVisualSelection(true, false, false, false, false);
             click(5);
             expect(testComponent.value).toBe(5);
-            checkSelection(true, true, true, true, true);
+            checkVisualSelection(true, true, true, true, true);
             click(2);
-            checkSelection(true, true, false, false, false);
+            checkVisualSelection(true, true, false, false, false);
             expect(testComponent.value).toBe(2);
         }));
 
@@ -94,34 +104,15 @@ describe('NxRatingComponent', () => {
             testComponent.disabled = true;
             click(1);
             expect(testComponent.value).toBe(0);
-            checkSelection(false, false, false, false, false);
+            checkVisualSelection(false, false, false, false, false);
         }));
-
-        it('should handle keyboard event RIGHT_ARROW and LEFT_ARROW correctly', () => {
-            createTestComponent(SimpleRatingComponent);
-
-            expect(testComponent.value).toBe(0);
-
-            // dispatch the keyboard event on the first rating star
-            dispatchKeyboardEvent(icons[0], 'keyup', RIGHT_ARROW);
-            fixture.detectChanges();
-            dispatchKeyboardEvent(icons[1], 'keyup', RIGHT_ARROW);
-            fixture.detectChanges();
-            expect(testComponent.value).toBe(2);
-
-            dispatchKeyboardEvent(icons[1], 'keyup', LEFT_ARROW);
-            fixture.detectChanges();
-            expect(testComponent.value).toBe(1);
-        });
 
         it('should emit rating value on keyboard event ENTER', () => {
             createTestComponent(SimpleRatingComponent);
 
             spyOn(testComponent.valueChange, 'emit');
 
-            dispatchKeyboardEvent(icons[0], 'keyup', RIGHT_ARROW);
-            fixture.detectChanges();
-            dispatchKeyboardEvent(icons[0], 'keyup', ENTER);
+            dispatchKeyboardEvent(inputs[0], 'keyup', ENTER);
             fixture.detectChanges();
 
             expect(testComponent.valueChange.emit).toHaveBeenCalledWith(1);
@@ -132,13 +123,12 @@ describe('NxRatingComponent', () => {
 
             dispatchMouseEvent(icons[3], 'mouseenter');
             fixture.detectChanges();
-
-            checkSelection(true, true, true, true, false);
+            checkVisualSelection(true, true, true, true, false);
 
             dispatchMouseEvent(icons[3], 'mouseleave');
             fixture.detectChanges();
 
-            checkSelection(false, false, false, false, false);
+            checkVisualSelection(false, false, false, false, false);
         });
     });
 
@@ -257,16 +247,16 @@ describe('NxRatingComponent', () => {
             expect(endLabelContent).toBe('newEndLabel');
         }));
 
-        it('updates view on change of "ariaLabel"', fakeAsync(() => {
+        it('updates view on change of "ariaLabel"', () => {
             createTestComponent(RatingOnPushComponent);
-            let ariaLabel = fixture.nativeElement.querySelector('.nx-rating__icon').getAttribute('aria-label');
-            expect(ariaLabel).toBe('1/5');
+            let ariaLabel = fixture.nativeElement.querySelector('.nx-rating__input').getAttribute('aria-label');
+            expect(ariaLabel).toBe('1');
 
-            testInstance.rating.ariaLabel = ['one', 'two', 'three', 'four', 'five'];
+            (testInstance as RatingOnPushComponent).ariaInputLabels.set(['one', 'two', 'three', 'four', 'five']);
             fixture.detectChanges();
-            ariaLabel = fixture.nativeElement.querySelector('.nx-rating__icon').getAttribute('aria-label');
+            ariaLabel = fixture.nativeElement.querySelector('.nx-rating__input').getAttribute('aria-label');
             expect(ariaLabel).toBe('one');
-        }));
+        });
     });
 
     describe('a11y', () => {
@@ -291,18 +281,22 @@ describe('NxRatingComponent', () => {
     });
 });
 
-@Directive()
+@Directive({ standalone: true })
 class RatingTest {
     @ViewChild(NxRatingComponent) rating: any;
 }
 
 @Component({
-    template: `<nx-rating nxStartLabel="poor" nxEndLabel="great"></nx-rating>`,
+    template: `<nx-rating startLabel="poor" endLabel="great"></nx-rating>`,
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, NxRatingModule],
 })
 class SimpleRatingComponent extends RatingTest {}
 
 @Component({
-    template: `<nx-rating [(nxValue)]="theValue"></nx-rating>`,
+    template: `<nx-rating [(value)]="theValue"></nx-rating>`,
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, NxRatingModule],
 })
 class SimpleBindingRatingComponent extends RatingTest {
     theValue: any;
@@ -310,6 +304,8 @@ class SimpleBindingRatingComponent extends RatingTest {
 
 @Component({
     template: `<nx-rating [(ngModel)]="theValue"></nx-rating>`,
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, NxRatingModule],
 })
 class NgModelBindingRatingComponent extends RatingTest {
     theValue: any;
@@ -321,18 +317,24 @@ class NgModelBindingRatingComponent extends RatingTest {
             <nx-rating formControlName="rating"></nx-rating>
         </form>
     `,
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, NxRatingModule],
 })
 class ReactiveBindingRatingComponent extends RatingTest {
-    testForm = new UntypedFormBuilder().group({
-        rating: new UntypedFormControl(),
+    testForm = new FormBuilder().group({
+        rating: new FormControl(),
     });
 }
 
 @Component({
-    template: `<nx-rating [nxValue]="currentValue" [nxStartLabel]="startLabel" [nxEndLabel]="endLabel"></nx-rating>`,
+    template: `<nx-rating [value]="currentValue" [startLabel]="startLabel" [endLabel]="endLabel" [ariaRatingLabels]="ariaInputLabels()"></nx-rating>`,
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, NxRatingModule],
 })
 class RatingOnPushComponent extends RatingTest {
+    ariaInputLabels = signal(['1', '2', '3', '4', '5']);
+
     startLabel = 'startLabel';
     endLabel = 'endLabel';
     currentValue = 2;
@@ -341,13 +343,17 @@ class RatingOnPushComponent extends RatingTest {
 @Component({
     template: `<nx-rating [(ngModel)]="ngModelValue"></nx-rating>`,
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, NxRatingModule],
 })
 class TemplateDrivenOnPushComponent extends RatingTest {
     ngModelValue = 2;
 }
 
 @Component({
-    template: `<nx-rating [nxSize]="size"></nx-rating>`,
+    template: `<nx-rating [size]="size"></nx-rating>`,
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, NxRatingModule],
 })
 class SizeRatingComponent extends RatingTest {
     size = 'm';

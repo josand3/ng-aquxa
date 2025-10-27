@@ -1,15 +1,16 @@
-import { OverlayContainer, OverlayModule } from '@angular/cdk/overlay';
-import { CommonModule } from '@angular/common';
-import { Component, Directive, ElementRef, Type, ViewChild, ViewEncapsulation } from '@angular/core';
+import { OverlayContainer, OverlayModule, ScrollStrategy } from '@angular/cdk/overlay';
+import { CommonModule, JsonPipe, LowerCasePipe } from '@angular/common';
+import { Component, Directive, ElementRef, Inject, Type, ViewChild, ViewEncapsulation } from '@angular/core';
 import { ComponentFixture, fakeAsync, inject, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormControl, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { NxModalModule } from '@aposin/ng-aquila/modal';
+import { fakeScrollStrategyFunction } from '@aposin/ng-aquila/utils';
 import { Observable, of } from 'rxjs';
 
 import { dispatchFakeEvent } from '../cdk-test-utils';
 import { NxInputModule } from '../input';
-import { NxAutocompleteComponent, NxAutocompleteTriggerDirective } from '.';
+import { NX_AUTOCOMPLETE_SCROLL_STRATEGY, NxAutocompleteComponent, NxAutocompleteTriggerDirective } from '.';
 import { NxAutocompleteModule } from './autocomplete.module';
 
 describe('NxAutocompleteComponent:', () => {
@@ -48,16 +49,6 @@ describe('NxAutocompleteComponent:', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                BasicAutocompleteComponent,
-                ShadowAutoCompleteComponent,
-                CustomAutocompleteComponent,
-                ComplexDataAutocompleteComponent,
-                NgModelBindingAutocompleteComponent,
-                ReactiveAutocompleteComponent,
-                AutocompleteInModalComponent,
-                AutocompleteComponentWithDirection,
-            ],
             imports: [
                 CommonModule,
                 OverlayModule,
@@ -67,6 +58,14 @@ describe('NxAutocompleteComponent:', () => {
                 ReactiveFormsModule,
                 NoopAnimationsModule,
                 NxModalModule.forRoot(),
+                BasicAutocompleteComponent,
+                ShadowAutoCompleteComponent,
+                CustomAutocompleteComponent,
+                ComplexDataAutocompleteComponent,
+                NgModelBindingAutocompleteComponent,
+                ReactiveAutocompleteComponent,
+                AutocompleteInModalComponent,
+                AutocompleteComponentWithDirection,
             ],
         }).compileComponents();
 
@@ -89,6 +88,14 @@ describe('NxAutocompleteComponent:', () => {
         expect(isVisible(getAutocompletePanel())).toBeTruthy();
     }));
 
+    it('should open the overlay when focus the shadow input field', fakeAsync(() => {
+        createTestComponent(ShadowAutoCompleteComponent, true);
+        input.focus();
+        flush();
+
+        expect(getAutocompletePanel()).toBeTruthy();
+    }));
+
     it('should close the overlay', fakeAsync(() => {
         createTestComponent(BasicAutocompleteComponent);
         input.dispatchEvent(new Event('focus'));
@@ -101,6 +108,22 @@ describe('NxAutocompleteComponent:', () => {
         flush();
 
         expect(getAutocompletePanel()).toBeFalsy();
+    }));
+
+    it('should not focus item when mousedown', fakeAsync(() => {
+        createTestComponent(BasicAutocompleteComponent);
+        input.dispatchEvent(new Event('focus'));
+        typeInput('A');
+        flush();
+        const event = new MouseEvent('mousedown', { bubbles: true });
+
+        const item = getAutocompleteItems().item(1) as any;
+        spyOn(item, 'focus');
+
+        item.dispatchEvent(event);
+        flush();
+
+        expect(item.focus).not.toHaveBeenCalled();
     }));
 
     it('should close the overlay when clicking outside', fakeAsync(() => {
@@ -251,6 +274,22 @@ describe('NxAutocompleteComponent:', () => {
         expect(openedModal).toBeTruthy();
     }));
 
+    it('should be able to override the scroll strategy in parent injector', () => {
+        TestBed.resetTestingModule()
+            .configureTestingModule({
+                imports: [ScrollStrategyOverrideComponent, NxAutocompleteModule, NxInputModule, NoopAnimationsModule],
+                providers: [
+                    {
+                        provide: NX_AUTOCOMPLETE_SCROLL_STRATEGY,
+                        useFactory: () => fakeScrollStrategyFunction,
+                    },
+                ],
+            })
+            .compileComponents();
+        createTestComponent(ScrollStrategyOverrideComponent);
+        expect((testInstance as ScrollStrategyOverrideComponent).scrollStrategy).toBe(fakeScrollStrategyFunction);
+    });
+
     describe('a11y', () => {
         it('has no accessibility violations', async () => {
             createTestComponent(BasicAutocompleteComponent);
@@ -310,7 +349,7 @@ const COMPLEX_DATA = [
     { id: 'C', desc: 'C descr' },
 ];
 
-@Directive()
+@Directive({ standalone: true })
 class AutocompleteComponent {
     @ViewChild(NxAutocompleteComponent, { read: ElementRef }) autocompleteInstanceRef!: ElementRef;
     @ViewChild(NxAutocompleteComponent) autocompleteInstance!: NxAutocompleteComponent;
@@ -345,31 +384,62 @@ class AutocompleteComponent {
         />
         <nx-autocomplete #auto1></nx-autocomplete>
     `,
+    standalone: true,
+    imports: [OverlayModule, NxAutocompleteModule, NxInputModule, FormsModule, ReactiveFormsModule],
 })
 class BasicAutocompleteComponent extends AutocompleteComponent {}
 
 @Component({
     template: `
+        <input
+            type="text"
+            [nxAutocomplete]="auto1"
+            [nxAutocompleteItems]="searchFunction"
+            [nxAutocompleteDisabled]="autocompleteDisabled"
+            nxAutocompleteDebounce="0"
+            aria-label="atcmpl"
+        />
+        <nx-autocomplete #auto1></nx-autocomplete>
+    `,
+    standalone: true,
+    imports: [OverlayModule, NxAutocompleteModule, NxInputModule, FormsModule, ReactiveFormsModule],
+})
+class ScrollStrategyOverrideComponent extends AutocompleteComponent {
+    constructor(@Inject(NX_AUTOCOMPLETE_SCROLL_STRATEGY) readonly scrollStrategy: () => ScrollStrategy) {
+        super();
+    }
+}
+
+@Component({
+    template: `
         <input type="text" [nxAutocomplete]="auto1" [(ngModel)]="inputVal" />
         <nx-autocomplete #auto1>
-            <nx-autocomplete-option *ngFor="let item of searchData(inputVal)" [value]="item">
+            @for (item of searchData(inputVal); track item) {
+            <nx-autocomplete-option [value]="item">
                 {{ item | lowercase }}
             </nx-autocomplete-option>
+            }
         </nx-autocomplete>
     `,
+    standalone: true,
+    imports: [OverlayModule, NxAutocompleteModule, NxInputModule, FormsModule, ReactiveFormsModule, LowerCasePipe],
 })
 class CustomAutocompleteComponent extends AutocompleteComponent {}
 
 @Component({
     template: `
         <input type="text" [nxAutocomplete]="auto1" [(ngModel)]="inputVal" />
-        <nx-autocomplete #auto1 [nxValueFormatter]="valFormatter">
-            <nx-autocomplete-option *ngFor="let item of searchComplexData(inputVal)" [value]="item">
+        <nx-autocomplete #auto1 [valueFormatter]="valFormatter">
+            @for (item of searchComplexData(inputVal); track item) {
+            <nx-autocomplete-option [value]="item">
                 {{ item.desc | lowercase }}
             </nx-autocomplete-option>
+            }
         </nx-autocomplete>
         {{ inputVal | json }}
     `,
+    standalone: true,
+    imports: [OverlayModule, NxAutocompleteModule, NxInputModule, FormsModule, ReactiveFormsModule, JsonPipe, LowerCasePipe],
 })
 class ComplexDataAutocompleteComponent extends AutocompleteComponent {
     valFormatter = (val: any) => (val ? val.desc : null);
@@ -382,6 +452,8 @@ class ComplexDataAutocompleteComponent extends AutocompleteComponent {
             <nx-autocomplete #auto1></nx-autocomplete>
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [OverlayModule, NxAutocompleteModule, NxInputModule, FormsModule, ReactiveFormsModule],
 })
 class NgModelBindingAutocompleteComponent extends AutocompleteComponent {
     aValue: any;
@@ -402,12 +474,15 @@ class NgModelBindingAutocompleteComponent extends AutocompleteComponent {
             </nx-formfield>
         </form>
     `,
+    standalone: true,
+    imports: [OverlayModule, NxAutocompleteModule, NxInputModule, FormsModule, ReactiveFormsModule],
 })
 class ReactiveAutocompleteComponent extends AutocompleteComponent {
-    testForm = new UntypedFormBuilder().group({
-        autocomplete: new UntypedFormControl(
+    testForm = new FormBuilder().group({
+        autocomplete: new FormControl(
             {
-                value: null,
+                value: '',
+                disabled: false,
             },
             {
                 validators: Validators.required,
@@ -423,8 +498,12 @@ class ReactiveAutocompleteComponent extends AutocompleteComponent {
             <nx-autocomplete #auto1></nx-autocomplete>
         </ng-template>
 
-        <nx-modal #basicModal id="basicModal" [nxBody]="basicModalBody" *ngIf="open"> </nx-modal>
+        @if (open) {
+        <nx-modal #basicModal id="basicModal" [modalBody]="basicModalBody"> </nx-modal>
+        }
     `,
+    standalone: true,
+    imports: [OverlayModule, NxAutocompleteModule, NxInputModule, FormsModule, ReactiveFormsModule, NxModalModule],
 })
 class AutocompleteInModalComponent extends AutocompleteComponent {
     open = true;
@@ -444,6 +523,8 @@ class AutocompleteInModalComponent extends AutocompleteComponent {
             <nx-autocomplete #auto1></nx-autocomplete>
         </div>
     `,
+    standalone: true,
+    imports: [OverlayModule, NxAutocompleteModule, NxInputModule, FormsModule, ReactiveFormsModule],
 })
 class AutocompleteComponentWithDirection extends AutocompleteComponent {
     direction = 'rtl';
@@ -452,12 +533,16 @@ class AutocompleteComponentWithDirection extends AutocompleteComponent {
     template: `
         <input type="text" #animalInput [nxAutocomplete]="auto1" (input)="filter(animalInput.value)" />
         <nx-autocomplete #auto1="nxAutocomplete">
-            <nx-autocomplete-option *ngFor="let option of filteredOptions" [value]="option">
+            @for (option of filteredOptions; track option) {
+            <nx-autocomplete-option [value]="option">
                 {{ option }}
             </nx-autocomplete-option>
+            }
         </nx-autocomplete>
     `,
     encapsulation: ViewEncapsulation.ShadowDom,
+    standalone: true,
+    imports: [OverlayModule, NxAutocompleteModule, NxInputModule, FormsModule, ReactiveFormsModule],
 })
 class ShadowAutoCompleteComponent extends AutocompleteComponent {
     options = ['Abacus', 'Bell', 'Chipmunk'];

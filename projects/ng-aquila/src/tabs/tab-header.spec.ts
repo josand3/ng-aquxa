@@ -1,4 +1,4 @@
-import { END, ENTER, HOME, LEFT_ARROW, RIGHT_ARROW, SPACE } from '@angular/cdk/keycodes';
+import { END, ENTER, HOME, LEFT_ARROW, RIGHT_ARROW, SPACE, TAB } from '@angular/cdk/keycodes';
 import { Component, DebugElement, Directive, Type, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -8,7 +8,7 @@ import { dispatchKeyboardEvent } from '../cdk-test-utils';
 import { NxTabHeaderComponent } from './tab-header';
 import { NxTabsModule } from './tabs.module';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class TabHeaderTest {
     selectedIndex = 0;
     autoselect = true;
@@ -37,8 +37,7 @@ describe('NxTabHeaderComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [BasicHeader, SimpleHeader],
-            imports: [NxTabsModule, FormsModule, ReactiveFormsModule],
+            imports: [NxTabsModule, FormsModule, ReactiveFormsModule, BasicHeader, SimpleHeader],
         }).compileComponents();
     }));
 
@@ -99,6 +98,18 @@ describe('NxTabHeaderComponent', () => {
                 dispatchKeyboardEvent(tabListContainer, 'keydown', END);
                 fixture.detectChanges();
                 expect(testInstance.selectedIndex).toBe(2);
+            });
+
+            it('should not focus on navigation button when pressing TAB key', () => {
+                createTestComponent(BasicHeader);
+                testInstance.selectedIndex = 1;
+                testInstance.tabHeaderInstance._isScrolledToEnd = false;
+                fixture.detectChanges();
+
+                dispatchKeyboardEvent(tabListContainer, 'keydown', TAB);
+                fixture.detectChanges();
+                const navigationButton = tabHeaderNativeElement.querySelector('.end-button button');
+                expect(document.activeElement).not.toBe(navigationButton);
             });
         });
 
@@ -174,17 +185,15 @@ describe('NxTabHeaderComponent', () => {
 @Component({
     template: `
         <nx-tab-header [selectedIndex]="selectedIndex" (selectFocusedIndex)="selectedIndex = $event" (indexFocused)="onFocus($event)" [autoselect]="autoselect">
-            <button
-                nxTabLabelWrapper
-                *ngFor="let tab of tabs; let i = index"
-                (click)="selectedIndex = i"
-                class="nx-tab-header__item"
-                [class.nx-tab-header__item--active]="selectedIndex === i"
-            >
+            @for (tab of tabs; track tab; let i = $index) {
+            <button nxTabLabelWrapper (click)="selectedIndex = i" class="nx-tab-header__item" [class.nx-tab-header__item--active]="selectedIndex === i">
                 {{ tab.label }}
             </button>
+            }
         </nx-tab-header>
     `,
+    standalone: true,
+    imports: [NxTabsModule, FormsModule, ReactiveFormsModule],
 })
 class BasicHeader extends TabHeaderTest {
     tabs = [{ label: 'First' }, { label: 'Second' }, { label: 'Third' }];
@@ -198,17 +207,15 @@ class BasicHeader extends TabHeaderTest {
 @Component({
     template: `
         <nx-tab-header (selectFocusedIndex)="selectedIndex = $event" [selectedIndex]="selectedIndex">
-            <button
-                nxTabLabelWrapper
-                *ngFor="let tab of tabs; let i = index"
-                (click)="selectedIndex = i"
-                class="nx-tab-header__item"
-                [class.nx-tab-header__item--active]="selectedIndex === i"
-            >
+            @for (tab of tabs; track tab; let i = $index) {
+            <button nxTabLabelWrapper (click)="selectedIndex = i" class="nx-tab-header__item" [class.nx-tab-header__item--active]="selectedIndex === i">
                 {{ tab.label }}
             </button>
+            }
         </nx-tab-header>
     `,
+    standalone: true,
+    imports: [NxTabsModule, FormsModule, ReactiveFormsModule],
 })
 class SimpleHeader extends TabHeaderTest {
     tabs = [{ label: 'First' }, { label: 'Second' }, { label: 'Third' }];

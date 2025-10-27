@@ -1,5 +1,7 @@
 import { Direction, Directionality } from '@angular/cdk/bidi';
-import { AfterContentInit, ChangeDetectorRef, Directive, ElementRef, OnDestroy, Optional, QueryList } from '@angular/core';
+import { Platform } from '@angular/cdk/platform';
+import { AfterContentInit, ChangeDetectorRef, Directive, ElementRef, inject, Injector, OnDestroy, Optional, QueryList } from '@angular/core';
+import { NxViewportService } from '@aposin/ng-aquila/utils';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -7,7 +9,7 @@ const SPACE_BETWEEN_TABS = 32;
 const START_BUTTON_WIDTH = 40;
 
 /** @docs-private */
-@Directive()
+@Directive({ standalone: true })
 export abstract class NxScrollableTabBar implements AfterContentInit, OnDestroy {
     tabHeaderContainer!: ElementRef<HTMLElement>;
     scrollableTabsList!: ElementRef<HTMLElement>;
@@ -17,8 +19,15 @@ export abstract class NxScrollableTabBar implements AfterContentInit, OnDestroy 
     _isScrolledToEnd = true;
 
     private readonly _destroyed = new Subject<void>();
+    protected readonly _platform = inject(Platform);
+    protected readonly _injector = inject(Injector);
 
-    constructor(protected readonly _cdr: ChangeDetectorRef, @Optional() private readonly _dir: Directionality | null, private readonly _element: ElementRef) {
+    constructor(
+        protected readonly _cdr: ChangeDetectorRef,
+        @Optional() private readonly _dir: Directionality | null,
+        private readonly _element: ElementRef,
+        private readonly viewportService: NxViewportService,
+    ) {
         this._dir?.change.pipe(takeUntil(this._destroyed)).subscribe(() => {
             if (this.scrollableTabsList?.nativeElement.scrollLeft !== 0) {
                 const absoluteScrollLeft = Math.abs(this.scrollableTabsList?.nativeElement.scrollLeft);
@@ -27,14 +36,17 @@ export abstract class NxScrollableTabBar implements AfterContentInit, OnDestroy 
                 });
             }
         });
+        this.viewportService.viewportChange$.pipe(takeUntil(this._destroyed)).subscribe(() => this._updateScrollButtons());
     }
 
     ngAfterContentInit(): void {
-        this.tabButtons.changes.pipe(takeUntil(this._destroyed)).subscribe(() => setTimeout(() => this._updateScrollButtons()));
-        setTimeout(() => {
-            this.scrollableTabsList.nativeElement.addEventListener('scroll', this._scrollHandler);
-            this._updateScrollButtons();
-        });
+        if (this._platform.isBrowser) {
+            this.tabButtons.changes.pipe(takeUntil(this._destroyed)).subscribe(() => setTimeout(() => this._updateScrollButtons()));
+            setTimeout(() => {
+                this.scrollableTabsList.nativeElement.addEventListener('scroll', this._scrollHandler);
+                this._updateScrollButtons();
+            });
+        }
     }
 
     ngOnDestroy(): void {

@@ -1,8 +1,10 @@
 import { FocusMonitor, FocusOrigin } from '@angular/cdk/a11y';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
+import { CdkObserveContent } from '@angular/cdk/observers';
 import {
     AfterContentInit,
     AfterViewInit,
+    booleanAttribute,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
@@ -12,6 +14,7 @@ import {
     ElementRef,
     EventEmitter,
     forwardRef,
+    Injector,
     Input,
     OnDestroy,
     OnInit,
@@ -21,8 +24,21 @@ import {
     Self,
     ViewChild,
 } from '@angular/core';
-import { ControlValueAccessor, FormGroupDirective, NgControl, NgForm, UntypedFormControl } from '@angular/forms';
-import { NxLabelComponent } from '@aposin/ng-aquila/base';
+import {
+    AbstractControl,
+    ControlValueAccessor,
+    FormControl,
+    FormGroupDirective,
+    NG_VALIDATORS,
+    NG_VALUE_ACCESSOR,
+    NgControl,
+    NgForm,
+    ValidationErrors,
+    Validator,
+} from '@angular/forms';
+import { NxErrorComponent, NxLabelComponent } from '@aposin/ng-aquila/base';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
+import { NxAbstractControl } from '@aposin/ng-aquila/shared';
 import { ErrorStateMatcher } from '@aposin/ng-aquila/utils';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -63,14 +79,25 @@ export type NxCheckboxLabelSize = 'small' | 'large';
         '[attr.id]': 'id',
         '[attr.required]': 'required',
         '[attr.disabled]': 'disabled || null',
-        '[attr.aria-labelledby]': 'this._label?.id  || null',
         '[attr.role]': '"group"',
+        '(focus)': '_forwardFocusToInput()',
+        '[attr.aria-labelledby]': 'getLabelledby()',
     },
+    standalone: true,
+    imports: [],
+    providers: [
+        {
+            provide: NxAbstractControl,
+            useExisting: forwardRef(() => NxCheckboxGroupComponent),
+        },
+    ],
 })
-export class NxCheckboxGroupComponent implements ControlValueAccessor, AfterContentInit, OnDestroy, DoCheck {
+export class NxCheckboxGroupComponent implements ControlValueAccessor, AfterContentInit, OnDestroy, DoCheck, NxAbstractControl {
     @ContentChildren(forwardRef(() => NxCheckboxComponent), { descendants: true }) _checkboxes!: QueryList<NxCheckboxComponent>;
 
     @ContentChild(forwardRef(() => NxLabelComponent)) _label!: NxLabelComponent;
+
+    @ContentChild(NxErrorComponent) error!: NxErrorComponent;
 
     errorState = false;
 
@@ -112,6 +139,16 @@ export class NxCheckboxGroupComponent implements ControlValueAccessor, AfterCont
         return this._disabled;
     }
     private _disabled = false;
+
+    /** Sets all checkboxes in the group to readonly. */
+    @Input({ transform: booleanAttribute }) set readonly(value) {
+        this._readonly = value;
+        this._stateChanges.next();
+    }
+    get readonly() {
+        return this._readonly;
+    }
+    private _readonly = false;
 
     /** Set the negative styles for all the checkboxes inside the nx-checkbox-group */
     @Input() set negative(value: BooleanInput) {
@@ -159,6 +196,11 @@ export class NxCheckboxGroupComponent implements ControlValueAccessor, AfterCont
             // the `providers` to avoid running into a circular import.
             this.ngControl.valueAccessor = this;
         }
+    }
+
+    setReadonly(value: boolean): void {
+        this.readonly = value;
+        this._cdr.markForCheck();
     }
 
     ngAfterContentInit(): void {
@@ -245,13 +287,20 @@ export class NxCheckboxGroupComponent implements ControlValueAccessor, AfterCont
     updateErrorState() {
         const oldState = this.errorState;
         const parent = this._parentFormGroup || this._parentForm;
-        const control = this.ngControl ? (this.ngControl.control as UntypedFormControl) : null;
+        const control = this.ngControl ? (this.ngControl.control as FormControl) : null;
         const newState = this._errorStateMatcher.isErrorState(control, parent);
 
         if (newState !== oldState) {
             this.errorState = newState;
             this._cdr.markForCheck();
         }
+    }
+
+    getLabelledby() {
+        if (!this._label?.id && !this.error?.id) {
+            return null;
+        }
+        return [this._label?.id, this.error?.id].join(' ');
     }
 }
 
@@ -269,14 +318,38 @@ export class NxCheckboxGroupComponent implements ControlValueAccessor, AfterCont
         '[class.has-error]': '_controlInvalid() || null',
         '[attr.required]': 'required',
         '[attr.aria-invalid]': '_controlInvalid() || null',
+        '[class.is-readonly]': 'checkboxGroup?.readonly || readonly',
+        '[class.can-hover]': '!readonly && !disabled && !negative',
     },
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => NxCheckboxComponent),
+            multi: true,
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => NxCheckboxComponent),
+            multi: true,
+        },
+        {
+            provide: NxAbstractControl,
+            useExisting: forwardRef(() => NxCheckboxComponent),
+        },
+    ],
+    standalone: true,
+    imports: [NxIconModule, CdkObserveContent],
 })
-export class NxCheckboxComponent implements ControlValueAccessor, OnDestroy, OnInit, AfterViewInit {
+export class NxCheckboxComponent implements ControlValueAccessor, OnDestroy, OnInit, AfterViewInit, Validator, NxAbstractControl {
     /** @docs-private */
     @ViewChild('checkboxLabelWrapper', { static: true }) _checkboxLabelWrapper!: ElementRef;
 
     @ViewChild('input') _nativeInput!: ElementRef<HTMLElement>;
 
+    @ContentChild(NxErrorComponent) error: NxErrorComponent | undefined;
+
+    @Input() ariaLabel: string | null = null;
+    @Input() ariaLabelledBy: string | null = null;
     /**
      * Id of the checkbox.
      *
@@ -315,6 +388,14 @@ export class NxCheckboxComponent implements ControlValueAccessor, OnDestroy, OnI
     }
     private _disabled = false;
 
+    /** Whether the checkbox should be readonly. */
+    @Input({ transform: booleanAttribute }) set readonly(value) {
+        this._readonly = value;
+    }
+    get readonly() {
+        return this.checkboxGroup?.readonly || this._readonly;
+    }
+    private _readonly = false;
     /**
      * Sets the label size of the checkbox.
      *
@@ -428,37 +509,45 @@ export class NxCheckboxComponent implements ControlValueAccessor, OnDestroy, OnI
         this._cdr.detectChanges();
     }
 
+    ngControl: NgControl | null = null;
+    _parentForm: NgForm | null = null;
+    _parentFormGroup: FormGroupDirective | null = null;
+
     constructor(
         private readonly _cdr: ChangeDetectorRef,
         private readonly _errorStateMatcher: ErrorStateMatcher,
         @Optional() readonly checkboxGroup: NxCheckboxGroupComponent | null,
-        @Optional() @Self() readonly ngControl: NgControl | null,
-        @Optional() private readonly _parentForm: NgForm | null,
-        @Optional() private readonly _parentFormGroup: FormGroupDirective | null,
         private readonly _focusMonitor: FocusMonitor,
-    ) {
-        if (this.ngControl) {
-            // Note: we provide the value accessor through here, instead of
-            // the `providers` to avoid running into a circular import.
-            this.ngControl.valueAccessor = this;
-        }
+        private injector: Injector,
+    ) {}
+
+    setReadonly(value: boolean): void {
+        this.readonly = value;
+        this._cdr.markForCheck();
+    }
+
+    validate(control: AbstractControl<any, any>): ValidationErrors | null {
+        return this.required && control.value !== true ? { required: true } : null;
     }
 
     /** @docs-private */
     _controlInvalid(): boolean {
         const parent = this._parentFormGroup || this._parentForm;
-        let control: UntypedFormControl | NgControl | null = null; // TODO this doesn't seem correct
+        let control: FormControl | NgControl | null = null; // TODO this doesn't seem correct
 
         if (this.checkboxGroup?.ngControl) {
             control = this.checkboxGroup.ngControl;
         } else {
-            control = this.ngControl ? (this.ngControl.control as UntypedFormControl) : null;
+            control = this.ngControl ? (this.ngControl.control as FormControl) : null;
         }
-
-        return this._errorStateMatcher.isErrorState(control as UntypedFormControl, parent);
+        return this._errorStateMatcher.isErrorState(control as FormControl, parent);
     }
 
     ngOnInit(): void {
+        this.ngControl = this.injector.get(NgControl, null);
+        this._parentForm = this.injector.get(NgForm, null);
+        this._parentFormGroup = this.injector.get(FormGroupDirective, null);
+
         if (this.checkboxGroup) {
             this.name = this.checkboxGroup.name;
             // when relevant properties of the parent like name and disabled change
@@ -529,6 +618,11 @@ export class NxCheckboxComponent implements ControlValueAccessor, OnDestroy, OnI
         this._focusMonitor.focusVia(this._nativeInput, focusOrigin as FocusOrigin);
     }
 
+    /** Forward focus from host to hidden input field */
+    _forwardFocusToInput() {
+        this._nativeInput.nativeElement.focus();
+    }
+
     /** @docs-private */
     touch() {
         this.onTouchedCallback();
@@ -538,11 +632,14 @@ export class NxCheckboxComponent implements ControlValueAccessor, OnDestroy, OnI
     _onInputClick(event: Event): void {
         // stop the propagation of the native click on the checkbox input so that a click is not triggered twice
         event.stopPropagation();
-        if (!this.disabled) {
-            this.toggle();
-            this.checkedChange.emit(this._checked);
-            this.checkboxChange.emit(this._createChangeEvent(this._checked));
+
+        if (this.disabled || this.readonly) {
+            event.preventDefault();
+            return;
         }
+        this.toggle();
+        this.checkedChange.emit(this._checked);
+        this.checkboxChange.emit(this._createChangeEvent(this._checked));
     }
 
     /** @docs-private */

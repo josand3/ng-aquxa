@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class NxSortHeaderIntl {
     /**
      * Stream that emits whenever the labels here are changed. Use this to notify
@@ -14,7 +14,7 @@ export class NxSortHeaderIntl {
     /** The aria label for a header that can be clicked to sort descending. */
     sortDescendingAriaLabel = 'click to sort descending';
     /** The aria label for a column that is sorted ascending. */
-    sortedAscendingAriaLabel = 'sorted ascending by';
+    sortedAscendingAriaLabel = 'sorted ascending';
     /** The aria label for a column that is sorted descending. */
-    sortedDescendingAriaLabel = 'sorted descending by';
+    sortedDescendingAriaLabel = 'sorted descending';
 }

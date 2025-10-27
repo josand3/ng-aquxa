@@ -4,6 +4,16 @@ $max-modal-content-height: 65vh !default;
 $horizontal-offset: 48px;
 $action-bar-height: nx-spacer(2xl);
 
+::ng-deep .cdk-overlay-pane {
+    &.is-fullscreen {
+        padding-top: nx-spacer(2m);
+
+        @include media-breakpoint-down('small') {
+            padding-top: nx-spacer(2xs);
+        }
+    }
+}
+
 :host {
     background: v(modal-background-color);
     color: v(modal-text-color);
@@ -28,17 +38,59 @@ $action-bar-height: nx-spacer(2xl);
     min-height: inherit;
     max-height: inherit;
 
-    @include media-breakpoint-down('small') {
-        margin: 0 nx-spacer(2xs); // keep distance to the end of the screen
-        padding: nx-spacer(3m) nx-spacer(2m) nx-spacer(4m) nx-spacer(2m);
+    .is-fullscreen & {
+        border-radius: nx-spacer(2xs) nx-spacer(2xs) 0 0;
     }
 
-    @media screen and (-ms-high-contrast: active) {
-        border: nx-border-size(m) solid windowText;
+    @include media-breakpoint-down('small') {
+        margin: 0 nx-spacer(2xs); // keep distance to the end of the screen
+        padding: nx-spacer(2m) nx-spacer(2m) nx-spacer(2m) nx-spacer(2m);
+    }
+
+    @media screen and (forced-colors: active) {
+        border: nx-border-size(m) solid CanvasText;
+    }
+
+    ::ng-deep .nx-modal__title {
+        text-align: center;
+        font-size: 1.875rem;
+        font-weight: 300;
+        line-height: 2.25rem;
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        margin: 0;
+        margin-bottom: #{nx-spacer(m)};
+        @include media-breakpoint-down('small') {
+            font-size: 1.625rem;
+        }
+    }
+    ::ng-deep .nx-modal__status {
+        margin-bottom: #{nx-spacer(s)};
+        font-size: 4rem;
     }
 }
 
-::ng-deep .nx-modal__content {
+:host(.is-expert) {
+    ::ng-deep .nx-modal__status {
+        display: flex;
+        margin-bottom: 0;
+        margin-right: #{nx-spacer(s)};
+        font-size: 2.25rem !important;
+    }
+    ::ng-deep .nx-modal__title {
+        font-weight: 400;
+        text-align: left;
+        flex-direction: row;
+        margin-bottom: #{nx-spacer(s)};
+    }
+
+    ::ng-deep .nx-modal__actions {
+        justify-content: flex-end;
+    }
+}
+
+:host ::ng-deep .nx-modal__content {
     display: block;
     margin: 0 -#{nx-spacer(3m)};
     padding: 0 nx-spacer(3m);
@@ -46,13 +98,21 @@ $action-bar-height: nx-spacer(2xl);
     overflow: auto;
     -webkit-overflow-scrolling: touch;
 
+    .is-fullscreen & {
+        max-height: calc(100% - #{nx-spacer(2m)});
+    }
+
     @include media-breakpoint-down('small') {
         margin: 0 -#{nx-spacer(2m)};
         padding: 0 nx-spacer(2m);
+
+        .is-fullscreen & {
+            max-height: calc(100% - #{nx-spacer(3m)});
+        }
     }
 }
 
-::ng-deep .nx-modal__actions {
+:host ::ng-deep .nx-modal__actions {
     // Pull the actions down to avoid their padding stacking with the modal's padding.
     margin-bottom: -#{nx-spacer(3m)};
 
@@ -69,10 +129,22 @@ $action-bar-height: nx-spacer(2xl);
     border-bottom-left-radius: nx-border-radius(s);
     border-bottom-right-radius: nx-border-radius(s);
 
+    .is-fullscreen & {
+        background: v(modal-background-color);
+        position: absolute;
+        bottom: calc(#{$action-bar-height} - #{nx-spacer(2m)});
+        width: 100%;
+    }
+
     @include media-breakpoint-down('small') {
+        margin-bottom: -#{nx-spacer(2m)};
         margin-left: -#{nx-spacer(2m)};
         margin-right: -#{nx-spacer(2m)};
         padding: 0 nx-spacer(2m);
+
+        .is-fullscreen & {
+            bottom: calc(#{$action-bar-height} - #{nx-spacer(3m)});
+        }
     }
 }
 

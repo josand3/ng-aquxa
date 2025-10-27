@@ -1,13 +1,9 @@
 <div [dir]="directionQuery">
-    <ng-template
-        *ngIf="exampleComponent; else spinner"
-        [ngComponentOutlet]="exampleComponent?.componentType"
-        [ngComponentOutletNgModuleFactory]="exampleModuleFactory"
-    ></ng-template>
-</div>
-
-<ng-template #spinner>
+    @if (exampleComponent) {
+    <ng-template [ngComponentOutlet]="exampleComponent?.componentType" [ngComponentOutletNgModuleFactory]="exampleModuleFactory"></ng-template>
+    } @else {
     <div style="display: flex; align-items: center; justify-content: center">
-        <nx-spinner nxSize="large"></nx-spinner>
+        <nx-spinner size="large"></nx-spinner>
     </div>
-</ng-template>
+    }
+</div>

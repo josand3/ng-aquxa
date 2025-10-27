@@ -1,21 +1,24 @@
-import { Component, Directive, QueryList, Type, ViewChild, ViewChildren } from '@angular/core';
+import { JsonPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Directive, QueryList, Type, ViewChild, ViewChildren } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NxErrorModule, NxLabelModule } from '@aposin/ng-aquila/base';
 
+import { NxAbstractControl } from '../shared';
 import { NxCheckboxComponent, NxCheckboxGroupChangeEvent, NxCheckboxGroupComponent } from './checkbox.component';
 import { NxCheckboxModule } from './checkbox.module';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class CheckboxGroupTest {
     @ViewChild(NxCheckboxGroupComponent) checkboxGroupInstance!: NxCheckboxGroupComponent;
     @ViewChildren(NxCheckboxComponent) checkboxInstances!: QueryList<NxCheckboxComponent>;
 
     checked = false;
-    myFormGroup!: UntypedFormGroup;
+    myFormGroup!: FormGroup;
     labelSize!: string;
     disabled = false;
     negative = false;
+    readonly = false;
 }
 
 describe('NxCheckboxGroupComponent', () => {
@@ -36,8 +39,20 @@ describe('NxCheckboxGroupComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [BasicCheckboxGroup, CheckboxGroupValidation, CheckboxGroupDynamic, CheckboxGroupReactive, ConditionalCheckboxGroupReactive],
-            imports: [NxCheckboxModule, FormsModule, NxErrorModule, NxLabelModule, ReactiveFormsModule],
+            imports: [
+                NxCheckboxModule,
+                FormsModule,
+                NxErrorModule,
+                NxLabelModule,
+                ReactiveFormsModule,
+                BasicCheckboxGroup,
+                CheckboxGroupValidation,
+                CheckboxGroupDynamic,
+                CheckboxGroupReactive,
+                ConditionalCheckboxGroupReactive,
+                ConfigurableCheckboxGroup,
+                CheckboxGroupOnPush,
+            ],
         }).compileComponents();
     }));
 
@@ -59,6 +74,24 @@ describe('NxCheckboxGroupComponent', () => {
         fixture.detectChanges();
         checkboxInstances.forEach(checkbox => {
             expect(checkbox.disabled).toBeTrue();
+        });
+    });
+
+    it('should set every checkbox to readonly', () => {
+        createTestComponent(ConfigurableCheckboxGroup);
+        testInstance.readonly = true;
+        fixture.detectChanges();
+        checkboxInstances.forEach(checkbox => {
+            expect(checkbox.readonly).toBeTrue();
+        });
+    });
+
+    it('should set readonly programmatically with NxAbstractControl', () => {
+        createTestComponent(CheckboxGroupOnPush);
+        (testInstance as CheckboxGroupOnPush).group.setReadonly(true);
+        fixture.detectChanges();
+        checkboxElements.forEach(element => {
+            expect(element).toHaveClass('is-readonly');
         });
     });
 
@@ -94,8 +127,14 @@ describe('NxCheckboxGroupComponent', () => {
         fixture.detectChanges();
 
         let errors = fixture.nativeElement.querySelectorAll('nx-error') as NodeListOf<HTMLInputElement>;
+
+        const group = fixture.nativeElement.querySelector('nx-checkbox-group');
+        const labelId = fixture.nativeElement.querySelector('.nx-label__content')?.id;
+        const errorId = errors[0]?.querySelector('.nx-error__content')?.id;
+
         expect(errors).toHaveSize(1);
         expect(checkboxGroupInstance.errorState).toBeTruthy();
+        expect(group.getAttribute('aria-labelledby')).toBe(`${labelId} ${errorId}`);
 
         [0, 1, 2].forEach(i => checkboxElements[i].click());
         fixture.detectChanges();
@@ -227,8 +266,24 @@ describe('NxCheckboxGroupComponent', () => {
             <nx-checkbox>Term 3</nx-checkbox>
         </nx-checkbox-group>
     `,
+    standalone: true,
+    imports: [NxCheckboxModule, FormsModule, NxErrorModule, NxLabelModule, ReactiveFormsModule],
 })
 class BasicCheckboxGroup extends CheckboxGroupTest {}
+
+@Component({
+    template: `
+        <nx-checkbox-group name="terms" [disabled]="disabled" [readonly]="readonly">
+            <nx-label [id]="'terms-label'">Accept terms</nx-label>
+            <nx-checkbox>Term 1</nx-checkbox>
+            <nx-checkbox>Term 2</nx-checkbox>
+            <nx-checkbox>Term 3</nx-checkbox>
+        </nx-checkbox-group>
+    `,
+    standalone: true,
+    imports: [NxCheckboxModule, FormsModule, NxErrorModule, NxLabelModule, ReactiveFormsModule],
+})
+class ConfigurableCheckboxGroup extends CheckboxGroupTest {}
 
 @Component({
     template: `
@@ -242,13 +297,15 @@ class BasicCheckboxGroup extends CheckboxGroupTest {}
             </nx-checkbox-group>
         </form>
     `,
+    standalone: true,
+    imports: [NxCheckboxModule, FormsModule, NxErrorModule, NxLabelModule, ReactiveFormsModule],
 })
 class CheckboxGroupValidation extends CheckboxGroupTest {
-    myFormGroup!: UntypedFormGroup;
+    myFormGroup!: FormGroup;
 
     checkboxGroupCheckedValues = ['Term 2', 'Term 3'];
 
-    constructor(private readonly fb: UntypedFormBuilder) {
+    constructor(private readonly fb: FormBuilder) {
         super();
         this.createForm();
     }
@@ -266,18 +323,22 @@ class CheckboxGroupValidation extends CheckboxGroupTest {
             <nx-checkbox-group name="terms" formControlName="terms" required>
                 <nx-label [id]="'terms'">Select your choices</nx-label>
                 <nx-error appearance="text"> Please select at least one checkbox. </nx-error>
-                <nx-checkbox *ngFor="let key of data" [value]="key" checked>{{ key }}</nx-checkbox>
+                @for (key of data; track key) {
+                <nx-checkbox [value]="key" checked>{{ key }}</nx-checkbox>
+                }
             </nx-checkbox-group>
         </form>
     `,
+    standalone: true,
+    imports: [NxCheckboxModule, FormsModule, NxErrorModule, NxLabelModule, ReactiveFormsModule],
 })
 class CheckboxGroupDynamic extends CheckboxGroupTest {
-    myFormGroup!: UntypedFormGroup;
+    myFormGroup!: FormGroup;
 
     data = ['one', 'two', 'three'];
     i = 1;
 
-    constructor(private readonly fb: UntypedFormBuilder) {
+    constructor(private readonly fb: FormBuilder) {
         super();
         this.createForm();
     }
@@ -312,11 +373,13 @@ class CheckboxGroupDynamic extends CheckboxGroupTest {
             <button nxButton="primary small" id="submit-button" type="submit">Click</button>
         </form>
     `,
+    standalone: true,
+    imports: [NxCheckboxModule, FormsModule, NxErrorModule, NxLabelModule, ReactiveFormsModule, JsonPipe],
 })
 export class CheckboxGroupReactive extends CheckboxGroupTest {
-    myFormGroup: UntypedFormGroup;
+    myFormGroup: FormGroup;
 
-    constructor(private readonly fb: UntypedFormBuilder) {
+    constructor(private readonly fb: FormBuilder) {
         super();
         this.myFormGroup = this.fb.group({
             terms: [['Term 1', 'Term 2'], null],
@@ -328,20 +391,43 @@ export class CheckboxGroupReactive extends CheckboxGroupTest {
     template: `
         <form [formGroup]="myFormGroup">
             <nx-checkbox-group formControlName="checkboxes">
-                <nx-checkbox *ngFor="let checkbox of checkboxes" [value]="checkbox">{{ checkbox }}</nx-checkbox>
+                @for (checkbox of checkboxes; track checkbox) {
+                <nx-checkbox [value]="checkbox">{{ checkbox }}</nx-checkbox>
+                }
             </nx-checkbox-group>
         </form>
     `,
+    standalone: true,
+    imports: [NxCheckboxModule, FormsModule, NxErrorModule, NxLabelModule, ReactiveFormsModule],
 })
 export class ConditionalCheckboxGroupReactive extends CheckboxGroupTest {
-    myFormGroup: UntypedFormGroup;
+    myFormGroup: FormGroup;
     showCheckboxes = true;
     checkboxes: string[] = ['Term 1', 'Term 2', 'Term 3'];
 
-    constructor(private readonly fb: UntypedFormBuilder) {
+    constructor(private readonly fb: FormBuilder) {
         super();
         this.myFormGroup = this.fb.group({
             checkboxes: [['Term 1', 'Term 2']],
         });
     }
+}
+
+@Component({
+    template: `
+        <form>
+            <nx-checkbox-group #checkboxGroup>
+                @for (checkbox of checkboxes; track checkbox) {
+                <nx-checkbox [value]="checkbox">{{ checkbox }}</nx-checkbox>
+                }
+            </nx-checkbox-group>
+        </form>
+    `,
+    standalone: true,
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [NxCheckboxModule, NxErrorModule, NxLabelModule],
+})
+export class CheckboxGroupOnPush extends CheckboxGroupTest {
+    checkboxes: string[] = ['Term 1', 'Term 2', 'Term 3'];
+    @ViewChild('checkboxGroup', { read: NxAbstractControl }) group!: NxAbstractControl;
 }

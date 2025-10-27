@@ -5,5 +5,5 @@ import { Directive } from '@angular/core';
  *
  * @docs-private
  */
-@Directive()
+@Directive({ standalone: true })
 export class NxTableContentElement {}

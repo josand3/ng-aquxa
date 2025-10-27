@@ -1,9 +1,10 @@
-import { DOWN_ARROW, RIGHT_ARROW, UP_ARROW } from '@angular/cdk/keycodes';
+import { CONTROL, DOWN_ARROW, RIGHT_ARROW, UP_ARROW } from '@angular/cdk/keycodes';
 import { ChangeDetectionStrategy, Component, Directive, Injectable, Type, ViewChild } from '@angular/core';
-import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
+import { ComponentFixture, fakeAsync, flush, TestBed, tick, waitForAsync } from '@angular/core/testing';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NxErrorComponent } from '@aposin/ng-aquila/base';
 
-import { createKeyboardEvent, dispatchKeyboardEvent } from '../cdk-test-utils';
+import { createKeyboardEvent, dispatchFakeEvent, dispatchKeyboardEvent } from '../cdk-test-utils';
 import { NxCodeInputComponent } from './code-input.component';
 import { NxCodeInputModule } from './code-input.module';
 import { NxCodeInputIntl } from './code-input-intl';
@@ -14,12 +15,14 @@ class MyIntl extends NxCodeInputIntl {
     ofLabel = 'testOf';
 }
 
-@Directive()
+@Directive({ standalone: true })
 abstract class CodeInputTest {
     @ViewChild(NxCodeInputComponent) codeInputInstance!: NxCodeInputComponent;
 
     negative = false;
     disabled = false;
+    tabindex = 0;
+    type = 'text';
 
     onSubmit() {}
 }
@@ -41,23 +44,26 @@ describe('NxCodeInputComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [NxCodeInputModule, FormsModule, ReactiveFormsModule],
-            declarations: [
+            imports: [
+                NxCodeInputModule,
+                FormsModule,
+                ReactiveFormsModule,
                 CodeInputTest1,
                 CodeInputTest2,
                 CodeInputTest3,
                 NumberCodeInput,
                 ConfigurableCodeInput,
-                OnPushCodeInput,
                 OverrideDefaultLabelsCodeInput,
+                CodeInputWithError,
             ],
-            providers: [NxCodeInputIntl],
+            providers: [],
         }).compileComponents();
     }));
 
     it('creates a 4 character input form', () => {
         createTestComponent(CodeInputTest1);
         expect(testInstance).toBeTruthy();
+        expect(testInstance.codeInputInstance._keyCode).toEqual(['', '', '', '']);
     });
 
     it('should have a codeLength of 4', () => {
@@ -89,6 +95,30 @@ describe('NxCodeInputComponent', () => {
         expect(codeInputElement).toHaveClass('ng-invalid');
     });
 
+    it('should set selection range on keydown paste', () => {
+        createTestComponent(CodeInputTest1);
+        inputElement.value = '1';
+        inputElement.focus();
+        expect(inputElement.selectionStart).toBe(1);
+        expect(inputElement.selectionEnd).toBe(1);
+        dispatchKeyboardEvent(inputElement, 'keydown', CONTROL);
+        fixture.detectChanges();
+        expect(inputElement.selectionStart).toBe(0);
+        expect(inputElement.selectionEnd).toBe(1);
+    });
+
+    it('should set selection range on mousedown', () => {
+        createTestComponent(CodeInputTest1);
+        inputElement.value = '1';
+        inputElement.focus();
+        expect(inputElement.selectionStart).toBe(1);
+        expect(inputElement.selectionEnd).toBe(1);
+        inputElement.dispatchEvent(new Event('mousedown'));
+        fixture.detectChanges();
+        expect(inputElement.selectionStart).toBe(0);
+        expect(inputElement.selectionEnd).toBe(1);
+    });
+
     it('should select second input on right arrow', fakeAsync(() => {
         createTestComponent(CodeInputTest1);
         inputElement.focus();
@@ -110,7 +140,7 @@ describe('NxCodeInputComponent', () => {
 
         const lastInput = fixture.nativeElement.querySelector('input:last-child');
         lastInput.focus();
-        lastInput.blur();
+        dispatchFakeEvent(lastInput, 'blur');
         tick();
         fixture.detectChanges();
         expect(codeInputElement).toHaveClass('has-error');
@@ -129,45 +159,50 @@ describe('NxCodeInputComponent', () => {
         expect(codeInputElement).toHaveClass('has-error');
     }));
 
-    it('should paste', fakeAsync(() => {
+    it('should paste', () => {
         createTestComponent(CodeInputTest1);
-        const data = new DataTransfer();
-        data.items.add('abcd', 'text/plain');
-        const clipboard = new ClipboardEvent('paste', {
-            clipboardData: data,
-        } as ClipboardEventInit);
 
         inputElement.focus();
-        inputElement.dispatchEvent(clipboard);
+        inputElement.dispatchEvent(new InputEvent('input', { data: 'abcd' }));
         fixture.detectChanges();
-        tick(1);
         ['A', 'B', 'C', 'D'].forEach((char, i) => {
             const input = codeInputElement.querySelector(`input:nth-child(${i + 1})`) as HTMLInputElement;
             expect(input.value).toBe(char);
         });
-    }));
+    });
 
-    it('should ignore non-number characters on paste on number input', fakeAsync(() => {
-        createTestComponent(NumberCodeInput);
-        const data = new DataTransfer();
-        data.items.add('1a23', 'text/plain');
-        const clipboard = new ClipboardEvent('paste', {
-            clipboardData: data,
-        } as ClipboardEventInit);
-
+    it('should work on browser autofill', () => {
+        /**
+         * important: this test will not fail if you add maxlength="1" in the template again.
+         * on android chrome e.g. what will happen then that it will create two input events. first one with the whole pasted value
+         * and a second one only with the first character. we can't really simulate this behaviour in a test.
+         */
+        createTestComponent(CodeInputTest1);
         inputElement.focus();
-        inputElement.dispatchEvent(clipboard);
         fixture.detectChanges();
-        tick(1);
+
+        inputElement.dispatchEvent(new InputEvent('input', { data: '1234' }));
+        fixture.detectChanges();
+
+        ['1', '2', '3', '4'].forEach((char, i) => {
+            const input = codeInputElement.querySelector(`input:nth-child(${i + 1})`) as HTMLInputElement;
+            expect(input.value).toBe(char);
+        });
+    });
+
+    it('should ignore non-number characters on paste on number input', () => {
+        createTestComponent(NumberCodeInput);
+        inputElement.focus();
+        inputElement.dispatchEvent(new InputEvent('input', { data: '1a23' }));
+        fixture.detectChanges();
 
         ['1', '2', '3', ''].forEach((char, i) => {
             const input = codeInputElement.querySelector(`input:nth-child(${i + 1})`) as HTMLInputElement;
             expect(input.value).toBe(char);
         });
 
-        // @ts-expect-error fix nullability
-        expect(testInstance.codeInputInstance._keyCode).toEqual(['1', '2', '3', undefined]);
-    }));
+        expect(testInstance.codeInputInstance._keyCode).toEqual(['1', '2', '3', '']);
+    });
 
     it('should prevent default on down arrow press in an empty input', fakeAsync(() => {
         createTestComponent(NumberCodeInput);
@@ -249,8 +284,8 @@ describe('NxCodeInputComponent', () => {
     });
 
     it('should set the passed tabindex', () => {
-        createTestComponent(CodeInputTest1);
-        testInstance.codeInputInstance.tabindex = 1;
+        createTestComponent(ConfigurableCodeInput);
+        testInstance.tabindex = 1;
         fixture.detectChanges();
         expect(codeInputElement.getAttribute('tabindex')).toBe('-1');
 
@@ -261,8 +296,8 @@ describe('NxCodeInputComponent', () => {
     });
 
     it('should change the input type', fakeAsync(() => {
-        createTestComponent(CodeInputTest3);
-        fixture.componentInstance.codeInputInstance.type = 'number';
+        createTestComponent(ConfigurableCodeInput);
+        fixture.componentInstance.type = 'number';
         fixture.detectChanges();
         const inputEl = fixture.nativeElement.querySelector('.nx-code-input__field') as HTMLInputElement;
         expect(inputEl.getAttribute('type')).toBe('number');
@@ -289,18 +324,6 @@ describe('NxCodeInputComponent', () => {
             expect(testInstance.codeInputInstance.negative).toBeFalse();
             expect(codeInputElement).not.toHaveClass('is-negative');
         });
-
-        it('should update on negative change (programmatic change)', () => {
-            createTestComponent(OnPushCodeInput);
-
-            testInstance.codeInputInstance.negative = true;
-            fixture.detectChanges();
-            expect(codeInputElement).toHaveClass('is-negative');
-
-            testInstance.codeInputInstance.negative = false;
-            fixture.detectChanges();
-            expect(codeInputElement).not.toHaveClass('is-negative');
-        });
     });
 
     describe('disabled', () => {
@@ -309,7 +332,7 @@ describe('NxCodeInputComponent', () => {
             expect(testInstance.codeInputInstance.disabled).toBeFalse();
         });
 
-        it('should update on disabled change', () => {
+        it('should update on disabled change', fakeAsync(() => {
             createTestComponent(ConfigurableCodeInput);
             const inputElements = codeInputElement.querySelectorAll('.nx-code-input__field');
             expect(testInstance.codeInputInstance.disabled).toBeFalse();
@@ -317,6 +340,8 @@ describe('NxCodeInputComponent', () => {
 
             testInstance.disabled = true;
             fixture.detectChanges();
+            flush();
+
             expect(testInstance.codeInputInstance.disabled).toBeTrue();
             expect(codeInputElement).toHaveClass('is-disabled');
 
@@ -326,24 +351,15 @@ describe('NxCodeInputComponent', () => {
 
             testInstance.disabled = false;
             fixture.detectChanges();
+            flush();
+
             expect(testInstance.codeInputInstance.disabled).toBeFalse();
             expect(codeInputElement).not.toHaveClass('is-disabled');
+
             Array.from(inputElements).forEach(inputEl => {
                 expect((inputEl as HTMLElement).getAttribute('disabled')).toBeNull();
             });
-        });
-
-        it('should update on disabled change (programmatic change)', () => {
-            createTestComponent(OnPushCodeInput);
-
-            testInstance.codeInputInstance.disabled = true;
-            fixture.detectChanges();
-            expect(codeInputElement).toHaveClass('is-disabled');
-
-            testInstance.codeInputInstance.disabled = false;
-            fixture.detectChanges();
-            expect(codeInputElement).not.toHaveClass('is-disabled');
-        });
+        }));
 
         it('should update disabled on formGroup update', () => {
             createTestComponent(CodeInputTest1);
@@ -363,7 +379,22 @@ describe('NxCodeInputComponent', () => {
         const inputElements = codeInputElement.querySelectorAll('.nx-code-input__field');
 
         Array.from(inputElements).forEach((inputEl, index) => {
-            expect((inputEl as HTMLElement).getAttribute('aria-label')).toBe(`Test ${index + 1} testOf ${inputElements.length}`);
+            expect((inputEl as HTMLElement).getAttribute('aria-label')).toBe(`${index + 1} testOf ${inputElements.length}`);
+        });
+    });
+
+    it('should be possible to override Intl class from parent injector', () => {
+        TestBed.resetTestingModule()
+            .configureTestingModule({
+                imports: [ConfigurableCodeInput],
+                providers: [{ provide: NxCodeInputIntl, useClass: MyIntl }],
+            })
+            .compileComponents();
+        createTestComponent(ConfigurableCodeInput);
+        const inputElements = codeInputElement.querySelectorAll('.nx-code-input__field');
+
+        Array.from(inputElements).forEach((inputEl, index) => {
+            expect((inputEl as HTMLElement).getAttribute('aria-label')).toBe(`${index + 1} testOf ${inputElements.length}`);
         });
     });
 
@@ -372,20 +403,41 @@ describe('NxCodeInputComponent', () => {
             createTestComponent(CodeInputTest1);
             await expectAsync(fixture.nativeElement).toBeAccessible();
         });
+
+        it('should link error id with aria-descrideby', async () => {
+            createTestComponent(CodeInputWithError);
+            const errorId = (fixture.componentInstance as CodeInputWithError).error.id;
+            const ariaDescrideby = fixture.nativeElement.querySelector('.nx-code-input')?.getAttribute('aria-describedby');
+            expect(ariaDescrideby).toBe(errorId);
+        });
+
+        it('should set the default group aria labels', () => {
+            createTestComponent(CodeInputTest1);
+
+            expect(codeInputElement.getAttribute('aria-label')).toBe('Enter Key');
+        });
+
+        it('should overwrite the default group aria labels', () => {
+            createTestComponent(OverrideDefaultLabelsCodeInput);
+
+            expect(codeInputElement.getAttribute('aria-label')).toBe('Test');
+        });
     });
 });
 
 @Component({
     template: `
         <form class="nx-code-input-demo-form" [formGroup]="codeForm" (ngSubmit)="onSubmit()">
-            <nx-code-input [length]="4" nxConvertTo="upper" formControlName="keyCode"></nx-code-input>
+            <nx-code-input [length]="4" convertTo="upper" formControlName="keyCode"></nx-code-input>
         </form>
     `,
+    standalone: true,
+    imports: [NxCodeInputModule, FormsModule, ReactiveFormsModule],
 })
 class CodeInputTest1 extends CodeInputTest {
     inputValue = '';
-    codeForm: UntypedFormGroup = new UntypedFormGroup({
-        keyCode: new UntypedFormControl(this.inputValue, {
+    codeForm: FormGroup = new FormGroup({
+        keyCode: new FormControl(this.inputValue, {
             validators: [Validators.required, Validators.pattern('[A-Z]+'), Validators.minLength(4)],
             updateOn: 'submit',
         }),
@@ -398,11 +450,13 @@ class CodeInputTest1 extends CodeInputTest {
             <nx-code-input formControlName="keyCode2"></nx-code-input>
         </form>
     `,
+    standalone: true,
+    imports: [NxCodeInputModule, FormsModule, ReactiveFormsModule],
 })
 class CodeInputTest2 extends CodeInputTest {
     inputValue2 = '';
-    codeForm2: UntypedFormGroup = new UntypedFormGroup({
-        keyCode2: new UntypedFormControl(this.inputValue2, {
+    codeForm2: FormGroup = new FormGroup({
+        keyCode2: new FormControl(this.inputValue2, {
             validators: [Validators.required, Validators.minLength(6)],
             updateOn: 'blur',
         }),
@@ -418,11 +472,13 @@ class CodeInputTest2 extends CodeInputTest {
         </form>
     `,
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxCodeInputModule, FormsModule, ReactiveFormsModule],
 })
 class CodeInputTest3 extends CodeInputTest {
     inputValue3 = '';
-    codeForm3: UntypedFormGroup = new UntypedFormGroup({
-        keyCode3: new UntypedFormControl(this.inputValue3, {
+    codeForm3: FormGroup = new FormGroup({
+        keyCode3: new FormControl(this.inputValue3, {
             validators: [Validators.required, Validators.minLength(6)],
             updateOn: 'blur',
         }),
@@ -432,22 +488,32 @@ class CodeInputTest3 extends CodeInputTest {
 @Component({
     template: `<nx-code-input [length]="4" type="number"></nx-code-input>`,
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxCodeInputModule, FormsModule, ReactiveFormsModule],
 })
 class NumberCodeInput extends CodeInputTest {}
 
 @Component({
-    template: `<nx-code-input [negative]="negative" [disabled]="disabled" [length]="4"> </nx-code-input>`,
+    template: `<nx-code-input [negative]="negative" [disabled]="disabled" [length]="4" [tabindex]="tabindex" [type]="type"> </nx-code-input>`,
+    standalone: true,
+    imports: [NxCodeInputModule, FormsModule, ReactiveFormsModule],
 })
 class ConfigurableCodeInput extends CodeInputTest {}
 
 @Component({
-    template: `<nx-code-input [negative]="negative" [length]="4"> </nx-code-input>`,
-    changeDetection: ChangeDetectionStrategy.OnPush,
-})
-class OnPushCodeInput extends CodeInputTest {}
-
-@Component({
     template: `<nx-code-input [length]="4"></nx-code-input>`,
     providers: [{ provide: NxCodeInputIntl, useClass: MyIntl }],
+    standalone: true,
+    imports: [NxCodeInputModule, FormsModule, ReactiveFormsModule],
 })
 class OverrideDefaultLabelsCodeInput extends CodeInputTest {}
+
+@Component({
+    template: `<nx-code-input [length]="4" type="number"><nx-error>error</nx-error></nx-code-input>`,
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxCodeInputModule, FormsModule, ReactiveFormsModule, NxErrorComponent],
+})
+class CodeInputWithError extends CodeInputTest {
+    @ViewChild(NxErrorComponent) error!: NxErrorComponent;
+}

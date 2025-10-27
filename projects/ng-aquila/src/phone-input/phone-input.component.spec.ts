@@ -1,10 +1,10 @@
 import { OverlayContainer } from '@angular/cdk/overlay';
 import { Component, DebugElement, Directive, Injectable, Type, ViewChild } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, inject, TestBed } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule, UntypedFormControl, Validators } from '@angular/forms';
+import { FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { NxDropdownComponent } from '@aposin/ng-aquila/dropdown';
-import { NxFormfieldComponent } from '@aposin/ng-aquila/formfield';
+import { NxFormfieldComponent, NxFormfieldModule } from '@aposin/ng-aquila/formfield';
 import countries from 'i18n-iso-countries';
 import de from 'i18n-iso-countries/langs/de.json';
 
@@ -48,8 +48,17 @@ describe('PhoneInputComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [NxPhoneInputModule, ReactiveFormsModule, FormsModule],
-            declarations: [ReactiveFormsPhoneInput, I18nProviderTest, DefaultPhoneInput, ConfigurablePhoneInput, CustomFormatter],
+            imports: [
+                NxPhoneInputModule,
+                ReactiveFormsModule,
+                FormsModule,
+                ReactiveFormsPhoneInput,
+                I18nProviderTest,
+                DefaultPhoneInput,
+                ConfigurablePhoneInput,
+                CustomFormatter,
+                PhoneInputA11y,
+            ],
             providers: [NxPhoneInputIntl],
         }).compileComponents();
 
@@ -100,6 +109,22 @@ describe('PhoneInputComponent', () => {
         flush();
         expect(fixture.nativeElement.querySelector('.readonly-input').value).toBe('+49123456');
     }));
+
+    it('should reflect readonly state when setReadonly changed', () => {
+        createTestComponent(DefaultPhoneInput);
+
+        const container = fixture.debugElement.query(By.css('nx-formfield'))!.nativeElement;
+
+        phoneInputInstance.setReadonly(true);
+        fixture.detectChanges();
+        expect(container).toHaveClass('is-readonly');
+        expect(container.querySelector('.readonly-input')).toBeTruthy();
+
+        phoneInputInstance.setReadonly(false);
+        fixture.detectChanges();
+        expect(container).not.toHaveClass('is-readonly');
+        expect(container.querySelector('.readonly-input')).toBeFalsy();
+    });
 
     it('should disable from input', () => {
         createTestComponent(ConfigurablePhoneInput);
@@ -174,6 +199,26 @@ describe('PhoneInputComponent', () => {
         fixture.detectChanges();
         flush();
         expect(input.value).toBe('1234');
+    }));
+
+    it('should not remove leading zeros on blur if country is italy ', fakeAsync(() => {
+        createTestComponent(ReactiveFormsPhoneInput);
+        flush();
+        const input = getInput().nativeElement;
+
+        const formControl = (testInstance as ReactiveFormsPhoneInput).formControl;
+        formControl.setValue('+390123');
+        fixture.detectChanges();
+        flush();
+        fixture.detectChanges();
+        dispatchFakeEvent(input, 'input');
+        fixture.detectChanges();
+        flush();
+        dispatchFakeEvent(input, 'blur');
+        fixture.detectChanges();
+        flush();
+        expect(getInput().nativeElement.value).toBe('0123');
+        expect((testInstance as ReactiveFormsPhoneInput).formControl.value).toBe('+390123');
     }));
 
     it('should remove leading zero in model', fakeAsync(() => {
@@ -322,9 +367,48 @@ describe('PhoneInputComponent', () => {
         expect(testInstance.phoneInput.countryCode).toBe('UA');
         expect(testInstance.phoneInput.inputFormatter).toHaveBeenCalled();
     }));
+
+    it('should set aria-label', () => {
+        createTestComponent(PhoneInputA11y);
+        fixture.detectChanges();
+
+        const areaCodeElement = dropdown.nativeElement;
+        const phoneInput = getInput().nativeElement;
+        expect(areaCodeElement.getAttribute('aria-label')).toBe('custom area code');
+        expect(areaCodeElement.getAttribute('aria-labelledby')).toBe(null);
+
+        expect(phoneInput.getAttribute('aria-label')).toBe('custom line number');
+        expect(phoneInput.getAttribute('aria-labelledby')).toBe(null);
+
+        const formfield = fixture.debugElement.query(By.directive(NxFormfieldComponent)).componentInstance;
+        expect(phoneInputInstance.elementRef.nativeElement.getAttribute('aria-labelledby')).toBe(formfield.labelId);
+    });
+
+    it('should update focused state when focus', () => {
+        createTestComponent(DefaultPhoneInput);
+        expect(testInstance.phoneInput.focused).toBe(false);
+
+        const container = fixture.debugElement.query(By.css('nx-formfield'))!.nativeElement;
+        const input = getInput()?.nativeElement;
+        input.focus();
+        fixture.detectChanges();
+
+        expect(testInstance.phoneInput.focused).toBe(true);
+        expect(container).toHaveClass('is-focused');
+
+        input.blur();
+        fixture.detectChanges();
+        expect(testInstance.phoneInput.focused).toBe(false);
+        expect(container).not.toHaveClass('is-focused');
+
+        dropdown.nativeElement.focus();
+        fixture.detectChanges();
+        expect(testInstance.phoneInput.focused).toBe(true);
+        expect(container).toHaveClass('is-focused');
+    });
 });
 
-@Directive()
+@Directive({ standalone: true })
 abstract class PhoneInputTest {
     @ViewChild(NxPhoneInputComponent) phoneInput!: NxPhoneInputComponent;
     disabled = false;
@@ -336,14 +420,16 @@ abstract class PhoneInputTest {
 }
 
 @Component({
-    template: `<nx-formfield nxLabel="Telephone number">
+    template: `<nx-formfield label="Telephone number">
         <nx-phone-input [countryCode]="countryCode"></nx-phone-input>
     </nx-formfield>`,
+    standalone: true,
+    imports: [NxPhoneInputModule, ReactiveFormsModule, FormsModule],
 })
 class DefaultPhoneInput extends PhoneInputTest {}
 
 @Component({
-    template: `<nx-formfield nxLabel="Telephone number">
+    template: `<nx-formfield label="Telephone number">
         <nx-phone-input
             [(ngModel)]="value"
             [disabled]="disabled"
@@ -354,19 +440,23 @@ class DefaultPhoneInput extends PhoneInputTest {}
             [countryCode]="countryCode"
         ></nx-phone-input>
     </nx-formfield>`,
+    standalone: true,
+    imports: [NxPhoneInputModule, ReactiveFormsModule, FormsModule],
 })
 class ConfigurablePhoneInput extends PhoneInputTest {
     value = '+49123456';
 }
 
 @Component({
-    template: `<nx-formfield nxLabel="Telephone number">
+    template: `<nx-formfield label="Telephone number">
         <nx-phone-input [formControl]="formControl" [readonly]="readonly" [countryCode]="countryCode"></nx-phone-input>
         <nx-error nxFormfieldError>Error message</nx-error>
     </nx-formfield>`,
+    standalone: true,
+    imports: [NxPhoneInputModule, ReactiveFormsModule, FormsModule],
 })
 class ReactiveFormsPhoneInput extends PhoneInputTest {
-    formControl = new UntypedFormControl('+49123456', Validators.required);
+    formControl = new FormControl('+49123456', Validators.required);
 }
 
 @Injectable()
@@ -376,22 +466,35 @@ class MyIntl extends NxPhoneInputIntl {
 }
 
 @Component({
-    template: `<nx-formfield nxLabel="Telephone number">
+    template: `<nx-formfield label="Telephone number">
         <nx-phone-input></nx-phone-input>
     </nx-formfield>`,
     providers: [{ provide: NxPhoneInputIntl, useClass: MyIntl }],
+    standalone: true,
+    imports: [NxPhoneInputModule, ReactiveFormsModule, FormsModule],
 })
 class I18nProviderTest extends PhoneInputTest {}
 
 @Component({
-    template: `<nx-formfield nxLabel="Telephone number">
+    template: `<nx-formfield label="Telephone number">
         <nx-phone-input [inputFormatter]="formatter" [formControl]="formControl"></nx-phone-input>
         <nx-error nxFormfieldError>Error message</nx-error>
     </nx-formfield>`,
+    standalone: true,
+    imports: [NxPhoneInputModule, ReactiveFormsModule, FormsModule],
 })
 class CustomFormatter extends PhoneInputTest {
-    formControl = new UntypedFormControl('+49123456', Validators.required);
+    formControl = new FormControl('+49123456', Validators.required);
     formatter(value: string, countryCode: string) {
         return value.match(/.{1,2}/g)?.join(' ') || '';
     }
 }
+
+@Component({
+    standalone: true,
+    template: `<nx-formfield label="Telephone number">
+        <nx-phone-input [countryCode]="countryCode" lineNumberLabel="custom line number" areaCodeLabel="custom area code"></nx-phone-input>
+    </nx-formfield>`,
+    imports: [NxFormfieldModule, NxPhoneInputModule],
+})
+class PhoneInputA11y extends PhoneInputTest {}

@@ -1,6 +1,6 @@
 import { Component, DebugElement, Directive, QueryList, Type, ViewChild, ViewChildren } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { NxErrorComponent, NxErrorModule } from '@aposin/ng-aquila/base';
 
@@ -8,14 +8,14 @@ import { NxCardModule } from './card.module';
 import { NxSelectableCardComponent } from './selectable-card.component';
 import { NxSelectableCardChangeEvent } from './selectable-card-change-event';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class SelectableCardTest {
     @ViewChild(NxSelectableCardComponent) selectableCardInstance!: NxSelectableCardComponent;
     @ViewChildren(NxErrorComponent) errors!: QueryList<NxErrorComponent>;
 
     checked = false;
     disabled = false;
-    testForm!: UntypedFormGroup;
+    testForm!: FormGroup;
     customError!: boolean;
 }
 
@@ -50,8 +50,17 @@ describe('NxSelectableCardComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [BasicSelectableCard, ReactiveSelectableCard, DynamicErrorSelectableCard, ExpertSelectableCard],
-            imports: [NxCardModule, FormsModule, ReactiveFormsModule, NxErrorModule],
+            imports: [
+                NxCardModule,
+                FormsModule,
+                ReactiveFormsModule,
+                NxErrorModule,
+                BasicSelectableCard,
+                ReactiveSelectableCard,
+                DynamicErrorSelectableCard,
+                ExpertSelectableCard,
+                HighlightSelectableCard,
+            ],
         }).compileComponents();
     }));
 
@@ -107,6 +116,27 @@ describe('NxSelectableCardComponent', () => {
             createTestComponent(ExpertSelectableCard);
             expect(selectableCardInstance.appearance).toBe('expert');
             expect(selectableCardNativeElement).toHaveClass('is-expert');
+        });
+    });
+
+    describe('highlight', () => {
+        it('does not have the highlight', () => {
+            createTestComponent(BasicSelectableCard);
+            expect(selectableCardInstance.highlight).toBe(false);
+            expect(selectableCardNativeElement).not.toHaveClass('is-highlight');
+        });
+
+        it('has the highlight', () => {
+            createTestComponent(HighlightSelectableCard);
+            expect(selectableCardInstance.highlight).toBe(true);
+            expect(selectableCardNativeElement).toHaveClass('is-highlight');
+        });
+
+        it('has the highlight header', () => {
+            createTestComponent(HighlightSelectableCard);
+            const hightlightHeader = selectableCardNativeElement.querySelector('.nx-card-highlight');
+            expect(hightlightHeader).toBeTruthy();
+            expect(hightlightHeader?.textContent?.trim()).toContain('Highlight');
         });
     });
 
@@ -177,6 +207,8 @@ describe('NxSelectableCardComponent', () => {
             <p>Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit</p>
         </nx-selectable-card>
     `,
+    standalone: true,
+    imports: [NxCardModule, FormsModule, ReactiveFormsModule, NxErrorModule],
 })
 class BasicSelectableCard extends SelectableCardTest {}
 
@@ -186,8 +218,22 @@ class BasicSelectableCard extends SelectableCardTest {}
             <p>Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit</p>
         </nx-selectable-card>
     `,
+    standalone: true,
+    imports: [NxCardModule, FormsModule, ReactiveFormsModule, NxErrorModule],
 })
 class ExpertSelectableCard extends SelectableCardTest {}
+
+@Component({
+    template: `
+        <nx-selectable-card highlight>
+            <div nxHighlightHeader>Highlight</div>
+            <p>Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit</p>
+        </nx-selectable-card>
+    `,
+    standalone: true,
+    imports: [NxCardModule, FormsModule, ReactiveFormsModule, NxErrorModule],
+})
+class HighlightSelectableCard extends SelectableCardTest {}
 
 @Component({
     template: `
@@ -197,12 +243,14 @@ class ExpertSelectableCard extends SelectableCardTest {}
             </nx-selectable-card>
         </form>
     `,
+    standalone: true,
+    imports: [NxCardModule, FormsModule, ReactiveFormsModule, NxErrorModule],
 })
 class ReactiveSelectableCard extends SelectableCardTest {
     constructor() {
         super();
 
-        const fb = new UntypedFormBuilder();
+        const fb = new FormBuilder();
 
         this.testForm = fb.group({
             card: [false, Validators.requiredTrue],
@@ -215,17 +263,22 @@ class ReactiveSelectableCard extends SelectableCardTest {
         <form [formGroup]="testForm">
             <nx-selectable-card formControlName="card">
                 <p>Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit</p>
-                <nx-error appearance="text" *ngIf="testForm.controls.card.hasError('required')"> This card must be selected. </nx-error>
-                <nx-error appearance="text" *ngIf="customError"> Another Error </nx-error>
+                @if (testForm.controls.card.hasError('required')) {
+                <nx-error appearance="text"> This card must be selected. </nx-error>
+                } @if (customError) {
+                <nx-error appearance="text"> Another Error </nx-error>
+                }
             </nx-selectable-card>
         </form>
     `,
+    standalone: true,
+    imports: [NxCardModule, FormsModule, ReactiveFormsModule, NxErrorModule],
 })
 class DynamicErrorSelectableCard extends SelectableCardTest {
     constructor() {
         super();
 
-        const fb = new UntypedFormBuilder();
+        const fb = new FormBuilder();
 
         this.testForm = fb.group({
             card: [false, Validators.requiredTrue],

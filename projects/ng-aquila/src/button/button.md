@@ -4,11 +4,14 @@ category: components
 b2c: true
 expert: true
 stable: done
+a1: true
 ---
 
 Buttons are used to make common actions immediately visible and easy to perform. This component allows users to trigger an action – either by clicking on or tapping the button, or by pressing certain keyboard keys (such as Enter or the space bar). Depending on the use case, buttons contain a label and/or an icon. There are multiple styles, sizes, and variations that can be used for different situations. We attach buttons through a directive so that we can rely on the native abilities of a real **`<button>`** tag.
 
 We work with five different types of buttons. The primary's heavy appearance is intended to direct the user to take a suggested primary action; the secondary's lighter design best works to compliment a primary action or to reduce visual noise if there are several hierarchically equal actions on the same page. Emphasis, call-to-action and disabled should be self-explanatory.
+
+### Basic button
 
 <!-- example(button) -->
 
@@ -42,11 +45,9 @@ We work with five different types of buttons. The primary's heavy appearance is 
 
 <!-- example(button-negative) -->
 
-### Icons
+### With icons
 
-A button with an icon is particularily useful whenever the interface space is limited. Users may even recognize them more quickly than a text if the icon represents the connected action adequately.
-
-**Please add a margin** between icon and text. You can use the [utility classes](./documentation/margins/overview) `nx-margin-right-2xs` and `nx-margin-left-2xs`.
+Use the `nxIconPositionStart` or `nxIconPositionEnd` attributes to position the icons. Please also don't set any size on the icon, the button component will handle the correct size for you.
 
 <!-- example(button-with-icon) -->
 
@@ -58,7 +59,7 @@ Use the `nxIconButton` component if your button contains only an icon and no tex
 
 #### Indicators
 
-Inside the icon button there can be used a [`<nx-indicator>`](./documentation/indicator/overview):
+Inside the icon button you can add the [`<nx-indicator>`](./documentation/indicator/overview) component:
 
 <!-- example(button-icon-indicator) -->
 
@@ -67,6 +68,12 @@ Inside the icon button there can be used a [`<nx-indicator>`](./documentation/in
 The `nxPlainButton` does not need a lot of space. If only icons are used, they need to be made accessible, e.g. by using an `aria-label` or a tooltip.
 
 <!-- example(button-plain) -->
+
+<div class="docs-a1">
+For One Allianz the plain button supports new API options `size` and `variant`.
+
+<!-- example(button-plain-a1) -->
+</div>
 
 ### Anchor Button
 

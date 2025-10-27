@@ -4,13 +4,13 @@ import { removeClasses } from '@aposin/ng-aquila/utils';
 let nextId = 0;
 
 /** @docs-private */
-@Directive()
+@Directive({ standalone: true })
 export class NxRadioToggleButtonBaseComponent {
     /** @docs-private */
     toggleButtonId: string = 'nx-radio-toggle-button-' + nextId++;
 
     /** @docs-private */
-    @Input('nxValue') value: any;
+    @Input() value: any;
 
     /** @docs-private */
     @ViewChild('toggleButtonLabelContainer', { static: true }) labelContainer!: ElementRef;

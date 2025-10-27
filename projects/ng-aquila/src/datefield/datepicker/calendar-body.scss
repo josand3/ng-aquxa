@@ -27,6 +27,7 @@ $item-size: nx-spacer(3m);
     height: $item-size;
 
     margin: 0 auto;
+    outline: none;
     @include type-style(datefield-cell);
     color: v(datefield-cell-color);
     border-radius: 50%;
@@ -37,7 +38,7 @@ $item-size: nx-spacer(3m);
     // Prevents that focus-style is "splitting up" and spreading over items
     box-shadow: 0 0 0 6px transparent;
 
-    @media screen and (-ms-high-contrast: active) {
+    @media screen and (forced-colors: active) {
         color: buttonText;
     }
 
@@ -45,8 +46,8 @@ $item-size: nx-spacer(3m);
         color: v(datefield-cell-selected-color);
         background-color: v(datefield-cell-selected-background-color);
 
-        @media screen and (-ms-high-contrast: active) {
-            -ms-high-contrast-adjust: none;
+        @media screen and (forced-colors: active) {
+            forced-color-adjust: none;
             background-color: highlight;
             color: highlightText;
         }
@@ -63,23 +64,64 @@ $item-size: nx-spacer(3m);
             margin-top: 24px;
             background-color: v(datefield-controls-color);
             border-radius: 50%;
+            @media screen and (forced-colors: active) {
+                background-color: CanvasText !important;
+            }
         }
 
         &.nx-calendar-body-selected {
             color: v(datefield-cell-selected-color) !important;
             &::after {
                 background-color: v(datefield-cell-selected-color);
+                @media screen and (forced-colors: active) {
+                    background-color: Background !important;
+                }
             }
         }
     }
 
     .nx-calendar-body-disabled > &:not(.nx-calendar-body-selected) {
         color: v(datefield-cell-disabled-color);
-        font-weight: nx-font-weight(regular);
 
-        @media screen and (-ms-high-contrast: active) {
+        @media screen and (forced-colors: active) {
             color: GrayText;
         }
+    }
+
+    &.cdk-keyboard-focused {
+        @include focus-style;
+    }
+
+    .nx-calendar-body-cell-content:not(.nx-calendar-body-selected) {
+        background-color: v(datefield-cell-focused-background-color);
+
+        @media screen and (forced-colors: active) {
+            background-color: highlight;
+        }
+    }
+}
+
+.nx-calendar-body-disabled {
+    color: v(datefield-cell-disabled-color);
+
+    /* Disabled current date */
+    &.nx-calendar-body-today {
+        color: v(datefield-cell-disabled-today-color) !important;
+        &::after {
+            background-color: v(datefield-cell-disabled-today-color) !important;
+        }
+
+        /* Disabled selected current date */
+        &.nx-calendar-body-selected {
+            &::after {
+                background-color: v(datefield-cell-selected-color) !important;
+            }
+        }
+    }
+
+    /* Disabled selected date */
+    &.nx-calendar-body-selected {
+        background-color: v(datefield-cell-disabled-selected-background-color) !important;
     }
 }
 
@@ -90,8 +132,8 @@ $item-size: nx-spacer(3m);
             color: v(datefield-cell-hover-color);
             background-color: v(datefield-cell-hover-background-color);
 
-            @media screen and (-ms-high-contrast: active) {
-                -ms-high-contrast-adjust: none;
+            @media screen and (forced-colors: active) {
+                forced-color-adjust: none;
                 background-color: highlight;
                 color: highlightText;
             }
@@ -130,24 +172,6 @@ $item-size: nx-spacer(3m);
     }
 }
 
-.nx-calendar-body-cell.cdk-keyboard-focused {
-    .nx-calendar-body-cell-content {
-        @include focus-style;
-    }
-
-    &.nx-calendar-body-disabled .nx-calendar-body-cell-content {
-        color: v(datefield-cell-disabled-color);
-    }
-
-    .nx-calendar-body-cell-content:not(.nx-calendar-body-selected) {
-        background-color: v(datefield-cell-focused-background-color);
-
-        @media screen and (-ms-high-contrast: active) {
-            background-color: highlight;
-        }
-    }
-}
-
 .nx-calendar-adjacent-cell-content {
     display: flex;
     align-items: center;
@@ -166,7 +190,7 @@ $item-size: nx-spacer(3m);
     // Prevents text being off-center on Android.
     line-height: 1;
 
-    @media screen and (-ms-high-contrast: active) {
+    @media screen and (forced-colors: active) {
         color: GrayText;
     }
 }

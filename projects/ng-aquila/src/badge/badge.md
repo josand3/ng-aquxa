@@ -5,6 +5,7 @@ b2c: true
 expert: true
 stable: done
 alias: chip
+a1: true
 ---
 
 ### Basic
@@ -12,6 +13,10 @@ alias: chip
 You can change the color of the badge by setting the `type` to either `active`, `positive`, `critical` or `negative`.
 
 <!-- example(badge) -->
+
+### Character badge
+If the text contains only one character, the badge will be displayed as a circle.
+<!-- example(badge-character) -->
 
 ### Vibrant
 

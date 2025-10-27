@@ -1,7 +1,12 @@
 import { FocusMonitor } from '@angular/cdk/a11y';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, HostBinding, Input, OnDestroy } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, HostBinding, Input, OnDestroy } from '@angular/core';
 import { NxTriggerButton } from '@aposin/ng-aquila/overlay';
+
+/** Please note: small is only for meant for the One Allianz Design */
+export type NxPlainButtonSize = 'medium' | 'small';
+/** Please note: secondary is only for meant for the One Allianz Design */
+export type NxPlainButtonVariant = 'primary' | 'secondary';
 
 @Component({
     selector: 'button[nxPlainButton]',
@@ -10,12 +15,15 @@ import { NxTriggerButton } from '@aposin/ng-aquila/overlay';
     changeDetection: ChangeDetectionStrategy.OnPush,
     inputs: ['classNames:nxPlainButton'],
     host: {
-        '[class.nx-plain-button]': 'true',
-        '[class.nx-plain-button--danger]': 'danger',
+        class: 'nx-plain-button',
+        '[class.nx-plain-button--danger]': 'critical',
+        '[class.nx-plain-button--secondary]': 'variant === "secondary"',
+        '[class.nx-plain-button--small]': 'size === "small"',
     },
     providers: [{ provide: NxTriggerButton, useExisting: NxPlainButtonComponent }],
+    standalone: true,
 })
-export class NxPlainButtonComponent implements NxTriggerButton, OnDestroy {
+export class NxPlainButtonComponent implements NxTriggerButton, OnDestroy, AfterViewInit {
     /** @docs-private */
     @HostBinding('attr.disabled') get isDisabled(): boolean | null {
         return this.disabled || null;
@@ -25,6 +33,22 @@ export class NxPlainButtonComponent implements NxTriggerButton, OnDestroy {
         return this.disabled.toString();
     }
 
+    /** The plain button size. Please only use it for the One Allianz Design. */
+    @Input() size: NxPlainButtonSize = 'medium';
+
+    /** The plain button variant. Please only use it for the One Allianz Design. */
+    @Input() variant: NxPlainButtonVariant = 'primary';
+
+    /** Whether to show the critical/danger appearance */
+    @Input() set critical(value: BooleanInput) {
+        this._critical = coerceBooleanProperty(value);
+    }
+    get critical() {
+        return this._critical || this.danger;
+    }
+    private _critical = false;
+
+    /** Whether the button should be disabled. */
     @Input() set disabled(value: BooleanInput) {
         this._disabled = coerceBooleanProperty(value);
     }
@@ -37,6 +61,7 @@ export class NxPlainButtonComponent implements NxTriggerButton, OnDestroy {
 
     danger = false;
 
+    /** @deprecated Use the `critical` input for the danger/critical appearance */
     set classNames(value: string) {
         if (this._classNames === value) {
             return;
@@ -52,7 +77,9 @@ export class NxPlainButtonComponent implements NxTriggerButton, OnDestroy {
         return this._classNames;
     }
 
-    constructor(private readonly _cdr: ChangeDetectorRef, private readonly _elementRef: ElementRef, private readonly _focusMonitor: FocusMonitor) {
+    constructor(private readonly _cdr: ChangeDetectorRef, private readonly _elementRef: ElementRef, private readonly _focusMonitor: FocusMonitor) {}
+
+    ngAfterViewInit(): void {
         this._focusMonitor.monitor(this._elementRef);
     }
 

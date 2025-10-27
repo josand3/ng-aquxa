@@ -1,5 +1,5 @@
 <div class="wrapper">
-    <nx-formfield nxLabel="Type in here to filter (e.g. 2019, Auto)">
+    <nx-formfield label="Type in here to filter (e.g. 2019, Auto)">
         <input
             nxInput
             [ngModel]="filterValue"
@@ -25,7 +25,8 @@
                 </tr>
             </thead>
             <tbody>
-                <tr nxTableRow *ngFor="let item of currentlyShownPageElements">
+                @for (item of currentlyShownPageElements; track item) {
+                <tr nxTableRow>
                     <td nxTableCell>{{item.product}}</td>
                     <td nxTableCell>{{item.contractNumber}}</td>
                     <td nxTableCell>{{item.desc}}</td>
@@ -43,19 +44,20 @@
                         >
                     </td>
                 </tr>
+                }
             </tbody>
         </table>
     </div>
 
     <nx-pagination
         class="pagination"
-        [nxCount]="currentlyAvailableElements.length"
-        [nxPage]="page"
-        nxType="advanced"
-        [nxPerPage]="elementsPerPage"
-        (nxGoPrev)="prevPage()"
-        (nxGoNext)="nextPage()"
-        (nxGoPage)="goToPage($event)"
+        [count]="currentlyAvailableElements.length"
+        [page]="page"
+        type="advanced"
+        [perPage]="elementsPerPage"
+        (goPrev)="prevPage()"
+        (goNext)="nextPage()"
+        (goPage)="goToPage($event)"
     >
     </nx-pagination>
 </div>

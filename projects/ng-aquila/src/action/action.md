@@ -5,6 +5,7 @@ b2c: true
 expert: true
 stable: done
 alias: menu
+a1: true
 ---
 
 An `[nxAction]` enhances `<a>` or `<button>` elements with styling to be used as a list inside a [sidebar](./documentation/sidebar/overview) or in a [nx-tree](./documentation/tree/overview).
@@ -22,3 +23,6 @@ The action is fully compatible with the angular router. When using the `routerLi
 Inside the `nxAction` item there can be used a [`<nx-indicator>`](./documentation/indicator/overview):
 
 <!-- example(action-indicator) -->
+
+### Accessibility
+If you use this Component for navigation consider enclosing your list within a `<nav>` element or applying the `role="navigation"` attribute for improved accessibility in your application.

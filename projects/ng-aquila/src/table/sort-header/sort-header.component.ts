@@ -1,6 +1,7 @@
 import { FocusMonitor } from '@angular/cdk/a11y';
 import { ENTER, SPACE } from '@angular/cdk/keycodes';
 import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Input, OnDestroy, OnInit, Optional, ViewChild } from '@angular/core';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -17,6 +18,8 @@ import { NxSortHeaderIntl } from './sort-header-intl';
         '(keydown)': '_onKeydown($event)',
     },
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxIconModule],
 })
 export class NxSortHeaderComponent implements OnInit, AfterViewInit, OnDestroy {
     /** Sets the key of this sort header. */
@@ -89,7 +92,11 @@ export class NxSortHeaderComponent implements OnInit, AfterViewInit, OnDestroy {
         return this._sort.active === this._key && this._sort.direction === 'desc';
     }
 
-    _getAriaLabel(): string {
+    _isSorted() {
+        return this._sort.active === this._key;
+    }
+
+    _getAriaLabel(): string | null {
         if (this._sort.active === this._key) {
             if (this._sort.direction === 'asc') {
                 return `${this._intl.sortedAscendingAriaLabel}`;
@@ -97,7 +104,7 @@ export class NxSortHeaderComponent implements OnInit, AfterViewInit, OnDestroy {
             return `${this._intl.sortedDescendingAriaLabel}`;
         }
 
-        return '';
+        return null;
     }
 
     _getTitle(): string {

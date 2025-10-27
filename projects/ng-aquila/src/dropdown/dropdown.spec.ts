@@ -1,19 +1,41 @@
-import { B, D, DOWN_ARROW, ENTER, SPACE, TAB, UP_ARROW, V } from '@angular/cdk/keycodes';
+import { B, D, DOWN_ARROW, END, ENTER, HOME, LEFT_ARROW, RIGHT_ARROW, SPACE, TAB, UP_ARROW, V } from '@angular/cdk/keycodes';
 import { MutationObserverFactory } from '@angular/cdk/observers';
-import { OverlayContainer, OverlayModule } from '@angular/cdk/overlay';
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Directive, Type, ViewChild, ViewChildren } from '@angular/core';
+import { OverlayContainer, OverlayModule, ScrollStrategy } from '@angular/cdk/overlay';
+import { ComponentHarness, LocatorFactory } from '@angular/cdk/testing';
+import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+import { AsyncPipe, CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Directive, Inject, QueryList, Type, ViewChild, ViewChildren } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, inject, TestBed, tick } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { NxFormfieldModule } from '@aposin/ng-aquila/formfield';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { NxFormfieldComponent, NxFormfieldModule } from '@aposin/ng-aquila/formfield';
+import { fakeScrollStrategyFunction } from '@aposin/ng-aquila/utils';
 import { of } from 'rxjs';
 import { delay } from 'rxjs/operators';
 
 import { createFakeEvent, dispatchFakeEvent, dispatchKeyboardEvent } from '../cdk-test-utils';
-import { NxDropdownComponent } from './dropdown';
+import { NX_DROPDOWN_SCROLL_STRATEGY, NxDropdownComponent, NxDropdownIntl } from './dropdown';
 import { NxDropdownModule } from './dropdown.module';
 import { NxDropdownItemComponent } from './item/dropdown-item';
+
+class CustomIntl extends NxDropdownIntl {
+    selectAll = 'Test select all';
+    clearAll = 'Test clear all';
+}
+
+class DropdownHarness extends ComponentHarness {
+    static hostSelector = 'nx-dropdown';
+
+    private readonly documentRootLocator: LocatorFactory = this.documentRootLocatorFactory();
+
+    getOptions = this.documentRootLocator.locatorForAll('nx-dropdown-item');
+
+    async pressKey(key: string, keyCode?: number, altKey?: boolean) {
+        const dropdown = await this.host();
+        dropdown.dispatchEvent('keydown', { key, keyCode, altKey });
+    }
+}
 
 describe('NxDropdownComponent', () => {
     let fixture: ComponentFixture<DropdownTest>;
@@ -31,10 +53,9 @@ describe('NxDropdownComponent', () => {
      *
      * @param declarations Components to declare for this block.
      */
-    function configureNxDropdownTestingModule(declarations: any[]) {
+    function configureNxDropdownTestingModule(imports: any[]) {
         TestBed.configureTestingModule({
-            imports: [CommonModule, OverlayModule, NxDropdownModule, FormsModule, ReactiveFormsModule, NxFormfieldModule],
-            declarations,
+            imports: [CommonModule, OverlayModule, NxDropdownModule, FormsModule, ReactiveFormsModule, NxFormfieldModule, ...imports],
         }).compileComponents();
 
         inject([OverlayContainer], (oc: OverlayContainer) => {
@@ -76,6 +97,10 @@ describe('NxDropdownComponent', () => {
 
     function getDropdown() {
         return overlayContainer.getContainerElement().querySelector('.nx-dropdown__panel');
+    }
+
+    function getOverlayPane() {
+        return overlayContainer.getContainerElement().querySelector('.cdk-overlay-pane') as HTMLElement;
     }
 
     function getBackdrop() {
@@ -166,12 +191,22 @@ describe('NxDropdownComponent', () => {
 
     describe('basic dropdown', () => {
         beforeEach(fakeAsync(() => {
-            configureNxDropdownTestingModule([SimpleDropdownComponent, DynamicDropdownComponent, CustomClosedLabelComponent]);
+            configureNxDropdownTestingModule([
+                SimpleDropdownComponent,
+                DynamicDropdownComponent,
+                CustomClosedLabelComponent,
+                ReactiveDropdownUpdateOnBlurComponent,
+                IntlOverrideDropdown,
+                OverlayFallbackOriginDropdownComponent,
+            ]);
         }));
 
         it('should open the dropdown by click and close it by click on the backdrop', fakeAsync(() => {
             createTestComponent(SimpleDropdownComponent);
             openDropdownByClick();
+            const panelBody = getDropdown()?.querySelector('.nx-dropdown__panel-body');
+            expect(panelBody).not.toHaveClass('keyboard-focused');
+
             expectDropdownOpen();
             clickOnBackdrop();
             expectDropdownClose();
@@ -359,31 +394,9 @@ describe('NxDropdownComponent', () => {
         }));
 
         it('should update the item label when projected content is deferred', fakeAsync(() => {
-            // material uses the MutationObserverFactory that you can call the mutationCallbacks like
-            // the _onLabelChange() callback from dropdown-item manually. Otherwise they are run too late
-            // and you can't test it properly.
-
             TestBed.resetTestingModule()
                 .configureTestingModule({
-                    imports: [CommonModule, OverlayModule, NxDropdownModule, FormsModule, ReactiveFormsModule, NxFormfieldModule],
-                    declarations: [DeferredTestComponent],
-                    providers: [
-                        {
-                            provide: MutationObserverFactory,
-                            useValue: {
-                                // Stub out the factory that creates mutation observers for the underlying directive
-                                // to allows us to flush out the callbacks asynchronously.
-                                create: (callback: () => void) => {
-                                    mutationCallbacks.push(callback);
-
-                                    return {
-                                        observe: () => {},
-                                        disconnect: () => {},
-                                    };
-                                },
-                            },
-                        },
-                    ],
+                    imports: [CommonModule, OverlayModule, NxDropdownModule, FormsModule, ReactiveFormsModule, NxFormfieldModule, DeferredTestComponent],
                 })
                 .compileComponents();
 
@@ -395,15 +408,15 @@ describe('NxDropdownComponent', () => {
 
             trigger.click();
             fixture.detectChanges();
+
             let items: NodeListOf<Element> = getDropdownItems();
             expect(items.item(0).textContent!.trim()).toBe('value');
+
             tick(100);
             fixture.detectChanges();
-            mutationCallbacks.forEach(callback => callback());
-            // mutationCallback should have run the change detection of the dropdown item and this
-            // needs to be reflected in the component template now
-            fixture.detectChanges();
+
             items = getDropdownItems();
+
             expect(items.item(0).textContent!.trim()).toBe('deferred label');
         }));
 
@@ -481,17 +494,13 @@ describe('NxDropdownComponent', () => {
             expect(dropdownInstance.value).toBe('BMW');
         }));
 
-        it('overlay should have same width as the dropdown', fakeAsync(() => {
+        it('overlay should have same min width as the formfield', fakeAsync(() => {
             createTestComponent(SimpleDropdownComponent);
-            dropdownElement.style.width = '400px';
+            const formfieldElement = fixture.debugElement.query(By.css('nx-formfield')).nativeElement;
+            formfieldElement.style.width = '400px';
             openDropdownByClick();
-            fixture.detectChanges();
-            tick();
-            fixture.detectChanges();
-            tick();
-            flush();
 
-            expect(getDropdown()!.clientWidth).toBe(400);
+            expect(getOverlayPane()!.clientWidth).toBe(400);
         }));
 
         it('should not autofill monitor dropdown', () => {
@@ -502,6 +511,22 @@ describe('NxDropdownComponent', () => {
             // autofill monitor.
             dropdownElement.dispatchEvent(autofillTriggerEvent);
             expect(dropdownElement).not.toHaveClass('cdk-text-field-autofilled');
+        });
+
+        it('should be able to override the scroll strategy in parent injector', () => {
+            TestBed.resetTestingModule()
+                .configureTestingModule({
+                    imports: [SimpleDropdownComponent, NxDropdownModule, NoopAnimationsModule, NxFormfieldModule],
+                    providers: [
+                        {
+                            provide: NX_DROPDOWN_SCROLL_STRATEGY,
+                            useFactory: () => fakeScrollStrategyFunction,
+                        },
+                    ],
+                })
+                .compileComponents();
+            createTestComponent(SimpleDropdownComponent);
+            expect((testInstance as SimpleDropdownComponent).scrollStrategy).toBe(fakeScrollStrategyFunction);
         });
     });
 
@@ -562,21 +587,154 @@ describe('NxDropdownComponent', () => {
             dropdownElement.style.width = '200px';
         }));
 
-        it('should not use the whole viewport width by default', fakeAsync(() => {
-            openDropdownByClick();
+        it('should map panelMinWidth "none" to panelGrow true if panelGrow has not been set', fakeAsync(() => {
+            testInstance.panelMinWidth = 'none';
             fixture.detectChanges();
-            flush();
-
-            expect(getDropdown()!.clientWidth).toBe(453);
+            openDropdownByClick();
+            expect(dropdownInstance.panelGrow).toBeTrue();
         }));
 
-        it('should use the whole viewport width with _truncateItems', fakeAsync(() => {
-            dropdownInstance.ignoreItemTrunctation = true;
+        it('should map panelMinWidth "trigger" to panelGrow true if panelGrow has not been set', fakeAsync(() => {
+            testInstance.panelMinWidth = 'trigger';
+            fixture.detectChanges();
+            openDropdownByClick();
+            expect(dropdownInstance.panelGrow).toBeTrue();
+        }));
+    });
+
+    describe('ignoreItemTruncation', () => {
+        beforeEach(fakeAsync(() => {
+            configureNxDropdownTestingModule([ignoreItemTruncationDropdownComponent]);
+            createTestComponent(ignoreItemTruncationDropdownComponent);
+            dropdownElement.style.width = '200px';
+        }));
+
+        it('should map ignoreItemTruncation to panelGrow if panelGrow has not been set', fakeAsync(() => {
+            testInstance.ignoreItemTruncation = true;
+            fixture.detectChanges();
+            openDropdownByClick();
+            fixture.detectChanges();
+            expect(dropdownInstance.panelGrow).toBeTrue();
+        }));
+
+        it('should be larger than the trigger if ignoreItemTruncation is set to true', fakeAsync(() => {
+            testInstance.ignoreItemTruncation = true;
+            fixture.detectChanges();
+            openDropdownByClick();
+            fixture.detectChanges();
+            expect(getOverlayPane()!.clientWidth).toBeGreaterThan(trigger.clientWidth);
+        }));
+    });
+
+    describe('overlay width with long option label and panelGrow', () => {
+        beforeEach(fakeAsync(() => {
+            configureNxDropdownTestingModule([LongOptionLabelPanelgrowDropdownComponent]);
+            createTestComponent(LongOptionLabelPanelgrowDropdownComponent);
+            dropdownElement.style.width = '200px';
+        }));
+
+        it('should not map panelMinWidth to panelGrow if panelGrow has been set', fakeAsync(() => {
+            testInstance.panelGrow = false;
+            testInstance.panelMinWidth = 'trigger';
+            fixture.detectChanges();
+            openDropdownByClick();
+            expect(dropdownInstance.panelGrow).toBeFalse();
+        }));
+
+        it('should have the width of the trigger if panelGrow is set to false', fakeAsync(() => {
+            testInstance.panelGrow = false;
+            fixture.detectChanges();
             openDropdownByClick();
             fixture.detectChanges();
             flush();
+            expect(getDropdown()!.clientWidth).toBe(200);
+        }));
 
-            expect(getDropdown()!.clientWidth).toBe(document.body.clientWidth - dropdownInstance._overlayViewportMargin);
+        it('should not have a min width if panelgrow is set to false', fakeAsync(() => {
+            testInstance.panelGrow = false;
+            fixture.detectChanges();
+            openDropdownByClick();
+            fixture.detectChanges();
+            expect(getOverlayPane()!.style.minWidth).toBeFalsy();
+        }));
+
+        it('should have a width if panelgrow is set to false', fakeAsync(() => {
+            testInstance.panelGrow = false;
+            fixture.detectChanges();
+            openDropdownByClick();
+            fixture.detectChanges();
+            expect(getOverlayPane()!.style.width).toBeTruthy();
+        }));
+
+        it('should have a min width if panelgrow is set to true', fakeAsync(() => {
+            testInstance.panelGrow = true;
+            fixture.detectChanges();
+            openDropdownByClick();
+            fixture.detectChanges();
+            expect(getOverlayPane()!.style.minWidth).toBeTruthy();
+        }));
+
+        it('should not have a width if panelgrow is set to true', fakeAsync(() => {
+            testInstance.panelGrow = true;
+            fixture.detectChanges();
+            openDropdownByClick();
+            fixture.detectChanges();
+            expect(getOverlayPane()!.style.width).toBeFalsy();
+        }));
+
+        it('should be larger than the trigger if panelGrow is set to true', fakeAsync(() => {
+            testInstance.panelGrow = true;
+            fixture.detectChanges();
+            openDropdownByClick();
+            fixture.detectChanges();
+            expect(getOverlayPane()!.clientWidth).toBeGreaterThan(trigger.clientWidth);
+        }));
+
+        it('should have a max width when panelMaxWidth is set', fakeAsync(() => {
+            testInstance.panelGrow = true;
+            testInstance.panelMaxWidth = '400px';
+            fixture.detectChanges();
+            openDropdownByClick();
+            fixture.detectChanges();
+            expect(getOverlayPane()!.clientWidth).toBe(400);
+        }));
+    });
+
+    describe('with overlayFallbackOrigin', () => {
+        beforeEach(fakeAsync(() => {
+            configureNxDropdownTestingModule([OverlayFallbackOriginDropdownComponent]);
+            createTestComponent(OverlayFallbackOriginDropdownComponent);
+        }));
+
+        it('should use overlayFallbackOrigin as origin', fakeAsync(() => {
+            const formfieldElement = fixture.debugElement.query(By.css('nx-formfield')).nativeElement;
+            formfieldElement.style.width = '600px';
+            dropdownElement.style.width = '400px';
+            testInstance.panelGrow = false;
+            fixture.detectChanges();
+            openDropdownByClick();
+            fixture.detectChanges();
+            flush();
+            expect(getOverlayPane()!.clientWidth).toBe(400);
+        }));
+    });
+
+    describe('without overlayFallbackOrigin', () => {
+        beforeEach(fakeAsync(() => {
+            configureNxDropdownTestingModule([SimpleDropdownComponent]);
+            createTestComponent(SimpleDropdownComponent);
+        }));
+
+        it('should use formfield as origin', fakeAsync(() => {
+            const formfieldElement = fixture.debugElement.query(By.css('nx-formfield')).nativeElement;
+            formfieldElement.style.width = '600px';
+            dropdownElement.style.width = '400px';
+            testInstance.panelGrow = false;
+            fixture.detectChanges();
+            openDropdownByClick();
+            fixture.detectChanges();
+            flush();
+            expect(getOverlayPane()!.clientWidth).toBe(600);
         }));
     });
 
@@ -591,8 +749,16 @@ describe('NxDropdownComponent', () => {
             flush();
             fixture.detectChanges();
             tick(1);
-            // 4 * 44 + 22 (half of item height) + 16 (firstItemPaddingTop) - 100 (middle of panel)
-            expect(dropdownInstance.panelBody?.nativeElement.scrollTop).toBe(106);
+            // 4 * 44 + 22 (half of item height) + 12 (firstItemPaddingTop) - 100 (middle of panel)
+            expect(dropdownInstance.panelBody?.nativeElement.scrollTop).toBe(110);
+        }));
+
+        it('should scroll the selected item in the middle of the panel on dropdown change', fakeAsync(() => {
+            createTestComponent(ScrollingTestComponent);
+            openDropdownByClick();
+
+            // 4 * 44 + 22 (half of item height) + 12 (firstItemPaddingTop) - 100 (middle of panel)
+            expect(dropdownInstance.panelBody?.nativeElement.scrollTop).toBe(110);
         }));
     });
 
@@ -846,6 +1012,80 @@ describe('NxDropdownComponent', () => {
             expectDropdownOpen();
             expect(getVisibleItems()).toHaveSize(1);
         }));
+
+        it('should not move item focus on LEFT and RIGHT arrow keys', fakeAsync(() => {
+            createTestComponent(FilterDropdownComponent);
+            openDropdownByClick();
+            const filterInput = getFilterInput();
+            dispatchKeyboardEvent(getDropdown()!, 'keydown', RIGHT_ARROW);
+
+            fixture.detectChanges();
+            flush();
+            tick(300);
+            expectItemsHighlighted([0]);
+
+            dispatchKeyboardEvent(getDropdown()!, 'keydown', LEFT_ARROW);
+
+            fixture.detectChanges();
+            flush();
+            tick(300);
+            expectItemsHighlighted([0]);
+
+            filterInput.value = 'E';
+            dispatchFakeEvent(filterInput, 'input');
+            fixture.detectChanges();
+            flush();
+            tick(300);
+            dispatchKeyboardEvent(getDropdown()!, 'keydown', RIGHT_ARROW);
+
+            fixture.detectChanges();
+            flush();
+            tick(300);
+            expectItemsHighlighted([0]);
+
+            dispatchKeyboardEvent(getDropdown()!, 'keydown', LEFT_ARROW);
+
+            fixture.detectChanges();
+            flush();
+            tick(300);
+            expectItemsHighlighted([0]);
+        }));
+
+        it('should not move item focus with HOME AND END keys', fakeAsync(() => {
+            createTestComponent(FilterDropdownComponent);
+            openDropdownByClick();
+            const filterInput = getFilterInput();
+            dispatchKeyboardEvent(getDropdown()!, 'keydown', HOME);
+            fixture.detectChanges();
+            flush();
+            tick(300);
+            expectItemsHighlighted([0]);
+
+            dispatchKeyboardEvent(getDropdown()!, 'keydown', END);
+            // dispatchFakeEvent(filterInput, 'input');
+            fixture.detectChanges();
+            flush();
+            tick(300);
+            expectItemsHighlighted([0]);
+
+            filterInput.value = 'E';
+            dispatchFakeEvent(filterInput, 'input');
+            dispatchKeyboardEvent(getDropdown()!, 'keydown', HOME);
+            fixture.detectChanges();
+            flush();
+            tick(300);
+            dispatchKeyboardEvent(getDropdown()!, 'keydown', HOME);
+            fixture.detectChanges();
+            flush();
+            tick(300);
+            expectItemsHighlighted([0]);
+
+            dispatchKeyboardEvent(getDropdown()!, 'keydown', END);
+            fixture.detectChanges();
+            flush();
+            tick(300);
+            expectItemsHighlighted([0]);
+        }));
     });
 
     describe('group dropdown', () => {
@@ -1047,6 +1287,31 @@ describe('NxDropdownComponent', () => {
         }));
     });
 
+    describe('with readonly state', () => {
+        beforeEach(fakeAsync(() => {
+            configureNxDropdownTestingModule([DropdownOnPush]);
+        }));
+
+        it('should correctly reflect readonly styles on programmatic setReadonly change', fakeAsync(() => {
+            createTestComponent(DropdownOnPush);
+            tick();
+
+            dropdownInstance.setReadonly(true);
+            fixture.detectChanges();
+            expect(dropdownElement).toHaveClass('is-readonly');
+            expect(dropdownElement.getAttribute('aria-disabled')).toBe('true');
+            expect(dropdownElement.getAttribute('readonly')).toBe('true');
+
+            flush();
+
+            dropdownInstance.setReadonly(false);
+            fixture.detectChanges();
+            expect(dropdownElement).not.toHaveClass('is-readonly');
+            expect(dropdownElement.getAttribute('aria-disabled')).toBe('false');
+            expect(dropdownElement.getAttribute('readonly')).toBe(null);
+        }));
+    });
+
     describe('with formfield', () => {
         beforeEach(fakeAsync(() => {
             configureNxDropdownTestingModule([FormFieldDropdownComponent]);
@@ -1066,20 +1331,6 @@ describe('NxDropdownComponent', () => {
     describe('keyboard support', () => {
         beforeEach(fakeAsync(() => {
             configureNxDropdownTestingModule([SimpleDropdownComponent, FilterDropdownComponent, MultiSelectDropdownComponent]);
-        }));
-
-        it('should auto select value, when dropdown is close + focused then typing keyboard', fakeAsync(() => {
-            createTestComponent(SimpleDropdownComponent);
-
-            const hostElement: HTMLElement = fixture.nativeElement.querySelector('nx-dropdown');
-            hostElement.focus();
-            dispatchKeyboardEvent(hostElement, 'keydown', B);
-            fixture.detectChanges();
-            tick(300);
-            flush();
-
-            expectDropdownClose();
-            expect(dropdownInstance.value).toBe('BMW');
         }));
 
         it('should close the dropdown on TAB if opened', fakeAsync(() => {
@@ -1207,7 +1458,53 @@ describe('NxDropdownComponent', () => {
             openDropdownByKeyboard();
             fixture.detectChanges();
             tick();
+
+            const panelBody = getDropdown()?.querySelector('.nx-dropdown__panel-body');
+            expect(panelBody).toHaveClass('keyboard-focused');
+
             expectDropdownOpen();
+        }));
+
+        it('should open the dropdown via UP or DOWN key', fakeAsync(() => {
+            createTestComponent(SimpleBindingDropdownComponent);
+            dispatchKeyboardEvent(dropdownElement, 'keydown', UP_ARROW);
+
+            fixture.detectChanges();
+            tick();
+            flush();
+
+            const panelBody = getDropdown()?.querySelector('.nx-dropdown__panel-body');
+            expect(panelBody).toHaveClass('keyboard-focused');
+
+            expectDropdownOpen();
+            clickOnBackdrop();
+
+            dispatchKeyboardEvent(dropdownElement, 'keydown', DOWN_ARROW);
+
+            fixture.detectChanges();
+            tick();
+            flush();
+            expect(panelBody).toHaveClass('keyboard-focused');
+        }));
+
+        it('should open the dropdown and select item via HOME/END key', fakeAsync(() => {
+            createTestComponent(SimpleBindingDropdownComponent);
+            dispatchKeyboardEvent(dropdownElement, 'keydown', END);
+            fixture.detectChanges();
+            tick(1000);
+            flush();
+            const last = testInstance.dropdownItems.length - 1;
+            expectDropdownOpen();
+            expect(testInstance?.dropdownItems?.get(last)?.active).toBe(true);
+
+            clickOnBackdrop();
+
+            dispatchKeyboardEvent(dropdownElement, 'keydown', HOME);
+            fixture.detectChanges();
+            tick(1000);
+            flush();
+            expectDropdownOpen();
+            expect(testInstance?.dropdownItems?.get(0)?.active).toBe(true);
         }));
 
         it('should highlight the first item after opening when no value is selected', fakeAsync(() => {
@@ -1240,13 +1537,13 @@ describe('NxDropdownComponent', () => {
             const dropdownOverlayDiv = getDropdown();
             dispatchKeyboardEvent(dropdownOverlayDiv as Node, 'keydown', V);
             fixture.detectChanges();
-            tick(300);
+            tick(500);
             flush();
             expectItemsHighlighted([2]);
 
             dispatchKeyboardEvent(dropdownOverlayDiv as Node, 'keydown', B);
             fixture.detectChanges();
-            tick(300);
+            tick(500);
             flush();
             expectItemsHighlighted([0]);
         }));
@@ -1282,7 +1579,13 @@ describe('NxDropdownComponent', () => {
 
     describe('accessibility', () => {
         beforeEach(fakeAsync(() => {
-            configureNxDropdownTestingModule([SimpleDropdownComponent, TabIndexTestComponent, PlainTabIndexTestComponent, DropdownCustomLabelComponent]);
+            configureNxDropdownTestingModule([
+                SimpleDropdownComponent,
+                TabIndexTestComponent,
+                PlainTabIndexTestComponent,
+                DropdownCustomLabelComponent,
+                ReactiveBindingDropdownComponent,
+            ]);
         }));
 
         it('has no accessibility violations', async () => {
@@ -1290,14 +1593,13 @@ describe('NxDropdownComponent', () => {
             await expectAsync(fixture.nativeElement).toBeAccessible();
         });
 
-        it('sets aria-labelledby to 2 ids', () => {
+        it('sets aria-labelledby to label if formfiled label is set', () => {
             createTestComponent(SimpleDropdownComponent);
 
             const localDropdownElement = fixture.nativeElement.querySelector('nx-dropdown');
             const labelledby = localDropdownElement.attributes.getNamedItem('aria-labelledby').value.split(' ');
-            expect(labelledby).toHaveSize(2);
-            expect(labelledby[0]).toContain('nx-dropdown-rendered-');
-            expect(labelledby[1]).toContain('nx-formfield-label-');
+            expect(labelledby).toHaveSize(1);
+            expect(labelledby[0]).toContain('nx-formfield-label-');
         });
 
         it('sets aria-labelledby to 1 id if formfiled label is not set', () => {
@@ -1307,6 +1609,16 @@ describe('NxDropdownComponent', () => {
             const labelledby = localDropdownElement.attributes.getNamedItem('aria-labelledby').value.split(' ');
             expect(labelledby).toHaveSize(1);
             expect(labelledby[0]).toContain('nx-dropdown-rendered-');
+        });
+
+        it('sets aria-invalid', () => {
+            createTestComponent(ReactiveBindingDropdownComponent);
+            testInstance.testForm.controls.dropdown.setValue('');
+            testInstance.testForm.controls.dropdown.markAllAsTouched();
+            fixture.detectChanges();
+
+            const ariaInvalid = dropdownElement.getAttribute('aria-invalid');
+            expect(ariaInvalid).toBe('true');
         });
 
         it('should set the tabindex of the select to 0 by default', fakeAsync(() => {
@@ -1374,6 +1686,48 @@ describe('NxDropdownComponent', () => {
             flush();
             expect(renderedResult.textContent).toBe('DE');
         }));
+
+        it('should open and jump to an item when typing on closed dropdown', async () => {
+            createTestComponent(DropdownCustomLabelComponent);
+            const loader = TestbedHarnessEnvironment.loader(fixture);
+            const dropdownHarness = await loader.getHarness(DropdownHarness);
+            await dropdownHarness.host();
+            await dropdownHarness.pressKey('D');
+            const options = await dropdownHarness.getOptions();
+
+            expect(await options[1].hasClass('nx-dropdown-item--active')).toBeTrue();
+        });
+
+        it('should open and jump to item when type consecutive character on closed dropdown', fakeAsync(async () => {
+            createTestComponent(DropdownLazy);
+            const loader = TestbedHarnessEnvironment.loader(fixture);
+            const dropdownHarness = await loader.getHarness(DropdownHarness);
+
+            const dropdown = await dropdownHarness.host();
+            dropdown.dispatchEvent('keydown', { key: 't' });
+            dropdown.dispatchEvent('keydown', { key: 'h' });
+            fixture.detectChanges();
+            tick(1000);
+            flush();
+
+            const options = await dropdownHarness.getOptions();
+            expect(await options[2].hasClass('nx-dropdown-item--active')).toBeTrue();
+        }));
+    });
+
+    describe('vertical align checkmark', () => {
+        beforeEach(fakeAsync(() => {
+            configureNxDropdownTestingModule([VerticalAlignCheckmarkComponent]);
+        }));
+
+        it('dropdown should have class centered-checkmark', fakeAsync(() => {
+            createTestComponent(VerticalAlignCheckmarkComponent);
+            dropdownInstance.verticalAlignCheckmark = 'center';
+            fixture.detectChanges();
+            openDropdownByClick();
+
+            expect(getDropdown()).toHaveClass('centered-checkmark');
+        }));
     });
 });
 
@@ -1382,10 +1736,11 @@ interface DropdownTestItem {
     label?: string;
 }
 
-@Directive()
+@Directive({ standalone: true })
 abstract class DropdownTest {
+    @ViewChild(NxFormfieldComponent) formfield!: NxFormfieldComponent;
     @ViewChild(NxDropdownComponent) dropdown!: NxDropdownComponent;
-    @ViewChildren(NxDropdownItemComponent) dropdownItems!: {
+    @ViewChildren(NxDropdownItemComponent) dropdownItems!: QueryList<NxDropdownItemComponent> & {
         forEach(arg0: (item: any, itemIndex: any) => void): void;
         filter(arg0: { (item: any): any; (item: any): boolean }): any;
         length: jasmine.Expected<number>;
@@ -1398,40 +1753,120 @@ abstract class DropdownTest {
     showFilter = false;
     selected: any = 'BMW';
     placeholder = 'Choose a car';
+    testForm!: UntypedFormGroup;
+    panelMinWidth = 'trigger';
+    panelGrow = false;
+    panelMaxWidth = '';
+    ignoreItemTruncation = false;
 }
 
 @Component({
-    template: `<nx-formfield nxLabel="Car brand">
-        <nx-dropdown [nxOverlayLabel]="overlayLabel">
-            <nx-dropdown-item nxValue="BMW">B</nx-dropdown-item>
-            <nx-dropdown-item nxValue="Audi">A</nx-dropdown-item>
-            <nx-dropdown-item nxValue="Volvo">V</nx-dropdown-item>
-            <nx-dropdown-item nxValue="Mini">M</nx-dropdown-item>
+    template: `<nx-formfield label="Car brand">
+        <nx-dropdown [overlayLabel]="overlayLabel">
+            <nx-dropdown-item value="BMW">B</nx-dropdown-item>
+            <nx-dropdown-item value="Audi">A</nx-dropdown-item>
+            <nx-dropdown-item value="Volvo">V</nx-dropdown-item>
+            <nx-dropdown-item value="Mini">M</nx-dropdown-item>
         </nx-dropdown>
     </nx-formfield>`,
+    standalone: true,
+    imports: [NxFormfieldModule, NxDropdownModule],
 })
 class SimpleDropdownComponent extends DropdownTest {
     overlayLabel = '';
+
+    constructor(@Inject(NX_DROPDOWN_SCROLL_STRATEGY) public scrollStrategy: () => ScrollStrategy) {
+        super();
+    }
 }
 
 @Component({
-    template: `<nx-formfield nxLabel="Car brand" appearance="outline">
-        <nx-dropdown [placeholder]="placeholder">
-            <nx-dropdown-item nxValue="BMW">B</nx-dropdown-item>
+    template: `<nx-formfield label="Car brand">
+        <nx-dropdown [overlayLabel]="overlayLabel">
+            <nx-dropdown-item value="BMW">B</nx-dropdown-item>
+            <nx-dropdown-item value="Audi">A</nx-dropdown-item>
+            <nx-dropdown-item value="Volvo">V</nx-dropdown-item>
+            <nx-dropdown-item value="Mini">M</nx-dropdown-item>
         </nx-dropdown>
     </nx-formfield>`,
+    standalone: true,
+    imports: [NxFormfieldModule, NxDropdownModule],
+    providers: [{ provide: NxDropdownIntl, useClass: CustomIntl }],
+})
+class IntlOverrideDropdown extends DropdownTest {
+    overlayLabel = '';
+
+    constructor(public intl: NxDropdownIntl) {
+        super();
+    }
+}
+
+@Component({
+    template: `<nx-formfield label="Car brand">
+        <nx-dropdown [panelMinWidth]="panelMinWidth" [panelGrow]="panelGrow" [panelMaxWidth]="panelMaxWidth" [overlayFallbackOrigin]="dropdown" #dropdown>
+            <nx-dropdown-item value="BMW">B</nx-dropdown-item>
+            <nx-dropdown-item value="Audi">A</nx-dropdown-item>
+            <nx-dropdown-item value="Volvo">V</nx-dropdown-item>
+            <nx-dropdown-item value="Mini">M</nx-dropdown-item>
+        </nx-dropdown>
+    </nx-formfield>`,
+    standalone: true,
+    imports: [NxFormfieldModule, NxDropdownModule],
+})
+class OverlayFallbackOriginDropdownComponent extends DropdownTest {}
+
+@Component({
+    template: `<nx-formfield label="Car brand" appearance="outline">
+        <nx-dropdown [placeholder]="placeholder">
+            <nx-dropdown-item value="BMW">B</nx-dropdown-item>
+        </nx-dropdown>
+    </nx-formfield>`,
+    standalone: true,
+    imports: [NxFormfieldModule, NxDropdownModule],
 })
 class DropdownInOutlineFieldComponent extends DropdownTest {}
 
 @Component({
-    template: `<nx-dropdown nxLabel="Car brand" [placeholder]="placeholder">
-        <nx-dropdown-item nxValue="Lorem ipsum">
+    template: `<nx-dropdown nxLabel="Car brand" [placeholder]="placeholder" [ignoreItemTruncation]="ignoreItemTruncation">
+        <nx-dropdown-item value="Lorem ipsum">
             Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua, sed eiusmod tempor incidunt ut
             labore et dolore magna aliqua.
         </nx-dropdown-item>
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxFormfieldModule, NxDropdownModule],
+})
+class ignoreItemTruncationDropdownComponent extends DropdownTest {}
+
+@Component({
+    template: `<nx-dropdown nxLabel="Car brand" [placeholder]="placeholder" [panelMinWidth]="panelMinWidth" [ignoreItemTruncation]="ignoreItemTruncation">
+        <nx-dropdown-item value="Lorem ipsum">
+            Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua, sed eiusmod tempor incidunt ut
+            labore et dolore magna aliqua.
+        </nx-dropdown-item>
+    </nx-dropdown>`,
+    standalone: true,
+    imports: [NxFormfieldModule, NxDropdownModule],
 })
 class LongOptionLabelDropdownComponent extends DropdownTest {}
+
+@Component({
+    template: `<nx-dropdown
+        nxLabel="Car brand"
+        [placeholder]="placeholder"
+        [panelMinWidth]="panelMinWidth"
+        [panelGrow]="panelGrow"
+        [panelMaxWidth]="panelMaxWidth"
+    >
+        <nx-dropdown-item value="Lorem ipsum">
+            Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua, sed eiusmod tempor incidunt ut
+            labore et dolore magna aliqua.
+        </nx-dropdown-item>
+    </nx-dropdown>`,
+    standalone: true,
+    imports: [NxFormfieldModule, NxDropdownModule],
+})
+class LongOptionLabelPanelgrowDropdownComponent extends DropdownTest {}
 
 @Component({
     template: `
@@ -1439,50 +1874,64 @@ class LongOptionLabelDropdownComponent extends DropdownTest {}
             <ng-template nxClosedLabel
                 ><i>{{ value }}</i></ng-template
             >
-            <nx-dropdown-item *ngFor="let item of items" [nxValue]="item.value">{{ item.label }}</nx-dropdown-item>
+            @for (item of items; track item) {
+            <nx-dropdown-item [value]="item.value">{{ item.label }}</nx-dropdown-item>
+            }
         </nx-dropdown>
     `,
+    standalone: true,
+    imports: [NxDropdownModule, FormsModule, NxFormfieldModule],
 })
 class CustomClosedLabelComponent extends DropdownTest {
     value = 'BMW';
 }
 
 @Component({
-    template: `<nx-dropdown [(ngModel)]="selected" [placeholder]="placeholder">
-        <nx-dropdown-item *ngFor="let item of items" [nxValue]="item.value">{{ item.label }}</nx-dropdown-item>
+    template: `<nx-dropdown [(ngModel)]="selected" [placeholder]="placeholder" [panelMinWidth]="panelMinWidth">
+        @for (item of items; track item) {
+        <nx-dropdown-item [value]="item.value">{{ item.label }}</nx-dropdown-item>
+        }
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule, FormsModule],
 })
 class DynamicDropdownComponent extends DropdownTest {}
 
 @Component({
-    template: `<nx-dropdown [nxIsMultiselect]="true" [placeholder]="placeholder">
-        <nx-dropdown-item nxValue="BMW"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Audi"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Volvo"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Mini"></nx-dropdown-item>
+    template: `<nx-dropdown [isMultiSelect]="true" [placeholder]="placeholder">
+        <nx-dropdown-item value="BMW"></nx-dropdown-item>
+        <nx-dropdown-item value="Audi"></nx-dropdown-item>
+        <nx-dropdown-item value="Volvo"></nx-dropdown-item>
+        <nx-dropdown-item value="Mini"></nx-dropdown-item>
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule],
 })
 class MultiSelectDropdownComponent extends DropdownTest {}
 
 @Component({
-    template: `<nx-dropdown [nxIsMultiselect]="true" [(nxValue)]="value" [placeholder]="placeholder">
-        <nx-dropdown-item nxValue="BMW"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Audi"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Volvo"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Mini"></nx-dropdown-item>
+    template: `<nx-dropdown [isMultiSelect]="true" [(value)]="value" [placeholder]="placeholder">
+        <nx-dropdown-item value="BMW"></nx-dropdown-item>
+        <nx-dropdown-item value="Audi"></nx-dropdown-item>
+        <nx-dropdown-item value="Volvo"></nx-dropdown-item>
+        <nx-dropdown-item value="Mini"></nx-dropdown-item>
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule],
 })
 class MultiSelectSimpleBinding extends DropdownTest {
     value: any = ['Audi', 'Mini'];
 }
 
 @Component({
-    template: `<nx-dropdown [nxIsMultiselect]="true" [(ngModel)]="value" [placeholder]="placeholder">
-        <nx-dropdown-item nxValue="BMW"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Audi"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Volvo"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Mini"></nx-dropdown-item>
+    template: `<nx-dropdown [isMultiSelect]="true" [(ngModel)]="value" [placeholder]="placeholder">
+        <nx-dropdown-item value="BMW"></nx-dropdown-item>
+        <nx-dropdown-item value="Audi"></nx-dropdown-item>
+        <nx-dropdown-item value="Volvo"></nx-dropdown-item>
+        <nx-dropdown-item value="Mini"></nx-dropdown-item>
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule, FormsModule],
 })
 class MultiSelectTemplateBinding extends DropdownTest {
     value: any = ['Audi', 'Mini'];
@@ -1490,37 +1939,43 @@ class MultiSelectTemplateBinding extends DropdownTest {
 
 @Component({
     template: `<form [formGroup]="testForm">
-        <nx-dropdown nxLabel="Car brand" formControlName="dropdown" [nxIsMultiselect]="true" [placeholder]="placeholder">
-            <nx-dropdown-item nxValue="BMW">BMW</nx-dropdown-item>
-            <nx-dropdown-item nxValue="Audi">Audi</nx-dropdown-item>
-            <nx-dropdown-item nxValue="Volvo">Volvo</nx-dropdown-item>
-            <nx-dropdown-item nxValue="Mini">Mini</nx-dropdown-item>
+        <nx-dropdown nxLabel="Car brand" formControlName="dropdown" [isMultiSelect]="true" [placeholder]="placeholder">
+            <nx-dropdown-item value="BMW">BMW</nx-dropdown-item>
+            <nx-dropdown-item value="Audi">Audi</nx-dropdown-item>
+            <nx-dropdown-item value="Volvo">Volvo</nx-dropdown-item>
+            <nx-dropdown-item value="Mini">Mini</nx-dropdown-item>
         </nx-dropdown>
     </form>`,
+    standalone: true,
+    imports: [NxDropdownModule, ReactiveFormsModule, NxFormfieldModule],
 })
 class MultiselectReactiveBinding extends DropdownTest {
-    testForm = new UntypedFormBuilder().group({
+    testForm = new FormBuilder().group({
         dropdown: [['Audi', 'Mini'], Validators.required],
     });
 }
 
 @Component({
-    template: `<nx-dropdown [nxIsMultiselect]="true" [placeholder]="placeholder">
-        <nx-dropdown-item nxValue="BMW">B</nx-dropdown-item>
-        <nx-dropdown-item nxValue="Audi">A</nx-dropdown-item>
-        <nx-dropdown-item nxValue="Volvo">V</nx-dropdown-item>
-        <nx-dropdown-item nxValue="Mini">M</nx-dropdown-item>
+    template: `<nx-dropdown [isMultiSelect]="true" [placeholder]="placeholder">
+        <nx-dropdown-item value="BMW">B</nx-dropdown-item>
+        <nx-dropdown-item value="Audi">A</nx-dropdown-item>
+        <nx-dropdown-item value="Volvo">V</nx-dropdown-item>
+        <nx-dropdown-item value="Mini">M</nx-dropdown-item>
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule],
 })
 class MultiSelectDropdownContentProjectionComponent extends DropdownTest {}
 
 @Component({
-    template: `<nx-dropdown [nxIsMultiselect]="true" [nxValueFormatter]="toTextMulti" [placeholder]="placeholder">
-        <nx-dropdown-item nxValue="BMW"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Audi"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Volvo"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Mini"></nx-dropdown-item>
+    template: `<nx-dropdown [isMultiSelect]="true" [valueFormatter]="toTextMulti" [placeholder]="placeholder">
+        <nx-dropdown-item value="BMW"></nx-dropdown-item>
+        <nx-dropdown-item value="Audi"></nx-dropdown-item>
+        <nx-dropdown-item value="Volvo"></nx-dropdown-item>
+        <nx-dropdown-item value="Mini"></nx-dropdown-item>
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule],
 })
 class MultiSelectDropdownRenderFunctionComponent extends DropdownTest {
     toTextMulti(value: { map(arg0: (item: any) => any): any[]; toUpperCase(): any }): any {
@@ -1534,12 +1989,14 @@ class MultiSelectDropdownRenderFunctionComponent extends DropdownTest {
     }
 }
 @Component({
-    template: `<nx-dropdown nxLabel="Car brand" [nxValueFormatter]="toText" [placeholder]="placeholder">
-        <nx-dropdown-item nxValue="BMW"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Audi"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Volvo"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Mini"></nx-dropdown-item>
+    template: `<nx-dropdown nxLabel="Car brand" [valueFormatter]="toText" [placeholder]="placeholder">
+        <nx-dropdown-item value="BMW"></nx-dropdown-item>
+        <nx-dropdown-item value="Audi"></nx-dropdown-item>
+        <nx-dropdown-item value="Volvo"></nx-dropdown-item>
+        <nx-dropdown-item value="Mini"></nx-dropdown-item>
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule],
 })
 class DropdownCustomToTextFunctionComponent extends DropdownTest {
     toText(value: string): string {
@@ -1548,35 +2005,41 @@ class DropdownCustomToTextFunctionComponent extends DropdownTest {
 }
 
 @Component({
-    template: `<nx-dropdown nxShowFilter="true" nxLabel="Car brand" [placeholder]="placeholder" (filterResult)="filterResultChanged($event)">
-        <nx-dropdown-item nxValue="DE">Germany</nx-dropdown-item>
-        <nx-dropdown-item nxValue="IRL">Ireland</nx-dropdown-item>
-        <nx-dropdown-item nxValue="SWE">Sweden</nx-dropdown-item>
-        <nx-dropdown-item nxValue="IT">Italy</nx-dropdown-item>
-        <nx-dropdown-item nxValue="NZ">New Zealand</nx-dropdown-item>
+    template: `<nx-dropdown showFilter="true" nxLabel="Car brand" [placeholder]="placeholder" (filterResult)="filterResultChanged($event)">
+        <nx-dropdown-item value="DE">Germany</nx-dropdown-item>
+        <nx-dropdown-item value="IRL">Ireland</nx-dropdown-item>
+        <nx-dropdown-item value="SWE">Sweden</nx-dropdown-item>
+        <nx-dropdown-item value="IT">Italy</nx-dropdown-item>
+        <nx-dropdown-item value="NZ">New Zealand</nx-dropdown-item>
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule],
 })
 class FilterDropdownComponent extends DropdownTest {
     filterResultChanged(event: any) {}
 }
 
 @Component({
-    template: `<nx-dropdown nxShowFilter="true" nxLabel="Car brand" [placeholder]="placeholder">
-        <nx-dropdown-item nxValue="DE"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="IRL"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="SWE"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="IT"></nx-dropdown-item>
+    template: `<nx-dropdown showFilter="true" nxLabel="Car brand" [placeholder]="placeholder">
+        <nx-dropdown-item value="DE"></nx-dropdown-item>
+        <nx-dropdown-item value="IRL"></nx-dropdown-item>
+        <nx-dropdown-item value="SWE"></nx-dropdown-item>
+        <nx-dropdown-item value="IT"></nx-dropdown-item>
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule],
 })
 class FilterDropdownNoLabelComponent extends DropdownTest {}
 
 @Component({
-    template: `<nx-dropdown nxShowFilter="true" nxLabel="Car brand" [filterFn]="myFilter" [placeholder]="placeholder">
-        <nx-dropdown-item nxValue="BMW">BMW</nx-dropdown-item>
-        <nx-dropdown-item nxValue="Audi">Audi</nx-dropdown-item>
-        <nx-dropdown-item nxValue="Volvo">Volvo</nx-dropdown-item>
-        <nx-dropdown-item nxValue="Mini">Mini</nx-dropdown-item>
+    template: `<nx-dropdown showFilter="true" nxLabel="Car brand" [filterFn]="myFilter" [placeholder]="placeholder">
+        <nx-dropdown-item value="BMW">BMW</nx-dropdown-item>
+        <nx-dropdown-item value="Audi">Audi</nx-dropdown-item>
+        <nx-dropdown-item value="Volvo">Volvo</nx-dropdown-item>
+        <nx-dropdown-item value="Mini">Mini</nx-dropdown-item>
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule],
 })
 class CustomFilterDropdownComponent extends DropdownTest {
     myFilter(search: string, itemValue: { match(arg0: RegExp): null }) {
@@ -1586,23 +2049,27 @@ class CustomFilterDropdownComponent extends DropdownTest {
 
 @Component({
     template: `<nx-dropdown nxLabel="Car brand" [placeholder]="placeholder">
-        <nx-dropdown-group nxLabel="German">
-            <nx-dropdown-item nxValue="BMW">BMW</nx-dropdown-item>
+        <nx-dropdown-group label="German">
+            <nx-dropdown-item value="BMW">BMW</nx-dropdown-item>
         </nx-dropdown-group>
-        <nx-dropdown-group nxLabel="Swedish">
-            <nx-dropdown-item nxValue="Volvo">Volvo</nx-dropdown-item>
+        <nx-dropdown-group label="Swedish">
+            <nx-dropdown-item value="Volvo">Volvo</nx-dropdown-item>
         </nx-dropdown-group>
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule],
 })
 class GroupDropdownComponent extends DropdownTest {}
 
 @Component({
-    template: `<nx-dropdown nxLabel="Car brand" [(nxValue)]="theValue" [placeholder]="placeholder">
-        <nx-dropdown-item nxValue="BMW">BMW</nx-dropdown-item>
-        <nx-dropdown-item nxValue="Audi">Audi</nx-dropdown-item>
-        <nx-dropdown-item nxValue="Volvo">Volvo</nx-dropdown-item>
-        <nx-dropdown-item nxValue="Mini">Mini</nx-dropdown-item>
+    template: `<nx-dropdown nxLabel="Car brand" [(value)]="theValue" [placeholder]="placeholder">
+        <nx-dropdown-item value="BMW">BMW</nx-dropdown-item>
+        <nx-dropdown-item value="Audi">Audi</nx-dropdown-item>
+        <nx-dropdown-item value="Volvo">Volvo</nx-dropdown-item>
+        <nx-dropdown-item value="Mini">Mini</nx-dropdown-item>
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule],
 })
 class SimpleBindingDropdownComponent extends DropdownTest {
     theValue = 'BMW';
@@ -1611,27 +2078,49 @@ class SimpleBindingDropdownComponent extends DropdownTest {
 @Component({
     template: `<form [formGroup]="testForm">
         <nx-dropdown nxLabel="Car brand" formControlName="dropdown" [placeholder]="placeholder">
-            <nx-dropdown-item nxValue="BMW">BMW</nx-dropdown-item>
-            <nx-dropdown-item nxValue="Audi">Audi</nx-dropdown-item>
-            <nx-dropdown-item nxValue="Volvo">Volvo</nx-dropdown-item>
-            <nx-dropdown-item nxValue="Mini">Mini</nx-dropdown-item>
+            <nx-dropdown-item value="BMW">BMW</nx-dropdown-item>
+            <nx-dropdown-item value="Audi">Audi</nx-dropdown-item>
+            <nx-dropdown-item value="Volvo">Volvo</nx-dropdown-item>
+            <nx-dropdown-item value="Mini">Mini</nx-dropdown-item>
         </nx-dropdown>
     </form>`,
+    standalone: true,
+    imports: [NxDropdownModule, ReactiveFormsModule],
 })
 class ReactiveBindingDropdownComponent extends DropdownTest {
-    testForm = new UntypedFormBuilder().group({
+    testForm = new FormBuilder().group({
         dropdown: ['BMW', Validators.required],
     });
 }
 
 @Component({
     template: `<form [formGroup]="testForm">
-        <nx-formfield nxLabel="Car brand">
-            <nx-dropdown nxInput nxLabel="Car brand" formControlName="dropdown" [placeholder]="placeholder">
-                <nx-dropdown-item nxValue="BMW">BMW</nx-dropdown-item>
-                <nx-dropdown-item nxValue="Audi">Audi</nx-dropdown-item>
-                <nx-dropdown-item nxValue="Volvo">Volvo</nx-dropdown-item>
-                <nx-dropdown-item nxValue="Mini">Mini</nx-dropdown-item>
+        <nx-dropdown nxLabel="Car brand" formControlName="dropdown">
+            <nx-dropdown-item value="BMW">BMW</nx-dropdown-item>
+            <nx-dropdown-item value="Audi">Audi</nx-dropdown-item>
+            <nx-dropdown-item value="Volvo">Volvo</nx-dropdown-item>
+            <nx-dropdown-item value="Mini">Mini</nx-dropdown-item>
+        </nx-dropdown>
+    </form>`,
+    standalone: true,
+    imports: [NxDropdownModule, ReactiveFormsModule],
+})
+class ReactiveDropdownUpdateOnBlurComponent extends DropdownTest {
+    testForm = new UntypedFormBuilder().group({
+        dropdown: new UntypedFormControl(undefined, {
+            updateOn: 'blur',
+        }),
+    });
+}
+
+@Component({
+    template: `<form [formGroup]="testForm">
+        <nx-formfield label="Car brand">
+            <nx-dropdown nxLabel="Car brand" formControlName="dropdown" [placeholder]="placeholder">
+                <nx-dropdown-item value="BMW">BMW</nx-dropdown-item>
+                <nx-dropdown-item value="Audi">Audi</nx-dropdown-item>
+                <nx-dropdown-item value="Volvo">Volvo</nx-dropdown-item>
+                <nx-dropdown-item value="Mini">Mini</nx-dropdown-item>
             </nx-dropdown>
             <div class="c-notification c-notification--error" nxFormfieldError>
                 <div class="c-notification__content">
@@ -1645,27 +2134,31 @@ class ReactiveBindingDropdownComponent extends DropdownTest {
             </div>
         </nx-formfield>
     </form>`,
+    standalone: true,
+    imports: [NxDropdownModule, NxFormfieldModule, ReactiveFormsModule],
 })
 class FormFieldDropdownComponent extends DropdownTest {
-    testForm = new UntypedFormBuilder().group({
+    testForm = new FormBuilder().group({
         dropdown: [null, Validators.required],
     });
 }
 
 @Component({
-    template: `<nx-dropdown nxLabel="Car brand" [(nxValue)]="selectedValue" [placeholder]="placeholder">
-        <nx-dropdown-item nxValue="BMW">BMW</nx-dropdown-item>
-        <nx-dropdown-item nxValue="Audi">Audi</nx-dropdown-item>
-        <nx-dropdown-item nxValue="Volvo">Volvo</nx-dropdown-item>
-        <nx-dropdown-item nxValue="Mini">Mini</nx-dropdown-item>
-        <nx-dropdown-item nxValue="Kia"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Opel"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Vw"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Ferrari"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Porsche"></nx-dropdown-item>
-        <nx-dropdown-item nxValue="Lada"></nx-dropdown-item>
+    template: `<nx-dropdown nxLabel="Car brand" [(value)]="selectedValue" [placeholder]="placeholder">
+        <nx-dropdown-item value="BMW">BMW</nx-dropdown-item>
+        <nx-dropdown-item value="Audi">Audi</nx-dropdown-item>
+        <nx-dropdown-item value="Volvo">Volvo</nx-dropdown-item>
+        <nx-dropdown-item value="Mini">Mini</nx-dropdown-item>
+        <nx-dropdown-item value="Kia"></nx-dropdown-item>
+        <nx-dropdown-item value="Opel"></nx-dropdown-item>
+        <nx-dropdown-item value="Vw"></nx-dropdown-item>
+        <nx-dropdown-item value="Ferrari"></nx-dropdown-item>
+        <nx-dropdown-item value="Porsche"></nx-dropdown-item>
+        <nx-dropdown-item value="Lada"></nx-dropdown-item>
     </nx-dropdown>`,
     styles: ['::ng-deep .nx-dropdown__panel-body {max-height: 200px!important;}', '* { box-sizing: border-box; }'],
+    standalone: true,
+    imports: [NxDropdownModule],
 })
 class ScrollingTestComponent extends DropdownTest {
     selectedValue = 'Kia';
@@ -1673,9 +2166,11 @@ class ScrollingTestComponent extends DropdownTest {
 }
 
 @Component({
-    template: `<nx-dropdown nxLabel="Car brand" [(nxValue)]="selectedValue" [tabIndex]="tabIndex" [nxDisabled]="disabled" [placeholder]="placeholder">
-        <nx-dropdown-item nxValue="BMW">BMW</nx-dropdown-item>
+    template: `<nx-dropdown nxLabel="Car brand" [(value)]="selectedValue" [tabIndex]="tabIndex" [disabled]="disabled" [placeholder]="placeholder">
+        <nx-dropdown-item value="BMW">BMW</nx-dropdown-item>
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule],
 })
 class TabIndexTestComponent extends DropdownTest {
     tabIndex = 0;
@@ -1683,17 +2178,21 @@ class TabIndexTestComponent extends DropdownTest {
 }
 
 @Component({
-    template: `<nx-dropdown nxLabel="Car brand" [(nxValue)]="selectedValue" tabindex="5" [placeholder]="placeholder">
-        <nx-dropdown-item nxValue="BMW">BMW</nx-dropdown-item>
+    template: `<nx-dropdown nxLabel="Car brand" [(value)]="selectedValue" tabindex="5" [placeholder]="placeholder">
+        <nx-dropdown-item value="BMW">BMW</nx-dropdown-item>
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule],
 })
 class PlainTabIndexTestComponent extends DropdownTest {}
 
 @Component({
     template: `<nx-dropdown [(ngModel)]="preselectedValue" [placeholder]="placeholder">
-        <nx-dropdown-item nxValue="monarch">a Monarch</nx-dropdown-item>
-        <nx-dropdown-item nxValue="dictator">a Dictator</nx-dropdown-item>
+        <nx-dropdown-item value="monarch">a Monarch</nx-dropdown-item>
+        <nx-dropdown-item value="dictator">a Dictator</nx-dropdown-item>
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule, FormsModule],
 })
 class PreselectedTestComponent extends DropdownTest {
     preselectedValue = 'dictator';
@@ -1703,8 +2202,10 @@ const mutationCallbacks: (() => void)[] = [];
 
 @Component({
     template: `<nx-dropdown nxLabel="Deferred" [placeholder]="placeholder">
-        <nx-dropdown-item [nxValue]="value">{{ asyncLabel | async }}</nx-dropdown-item>
+        <nx-dropdown-item [value]="value">{{ asyncLabel | async }}</nx-dropdown-item>
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule, AsyncPipe],
     providers: [
         {
             provide: MutationObserverFactory,
@@ -1734,8 +2235,12 @@ class DeferredTestComponent extends DropdownTest {
         <ng-template nxClosedLabel>
             <span>{{ customLabelDropdownValue?.prefix }}</span>
         </ng-template>
-        <nx-dropdown-item *ngFor="let item of countryList" [nxValue]="item"> {{ item.prefix }} ({{ item.countryId }}) </nx-dropdown-item>
+        @for (item of countryList; track item) {
+        <nx-dropdown-item [value]="item"> {{ item.prefix }} ({{ item.countryId }}) </nx-dropdown-item>
+        }
     </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule, FormsModule],
 })
 class DropdownCustomLabelComponent extends DropdownTest {
     customLabelDropdownValue: any;
@@ -1759,9 +2264,11 @@ class DropdownCustomLabelComponent extends DropdownTest {
 @Component({
     template: `<nx-formfield>
         <nx-dropdown>
-            <nx-dropdown-item [disabled]="disabled" nxValue="test"><span>label</span></nx-dropdown-item>
+            <nx-dropdown-item [disabled]="disabled" value="test"><span>label</span></nx-dropdown-item>
         </nx-dropdown>
     </nx-formfield>`,
+    standalone: true,
+    imports: [NxFormfieldModule, NxDropdownModule],
 })
 class DisabledItemDropdown extends DropdownTest {
     disabled = true;
@@ -1769,10 +2276,12 @@ class DisabledItemDropdown extends DropdownTest {
 
 @Component({
     template: `<nx-formfield>
-        <nx-dropdown nxIsMultiselect="true">
-            <nx-dropdown-item [disabled]="disabled" nxValue="test"><span>label</span></nx-dropdown-item>
+        <nx-dropdown isMultiSelect="true">
+            <nx-dropdown-item [disabled]="disabled" value="test"><span>label</span></nx-dropdown-item>
         </nx-dropdown>
     </nx-formfield>`,
+    standalone: true,
+    imports: [NxFormfieldModule, NxDropdownModule],
 })
 class DisabledItemMultiDropdown extends DropdownTest {
     disabled = true;
@@ -1781,10 +2290,12 @@ class DisabledItemMultiDropdown extends DropdownTest {
 @Component({
     template: `<nx-formfield>
         <nx-dropdown>
-            <nx-dropdown-item nxValue="test"><span>label</span></nx-dropdown-item>
+            <nx-dropdown-item value="test"><span>label</span></nx-dropdown-item>
         </nx-dropdown>
     </nx-formfield>`,
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxFormfieldModule, NxDropdownModule],
 })
 class DropdownOnPush extends DropdownTest {}
 
@@ -1792,6 +2303,8 @@ class DropdownOnPush extends DropdownTest {}
     template: `<nx-formfield>
         <nx-dropdown [options]="options" [(ngModel)]="model" name="dropdown"></nx-dropdown>
     </nx-formfield>`,
+    standalone: true,
+    imports: [NxFormfieldModule, NxDropdownModule, FormsModule],
 })
 class DropdownLazy extends DropdownTest {
     model: number | null = null;
@@ -1810,4 +2323,15 @@ class DropdownLazy extends DropdownTest {
             label: 'three',
         },
     ];
+}
+
+@Component({
+    template: `<nx-dropdown nxLabel="Car brand" [(value)]="selectedValue" [placeholder]="placeholder" [verticalAlignCheckmark]="verticalAlignCheckmark">
+        <nx-dropdown-item value="BMW">BMW</nx-dropdown-item>
+    </nx-dropdown>`,
+    standalone: true,
+    imports: [NxDropdownModule],
+})
+class VerticalAlignCheckmarkComponent extends DropdownTest {
+    verticalAlignCheckmark = 'top';
 }

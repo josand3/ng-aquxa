@@ -21,23 +21,34 @@
             class="nx-margin-bottom-s"
             nxFileUploadButton
         >
-            <nx-icon name="plus" class="nx-margin-right-2xs"></nx-icon>
+            <nx-icon
+                name="plus"
+                class="nx-margin-right-2xs"
+                aria-hidden="true"
+            ></nx-icon>
             Add File
         </button>
 
-        <nx-error *ngIf="testForm.controls['documents'].hasError('required')"
-            >Required!</nx-error
-        >
-        <nx-error *ngIf="testForm.controls['documents'].hasError('serverError')"
-            >An error occured while uploading.</nx-error
-        >
-        <nx-error
-            *ngIf="testForm.controls['documents'].hasError('NxFileUploadMaxFileSize')"
-        >
-            File
-            {{testForm.controls['documents'].getError('NxFileUploadMaxFileSize').fileName
-            | json}} can not be uploaded. File size exceeds size limit!
+        @if (testForm.controls['documents'].errors) {
+        <nx-error>
+            <div class="nx-font-weight-bold">Error</div>
+            <ul>
+                @if (testForm.controls['documents'].hasError('required')) {
+                <li>Required!</li>
+                } @if (testForm.controls['documents'].hasError('serverError')) {
+                <li>An error occured while uploading.</li>
+                } @if
+                (testForm.controls['documents'].hasError('NxFileUploadMaxFileSize'))
+                {
+                <li>
+                    File
+                    {{testForm.controls['documents'].getError('NxFileUploadMaxFileSize').fileName
+                    | json}} can not be uploaded. File size exceeds size limit!
+                </li>
+                }
+            </ul>
         </nx-error>
+        }
     </nx-file-uploader>
 </form>
 
@@ -46,11 +57,11 @@
     'file-upload' ? 'Valid url' : 'Invalid url' }}
 </p>
 
-<nx-radio-toggle nxStyle="small" [(ngModel)]="uploadConfig['requestUrl']">
-    <nx-radio-toggle-button nxValue="file-upload"
+<nx-radio-toggle variant="small" [(ngModel)]="uploadConfig['requestUrl']">
+    <nx-radio-toggle-button value="file-upload"
         >Valid url</nx-radio-toggle-button
     >
-    <nx-radio-toggle-button nxValue="file-upload-error"
+    <nx-radio-toggle-button value="file-upload-error"
         >Invalid url</nx-radio-toggle-button
     >
 </nx-radio-toggle>

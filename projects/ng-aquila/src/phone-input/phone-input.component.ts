@@ -7,16 +7,19 @@ import {
     Component,
     DoCheck,
     ElementRef,
+    EventEmitter,
     Input,
     OnDestroy,
     OnInit,
     Optional,
+    Output,
     Self,
     ViewChild,
 } from '@angular/core';
-import { ControlValueAccessor, FormGroupDirective, NgControl, NgForm, UntypedFormControl } from '@angular/forms';
-import { NxDropdownComponent, NxDropdownOption } from '@aposin/ng-aquila/dropdown';
+import { ControlValueAccessor, FormControl, FormGroupDirective, FormsModule, NgControl, NgForm } from '@angular/forms';
+import { NxDropdownComponent, NxDropdownModule, NxDropdownOption } from '@aposin/ng-aquila/dropdown';
 import { NxFormfieldComponent, NxFormfieldControl } from '@aposin/ng-aquila/formfield';
+import { NxAbstractControl } from '@aposin/ng-aquila/shared';
 import { ErrorStateMatcher } from '@aposin/ng-aquila/utils';
 import { LocalizedCountryNames } from 'i18n-iso-countries';
 import { Subject } from 'rxjs';
@@ -32,13 +35,22 @@ let next = 0;
     templateUrl: './phone-input.component.html',
     styleUrls: ['./phone-input.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [{ provide: NxFormfieldControl, useExisting: NxPhoneInputComponent }],
+    providers: [
+        { provide: NxFormfieldControl, useExisting: NxPhoneInputComponent },
+        { provide: NxAbstractControl, useExisting: NxPhoneInputComponent },
+    ],
     host: {
         '[attr.id]': 'id',
+        role: 'group',
+        '[attr.aria-labelledby]': '_ariaLabelledBy',
     },
+    standalone: true,
+    imports: [NxDropdownModule, FormsModule],
 })
-export class NxPhoneInputComponent implements ControlValueAccessor, NxFormfieldControl<any>, OnDestroy, DoCheck, OnInit, AfterViewInit {
+export class NxPhoneInputComponent implements ControlValueAccessor, NxFormfieldControl<any>, OnDestroy, DoCheck, OnInit, AfterViewInit, NxAbstractControl {
     @ViewChild(NxDropdownComponent, { static: true }) dropdown!: NxDropdownComponent;
+    @Output() readonly focusOut = new EventEmitter<boolean>();
+    @Output() readonly focusIn = new EventEmitter<boolean>();
 
     value: any;
 
@@ -98,6 +110,12 @@ export class NxPhoneInputComponent implements ControlValueAccessor, NxFormfieldC
     }
     private _readonly = false;
 
+    /** set readonly state */
+    setReadonly(value: boolean) {
+        this.readonly = value;
+        this._cdr.markForCheck();
+    }
+
     private _initialCountryCode = 'DE';
 
     /**
@@ -117,7 +135,7 @@ export class NxPhoneInputComponent implements ControlValueAccessor, NxFormfieldC
     }
     private _countryCode = 'DE';
 
-    /** Set the text at the top of the dropdown. The default value is 'Area Code'. */
+    /** Set the text at the top of the dropdown and aria-label of area code field. The default value is 'Area Code'. */
     @Input() set areaCodeLabel(value: string) {
         this._areaCodeLabel = value;
     }
@@ -125,6 +143,15 @@ export class NxPhoneInputComponent implements ControlValueAccessor, NxFormfieldC
         return this._areaCodeLabel || this._intl.areaCodeLabel;
     }
     private _areaCodeLabel!: string;
+
+    /** Sets the aria-label of line number field. */
+    @Input() set lineNumberLabel(value: string) {
+        this._lineNumberLabel = value;
+    }
+    get lineNumberLabel() {
+        return this._lineNumberLabel || this._intl.lineNumberAriaLabel;
+    }
+    private _lineNumberLabel = '';
 
     /** Set the translations of the countries. */
     @Input() set countryNames(value: LocalizedCountryNames<any>) {
@@ -271,7 +298,7 @@ export class NxPhoneInputComponent implements ControlValueAccessor, NxFormfieldC
     updateErrorState() {
         const oldState = this.errorState;
         const parent = this._parentFormGroup || this._parentForm;
-        const control = this.ngControl ? (this.ngControl.control as UntypedFormControl) : null;
+        const control = this.ngControl ? (this.ngControl.control as FormControl) : null;
         const newState = this._errorStateMatcher.isErrorState(control, parent);
 
         if (newState !== oldState) {
@@ -283,6 +310,18 @@ export class NxPhoneInputComponent implements ControlValueAccessor, NxFormfieldC
     _onInputBlur() {
         this._onTouched();
         this._inputValue = this.inputFormatter(this._inputValue, this._countryCallingCode);
+
+        if (!this.disabled) {
+            this.focused = false;
+            this.focusOut.emit(true);
+        }
+    }
+
+    _onInputFocus() {
+        if (!this.disabled) {
+            this.focused = true;
+            this.focusIn.emit(true);
+        }
     }
 
     _onInput() {
@@ -312,7 +351,10 @@ export class NxPhoneInputComponent implements ControlValueAccessor, NxFormfieldC
     }
 
     private _removeLeadingZero(value: string) {
-        return value.replace(/^0/, '');
+        // It is valid for an Italian landline phone numbers to start with 0.
+        const italyCountryCallingCode = '39';
+        const isItaly = this._countryCallingCode === italyCountryCallingCode;
+        return isItaly ? value : value.replace(/^0/, '');
     }
 
     /** Returns the combined string of selected calling code + input number */

@@ -1,17 +1,24 @@
+import { AnimationEvent } from '@angular/animations';
 import { CdkAccordionItem } from '@angular/cdk/accordion';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { UniqueSelectionDispatcher } from '@angular/cdk/collections';
-import { TemplatePortal } from '@angular/cdk/portal';
+import { CdkPortalOutlet, TemplatePortal } from '@angular/cdk/portal';
+import { CommonModule } from '@angular/common';
 import {
     AfterContentInit,
+    booleanAttribute,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    computed,
     ContentChild,
+    Inject,
+    InjectionToken,
     Input,
     OnChanges,
     OnDestroy,
     Optional,
+    signal,
     SimpleChanges,
     SkipSelf,
     ViewContainerRef,
@@ -28,6 +35,24 @@ let nextId = 0;
 /** The styling of the accordion. */
 export type AccordionStyle = 'regular' | 'light' | 'extra-light';
 const DEFAULT_TYPE = 'regular';
+
+/**
+ * This interface defines the default options of the expansion-panel.
+ */
+export interface ExpansionPanelDefaultOptions {
+    scrollIntoViewActive: boolean;
+    scrollIntoViewOptions?: ScrollIntoViewOptions;
+}
+
+/** Injection token that determines whether and how the body should scroll into view. */
+export const EXPANSION_PANEL_DEFAULT_OPTIONS = new InjectionToken<ExpansionPanelDefaultOptions>('EXPANSION_PANEL_DEFAULT_OPTIONS', {
+    factory: () => ({
+        scrollIntoViewActive: false,
+        scrollIntoViewOptions: {
+            behavior: 'smooth',
+        },
+    }),
+});
 
 @Component({
     selector: 'nx-expansion-panel',
@@ -49,6 +74,8 @@ const DEFAULT_TYPE = 'regular';
         // to the same accordion.
         { provide: NxAccordionDirective, useValue: undefined },
     ],
+    standalone: true,
+    imports: [CdkPortalOutlet, CommonModule],
 })
 export class NxExpansionPanelComponent extends CdkAccordionItem implements AfterContentInit, OnChanges, OnDestroy {
     /** Whether the negative set of styles should be used. */
@@ -66,7 +93,7 @@ export class NxExpansionPanelComponent extends CdkAccordionItem implements After
      * Value for the styling that should be chosen.
      * Default: `'regular'`.
      */
-    @Input('nxStyle') set style(value: AccordionStyle) {
+    @Input('variant') set style(value: AccordionStyle) {
         value = value ? value : DEFAULT_TYPE;
 
         const [newValue] = value.match(/regular|light|extra-light/) || [DEFAULT_TYPE];
@@ -77,6 +104,26 @@ export class NxExpansionPanelComponent extends CdkAccordionItem implements After
         return this._style!;
     }
     private _style: AccordionStyle | null = null;
+
+    /**
+     * Setting flush alignment style: no left/right padding in expansion panel header and body
+     */
+    @Input({ transform: booleanAttribute }) set flushAlignment(flushAligned: boolean) {
+        this._flushAlignment.set(flushAligned);
+    }
+    get flushAlignment(): boolean {
+        return this.isFlushAligned();
+    }
+
+    // replicating input signal behavior until they are stable
+    private readonly _flushAlignment = signal(false);
+    private readonly isFlushAligned = computed(() => this.accordion?.flushAlignmentSignal() || this._flushAlignment());
+
+    /** Whether scrollIntoView should be enabled. */
+    @Input() scrollIntoViewActive? = this._defaultOptions?.scrollIntoViewActive;
+
+    /** Configuration for the scrollIntoView behaviour after the expand animation is done. */
+    @Input() scrollIntoViewOptions? = this._defaultOptions?.scrollIntoViewOptions;
 
     /** @docs-private */
     @ContentChild(NxExpansionPanelBodyDirective) lazyContent: any;
@@ -98,6 +145,7 @@ export class NxExpansionPanelComponent extends CdkAccordionItem implements After
         _cdr: ChangeDetectorRef,
         _expansionDispatcher: UniqueSelectionDispatcher,
         private readonly _viewContainerRef: ViewContainerRef,
+        @Optional() @Inject(EXPANSION_PANEL_DEFAULT_OPTIONS) private readonly _defaultOptions: ExpansionPanelDefaultOptions,
     ) {
         super(accordion!, _cdr, _expansionDispatcher);
     }
@@ -140,5 +188,12 @@ export class NxExpansionPanelComponent extends CdkAccordionItem implements After
     /** @docs-private */
     getOpenState() {
         return this.expanded ? 'open' : 'closed';
+    }
+
+    /** @docs-private */
+    bodyExpansionDone(event: AnimationEvent) {
+        if (event.fromState === 'closed' && event.toState === 'open') {
+            event.element.scrollIntoView(this.scrollIntoViewOptions);
+        }
     }
 }

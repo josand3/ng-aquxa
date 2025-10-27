@@ -1,17 +1,26 @@
 import { Component, Injectable } from '@angular/core';
 import {
+    FormControl,
     FormGroupDirective,
+    FormsModule,
     NgForm,
-    UntypedFormControl,
+    ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
+import { NxErrorComponent } from '@aposin/ng-aquila/base';
+import {
+    NxFormfieldComponent,
+    NxFormfieldErrorDirective,
+    NxFormfieldHintDirective,
+} from '@aposin/ng-aquila/formfield';
+import { NxInputDirective } from '@aposin/ng-aquila/input';
 import { ErrorStateMatcher } from '@aposin/ng-aquila/utils';
 
 @Injectable()
 export class ShowOnDirtyErrorStateMatcher implements ErrorStateMatcher {
     /** Custom error state matcher that checks for validity of the formfield. */
     isErrorState(
-        control: UntypedFormControl | null,
+        control: FormControl | null,
         form: FormGroupDirective | NgForm | null,
     ): boolean {
         return !!(control?.invalid && (control.dirty || form?.submitted));
@@ -28,9 +37,19 @@ export class ShowOnDirtyErrorStateMatcher implements ErrorStateMatcher {
     providers: [
         { provide: ErrorStateMatcher, useClass: ShowOnDirtyErrorStateMatcher },
     ],
+    standalone: true,
+    imports: [
+        NxFormfieldComponent,
+        NxInputDirective,
+        FormsModule,
+        ReactiveFormsModule,
+        NxFormfieldHintDirective,
+        NxErrorComponent,
+        NxFormfieldErrorDirective,
+    ],
 })
 export class ErrorCustomMatcherFormfieldExampleComponent {
-    emailFormControl = new UntypedFormControl('', [
+    emailFormControl = new FormControl('', [
         Validators.required,
         Validators.email,
     ]);

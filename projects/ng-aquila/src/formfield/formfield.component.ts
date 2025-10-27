@@ -17,7 +17,8 @@ import {
     ViewChild,
     ViewEncapsulation,
 } from '@angular/core';
-import { getClassNameList } from '@aposin/ng-aquila/utils';
+import { Validators } from '@angular/forms';
+import { NxTooltipModule } from '@aposin/ng-aquila/tooltip';
 import { asapScheduler, merge, Subject } from 'rxjs';
 import { observeOn, startWith, takeUntil } from 'rxjs/operators';
 
@@ -29,10 +30,6 @@ import { NxFormfieldLabelDirective } from './label.directive';
 import { NxFormfieldNoteDirective } from './note.directive';
 import { NxFormfieldPrefixDirective } from './prefix.directive';
 import { NxFormfieldSuffixDirective } from './suffix.directive';
-
-const NX_STYLES = {
-    negative: 'nx-formfield--negative',
-};
 
 let nextUniqueId = 0;
 
@@ -49,6 +46,8 @@ export interface FormfieldDefaultOptions {
 
     /** Sets the default change detection trigger event. (optional) */
     updateOn?: NxFormfieldUpdateEventType;
+
+    nxOptionalLabel?: string;
 }
 
 export const FORMFIELD_DEFAULT_OPTIONS = new InjectionToken<FormfieldDefaultOptions>('FORMFIELD_DEFAULT_OPTIONS');
@@ -70,15 +69,20 @@ export type AppearanceType = 'outline' | 'auto';
         '[class.is-filled]': 'this._control.empty === false',
         '[class.is-focused]': 'this._control.focused',
         '[class.is-floating]': 'this.shouldLabelFloat',
+        '[class.is-auto-floating]': 'this.floatLabel === "auto"',
         '[class.has-error]': 'this._control.errorState',
         '[class.has-outline]': 'this.appearance === "outline"',
         '[class.has-hint]': 'this._hintChildren?.length > 0',
+        '[class.nx-formfield--negative]': 'this._negative',
         '(focusout)': '_onBlur()',
     },
     changeDetection: ChangeDetectionStrategy.OnPush,
     encapsulation: ViewEncapsulation.None,
+    standalone: true,
+    imports: [NxTooltipModule],
 })
 export class NxFormfieldComponent implements AfterContentInit, AfterContentChecked, OnDestroy {
+    protected _negative = false;
     private _styles = '';
 
     /** Html id of the formfield label */
@@ -90,7 +94,19 @@ export class NxFormfieldComponent implements AfterContentInit, AfterContentCheck
      * Sets the label which will act as a floating label.
      * In addition, the component uses input and label to properly support accessibility.
      */
-    @Input('nxLabel') label?: string | null;
+    @Input() label?: string | null;
+
+    /**
+     * Set optional text, which will addtional show in label if a field is not mandatory.
+     */
+    @Input() optionalLabel? = this._defaultOptions?.nxOptionalLabel;
+    get optional() {
+        if (this._isRequired() || !this.optionalLabel) {
+            return '';
+        }
+
+        return this.optionalLabel;
+    }
 
     @ContentChild(NxFormfieldLabelDirective) _labelChild!: NxFormfieldLabelDirective;
     @ContentChildren(NxFormfieldHintDirective) _hintChildren!: QueryList<NxFormfieldHintDirective>;
@@ -106,7 +122,7 @@ export class NxFormfieldComponent implements AfterContentInit, AfterContentCheck
      * Whether the label should float once the input is focused or filled (auto, default)
      * or force it to always float with a value of always to simulate a more static form.
      */
-    @Input('nxFloatLabel') set floatLabel(value: FloatLabelType) {
+    @Input() set floatLabel(value: FloatLabelType) {
         if (value !== this._floatLabel) {
             this._floatLabel = value || 'auto';
             this._cdr.markForCheck();
@@ -121,18 +137,12 @@ export class NxFormfieldComponent implements AfterContentInit, AfterContentCheck
      * Sets the styling of the formfield.
      * If 'negative', a negative set of stylings is used.
      */
-    @Input('nxStyle') set styles(value: string) {
-        if (this._styles === value) {
-            return;
-        }
-
-        const classNames = getClassNameList(value, NX_STYLES);
-
-        classNames.forEach(classStr => {
-            this.renderer.addClass(this.elementRef.nativeElement, classStr);
-        });
-
+    @Input('negative') set styles(value: string) {
+        this._negative = !!value.match(/negative/);
         this._styles = value;
+    }
+    get styles() {
+        return this._styles;
     }
 
     /**
@@ -222,6 +232,11 @@ export class NxFormfieldComponent implements AfterContentInit, AfterContentCheck
                 this._cdr.markForCheck();
             });
         }
+
+        // Whenever there are updates to ngControl, it's necessary to trigger change detection to ensure the view reflects these changes
+        this._control.ngControl?.valueChanges?.pipe(takeUntil(this._destroyed)).subscribe(() => {
+            this._cdr.markForCheck();
+        });
     }
 
     ngAfterContentChecked(): void {
@@ -267,7 +282,7 @@ export class NxFormfieldComponent implements AfterContentInit, AfterContentCheck
         }
     }
 
-    /** @docs-private */
+    /** Returns an element that overlays can attach to. */
     getConnectedOverlayOrigin(): ElementRef {
         return this._connectionContainerRef || this.elementRef;
     }
@@ -301,5 +316,29 @@ export class NxFormfieldComponent implements AfterContentInit, AfterContentCheck
             this._syncDescribedByIds();
             this._cdr.markForCheck();
         }
+    }
+
+    _isRequired() {
+        return this._control.ngControl?.control?.hasValidator(Validators.required) || false;
+    }
+
+    _isOutline() {
+        return this.appearance === 'outline';
+    }
+
+    _isNxInput() {
+        return this._control.elementRef.nativeElement.tagName === 'INPUT' && this._control.elementRef.nativeElement.hasAttribute('nxInput');
+    }
+
+    /** @docs-private */
+    get inputValueText() {
+        if (!this._control.readonly && !this._control.disabled) {
+            return;
+        }
+        return (this._control.elementRef.nativeElement.value || '').trim();
+    }
+
+    _isEllipsisActive() {
+        return this._control.elementRef.nativeElement.offsetWidth < this._control.elementRef.nativeElement.scrollWidth;
     }
 }

@@ -31,6 +31,14 @@
         border-color: v(button-#{$type}-active-border-color);
     }
 
+    // resets the text-decoration of tertiary button
+    &:active:not([disabled]),
+    &:hover:not([disabled]) {
+        .nx-button__content.nx-button__content {
+            text-decoration: none;
+        }
+    }
+
     &[disabled] {
         background-color: v(button-#{$type}-disabled-background-color);
         color: v(button-#{$type}-disabled-text-color);
@@ -47,15 +55,26 @@
     border-style: solid;
     border-color: transparent;
     cursor: pointer;
-    padding: button-padding(nx-spacer(xs)) button-padding(nx-spacer(2m));
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    padding: v(button-medium-padding);
     user-select: none;
     width: auto;
     hyphens: none;
     vertical-align: middle;
 
+    // TODO use tokens in proper implementation
+    &:has([nxiconpositionstart]) {
+        padding-left: v(button-medium-icon-start-padding);
+    }
+    &:has([nxiconpositionend]) {
+        padding-right: v(button-medium-icon-end-padding);
+    }
     // Fix for IE to make overflowing indicators visible
     overflow: visible;
+
+    &:hover,
+    &:focus {
+        transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
 
     // Expand every button on mobile to the full width
     @include media-breakpoint-response(mobile) {
@@ -172,6 +191,12 @@
     @include button-theme(tertiary);
 }
 
+:host(.nx-button--tertiary:not(.nx-icon-button)) {
+    .nx-button__content {
+        text-decoration: v(button-tertiary-text-decoration);
+    }
+}
+
 :host(.nx-button--tertiary.nx-button--danger) {
     @include button-theme(tertiary-danger);
 }
@@ -228,9 +253,16 @@
     @include type-style('button-small');
     min-height: v(button-small-height);
     display: inline-block;
-    padding: button-padding(nx-spacer(2xs)) button-padding(nx-spacer(s));
+    padding: v(button-small-padding);
     text-transform: none;
     width: auto;
+
+    &:has([nxiconpositionstart]) {
+        padding-left: v(button-small-icon-start-padding);
+    }
+    &:has([nxiconpositionend]) {
+        padding-right: v(button-small-icon-end-padding);
+    }
 }
 
 // Some additional colorful variants
@@ -242,6 +274,10 @@
     @include button-theme(emphasis);
 }
 
+:host(.nx-button--attention) {
+    @include button-theme(attention);
+}
+
 :host(.nx-button--block) {
     @include media-breakpoint-up(medium) {
         display: block;
@@ -249,7 +285,8 @@
     }
 }
 
-:host .nx-button__content-wrapper {
+:host .nx-button__content-wrapper,
+:host .nx-button__content {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -257,9 +294,13 @@
     position: relative;
 }
 
+:host .nx-button__content-wrapper {
+    gap: v(button-gap);
+}
+
 :host(.nx-icon-button),
 :host(.nx-sidebar__toggle-button) {
-    padding: 0;
+    padding: v(icon-button-medium-padding);
     flex: 0 0 auto;
 
     &.nx-button--small {
@@ -301,7 +342,7 @@
     }
 }
 
-@media screen and (-ms-high-contrast: active) {
+@media screen and (forced-colors: active) {
     :host {
         forced-color-adjust: none;
         background-color: buttonFace !important;
@@ -309,7 +350,7 @@
         color: buttonText !important;
 
         .nx-button__content-wrapper {
-            -ms-high-contrast-adjust: none;
+            forced-color-adjust: none;
         }
 
         &[disabled] {

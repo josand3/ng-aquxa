@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { NxBadgeComponent, NxBadgeType } from './badge.component';
 import { NxBadgeModule } from './badge.module';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class BadgeTest {
     @ViewChild(NxBadgeComponent) badgeInstance!: NxBadgeComponent;
     type = 'active';
@@ -29,8 +29,7 @@ describe('NxBadgeComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DefaultBadgeComponent, BasicBadgeComponent, VibrantBadgeComponent],
-            imports: [NxBadgeModule],
+            imports: [NxBadgeModule, DefaultBadgeComponent, BasicBadgeComponent, VibrantBadgeComponent, SingleLetterComponent],
         }).compileComponents();
     }));
 
@@ -50,6 +49,11 @@ describe('NxBadgeComponent', () => {
         it('should provide vibrant styling', () => {
             createTestComponent(VibrantBadgeComponent);
             expect(badgeNativeElement).toHaveClass('nx-badge--vibrant');
+        });
+
+        it('should add single letter className', () => {
+            createTestComponent(SingleLetterComponent);
+            expect(badgeNativeElement).toHaveClass('single-letter');
         });
     });
 
@@ -72,15 +76,28 @@ describe('NxBadgeComponent', () => {
 @Component({
     template: `<nx-badge>Active</nx-badge>`,
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxBadgeModule],
 })
 class BasicBadgeComponent extends BadgeTest {}
 
 @Component({
     template: `<nx-badge [type]="type">Active</nx-badge>`,
+    standalone: true,
+    imports: [NxBadgeModule],
 })
 class DefaultBadgeComponent extends BadgeTest {}
 
 @Component({
+    template: `<nx-badge [type]="type">A</nx-badge>`,
+    standalone: true,
+    imports: [NxBadgeModule],
+})
+class SingleLetterComponent extends BadgeTest {}
+
+@Component({
     template: '<nx-badge vibrant></nx-badge>',
+    standalone: true,
+    imports: [NxBadgeModule],
 })
 class VibrantBadgeComponent extends BadgeTest {}

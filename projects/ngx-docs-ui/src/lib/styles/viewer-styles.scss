@@ -67,13 +67,13 @@ a {
 }
 
 ::ng-deep .docs-api {
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 1rem;
+    line-height: 1.5rem;
 }
 
 ::ng-deep .docs-api-property {
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 1rem;
+    line-height: 1.5rem;
     margin: 0;
 }
 
@@ -83,7 +83,7 @@ a {
     border-style: solid;
     border-color: v(documentation-api-codebox-border-color);
     border-radius: 5px;
-    letter-spacing: 0.2px;
+    letter-spacing: 0.0125rem;
     padding: 12px;
 }
 
@@ -94,8 +94,8 @@ a {
     border-top-style: solid;
     border-top-color: v(table-header-border-top-color);
     border-collapse: collapse;
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 1rem;
+    line-height: 1.5rem;
 
     margin-bottom: 24px;
 
@@ -168,16 +168,16 @@ a {
 // Docs headings
 ::ng-deep .docs-markdown--h4,
 ::ng-deep .docs-api-h4 {
-    font-size: 24px;
-    line-height: 32px;
+    font-size: 1.5rem;
+    line-height: 2rem;
     font-weight: 400;
     margin: 16px 0;
 }
 
 ::ng-deep .docs-markdown--h3,
 ::ng-deep .docs-api-h3 {
-    font-size: 26px;
-    line-height: 32px;
+    font-size: 1.625rem;
+    line-height: 2rem;
     font-weight: 400;
     margin-top: 32px;
     margin-bottom: 16px;
@@ -187,8 +187,8 @@ a {
 ::ng-deep .component-examples__header,
 ::ng-deep .docs-markdown--h2,
 ::ng-deep .docs-api-h2 {
-    font-size: 30px;
-    line-height: 36px;
+    font-size: 1.875rem;
+    line-height: 2.25rem;
     font-weight: 400;
     margin-bottom: 16px;
     margin-top: 0;
@@ -203,8 +203,8 @@ a {
 ::ng-deep .general-overview__header,
 ::ng-deep .docs-markdown--h1,
 ::ng-deep .docs-api-h1 {
-    font-size: 40px;
-    line-height: 48px;
+    font-size: 2.5rem;
+    line-height: 3rem;
     font-weight: 400;
     margin-top: 32px;
     margin-bottom: 16px;
@@ -227,12 +227,13 @@ a {
     margin-bottom: 16px;
     width: 100%;
 
-    @media screen and (-ms-high-contrast: active) {
-        border: 1px solid windowText;
+    @media screen and (forced-colors: active) {
+        border: 1px solid CanvasText;
     }
 }
 
 ::ng-deep .docs-markdown--p code,
+::ng-deep .docs-deprecation-warning code,
 ::ng-deep .docs-markdown--li > code,
 ::ng-deep .docs-markdown--table code {
     padding: 2px;
@@ -389,8 +390,8 @@ a {
     color: v(documentation-grid-text-color);
     padding: 8px;
     text-align: center;
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 1rem;
+    line-height: 1.5rem;
     font-weight: 600;
 
     @media only screen and (min-width: 0) and (max-width: 319px) {
@@ -467,11 +468,109 @@ a {
         }
     }
 
-    @media screen and (-ms-high-contrast: active) {
+    @media screen and (forced-colors: active) {
         background-color: highlight;
         color: highlightText;
-        -ms-high-contrast-adjust: none;
+        forced-color-adjust: none;
     }
+}
+
+.grid-component__current-grid-tier-container {
+    color: v(documentation-grid-text-color);
+    text-align: center;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    position: sticky;
+    position: -webkit-sticky;
+    top: 45px;
+    z-index: 1;
+
+    @container (min-width: 0) and (max-width: 319px) {
+        background-color: cyan;
+    }
+
+    @container (min-width: 320px) and (max-width: 703px) {
+        background-color: #b0050c;
+    }
+
+    @container (min-width: 704px) and (max-width: 991px) {
+        background-color: olivedrab;
+    }
+
+    @container (min-width: 992px) and (max-width: 1279px) {
+    }
+
+    @container (min-width: 1280px) and (max-width: 1471px) {
+        background-color: v(documentation-grid-xlarge-color);
+    }
+
+    @container (min-width: 1472px) and (max-width: 1759px) {
+        background-color: v(documentation-grid-2xlarge-color);
+    }
+
+    @container (min-width: 1760px) {
+        background-color: v(documentation-grid-3xlarge-color);
+    }
+
+    .current-grid__tier {
+        padding: 8px;
+        height: 100%;
+        width: 100%;
+        display: none;
+    }
+
+    .current-grid__tier-tiny {
+        @container (min-width: 0) and (max-width: 319px) {
+            background-color: v(documentation-grid-tiny-color);
+            display: inline-block;
+        }
+    }
+
+    .current-grid__tier-small {
+        @container (min-width: 320px) and (max-width: 703px) {
+            background-color: v(documentation-grid-small-color);
+            display: inline-block;
+        }
+    }
+
+    .current-grid__tier-medium {
+        @container (min-width: 704px) and (max-width: 991px) {
+            background-color: v(documentation-grid-medium-color);
+            display: inline-block;
+        }
+    }
+
+    .current-grid__tier-large {
+        @container (min-width: 992px) and (max-width: 1279px) {
+            background-color: v(documentation-grid-large-color);
+            display: inline-block;
+        }
+    }
+
+    .current-grid__tier-xlarge {
+        @container (min-width: 1280px) and (max-width: 1471px) {
+            display: inline-block;
+        }
+    }
+
+    .current-grid__tier-2xlarge {
+        @container (min-width: 1472px) and (max-width: 1759px) {
+            display: inline-block;
+        }
+    }
+
+    .current-grid__tier-3xlarge {
+        @container (min-width: 1760px) {
+            display: inline-block;
+        }
+    }
+
+    //@media screen and (forced-colors: active) {
+    //    background-color: highlight;
+    //    color: highlightText;
+    //    forced-color-adjust: none;
+    //}
 }
 
 .docs-grid-colored-grid {

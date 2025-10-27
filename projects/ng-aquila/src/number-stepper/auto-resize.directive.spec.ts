@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, Directive, Type, ViewChild } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 
 import { NxAutoResizeDirective } from './auto-resize.directive';
 import { NxNumberStepperModule } from './number-stepper.module';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class ResizeTest {
     value = '10000';
     @ViewChild(NxAutoResizeDirective) inputInstance!: NxAutoResizeDirective;
@@ -28,8 +28,7 @@ describe('NxAutoResizeDirective', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DefaultResize, DisabledResize, MinWidthResize, BorderPaddingResize, InitTest, InitOnPushTest],
-            imports: [FormsModule, NxNumberStepperModule],
+            imports: [FormsModule, NxNumberStepperModule, DefaultResize, DisabledResize, MinWidthResize, BorderPaddingResize, InitTest, InitOnPushTest],
         }).compileComponents();
     }));
 
@@ -127,17 +126,38 @@ describe('NxAutoResizeDirective', () => {
         styles = window.getComputedStyle(nativeElement);
         expect(parseFloat(styles.width)).toBe(22);
     });
+
+    describe('Error handling', () => {
+        it('should not throw even environment does not have Canvas', fakeAsync(() => {
+            createTestComponent(DefaultResize);
+
+            expect(() => {
+                const getContext = HTMLCanvasElement.prototype.getContext;
+                HTMLCanvasElement.prototype.getContext = () => null;
+                nativeElement.value = '1000';
+                nativeElement.dispatchEvent(new Event('input'));
+                fixture.detectChanges();
+                tick();
+
+                HTMLCanvasElement.prototype.getContext = getContext;
+            }).not.toThrow();
+        }));
+    });
 });
 
 @Component({
     template: `<input [nxAutoResize] class="testinput" />`,
     styles: ['.testinput { width: 22px; }'],
+    standalone: true,
+    imports: [FormsModule, NxNumberStepperModule],
 })
 class DefaultResize extends ResizeTest {}
 
 @Component({
     template: `<input [nxAutoResize] class="testinput" [(value)]="value" />`,
     styles: ['.testinput { width: 22px; }'],
+    standalone: true,
+    imports: [FormsModule, NxNumberStepperModule],
 })
 class InitTest extends ResizeTest {}
 
@@ -145,23 +165,31 @@ class InitTest extends ResizeTest {}
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `<input [nxAutoResize] class="testinput" [(value)]="value" />`,
     styles: ['.testinput { width: 22px; }'],
+    standalone: true,
+    imports: [FormsModule, NxNumberStepperModule],
 })
 class InitOnPushTest extends ResizeTest {}
 
 @Component({
     template: `<input [nxAutoResize]="false" class="testinput" />`,
     styles: ['.testinput { width: 22px; }'],
+    standalone: true,
+    imports: [FormsModule, NxNumberStepperModule],
 })
 class DisabledResize extends ResizeTest {}
 
 @Component({
     template: `<input [nxAutoResize] class="testinput" />`,
     styles: ['.testinput { width: 22px; min-width: 22px; }'],
+    standalone: true,
+    imports: [FormsModule, NxNumberStepperModule],
 })
 class MinWidthResize extends ResizeTest {}
 
 @Component({
     template: `<input [nxAutoResize] class="testinput" />`,
     styles: ['.testinput { width: 22px; padding: 1px; border: 1px solid black}'],
+    standalone: true,
+    imports: [FormsModule, NxNumberStepperModule],
 })
 class BorderPaddingResize extends ResizeTest {}

@@ -2,26 +2,30 @@
 
 $formfield-margin-bottom: nx-spacer(m);
 $margin-to-message: nx-spacer(3xs);
-$outline-padding: 7px;
 
 .nx-formfield {
     display: block;
     //default theme is white and gets overwritten depending of the focus, error state or given modifiers
-    color: v(text-01);
+    color: v(formfield-input-color);
 
     nx-message {
         margin-top: nx-spacer(xs);
+    }
+
+    &:has(nx-password-toggle) {
+        input::-ms-reveal {
+            display: none;
+        }
     }
 }
 
 .nx-formfield__wrapper {
     padding-bottom: v(formfield-bottom-padding);
     padding-top: v(formfield-label-height);
-}
 
-// the hint should not push the other content down
-.has-hint .nx-formfield__wrapper {
-    padding-bottom: 0;
+    @include media-breakpoint-response(mobile) {
+        padding-bottom: v(formfield-mobile-bottom-padding);
+    }
 }
 
 .nx-formfield__row {
@@ -103,7 +107,7 @@ $outline-padding: 7px;
     text-overflow: ellipsis;
     overflow: hidden;
     transform-origin: 0 0;
-    transition: transform 0.15s ease-out, font-size 0.15s ease-out;
+
     text-size-adjust: 100%;
     text-align: left;
 
@@ -111,6 +115,14 @@ $outline-padding: 7px;
         right: 0;
         left: auto;
         text-align: right;
+    }
+
+    .optional {
+        font-weight: nx-font-weight(regular);
+        &::after {
+            content: ':';
+            margin-right: 4px;
+        }
     }
 }
 
@@ -172,9 +184,9 @@ $outline-padding: 7px;
 
 // Hints
 .nx-formfield__hints {
-    color: v(text-01);
+    color: v(formfield-hint-color);
     @include type-style(formfield-hint);
-    padding-top: 8px;
+    padding-top: v(formfield-hint-spacing);
     text-align: right;
 
     [dir='rtl'] & {
@@ -191,14 +203,7 @@ $outline-padding: 7px;
 
 // Messages
 .nx-formfield__message {
-    margin-top: $margin-to-message;
-}
-
-.nx-formfield:not(.nx-formfield--negative) {
-    // ensure all icons gets colored blueish.
-    .nx-formfield__appendix nx-icon {
-        color: v(formfield-active-color);
-    }
+    margin-top: v(formfield-message-gap);
 }
 
 // States
@@ -211,13 +216,43 @@ $outline-padding: 7px;
 .nx-formfield.is-focused:not(.nx-formfield--negative):not(.has-error) {
     color: v(formfield-active-color);
 
-    .nx-formfield__input-container {
-        border-bottom-color: v(formfield-active-border-color);
-    }
-
     // overwrite with white to maintain contrast
     &.nx-formfield--negative {
         color: v(negative);
+    }
+}
+
+.nx-formfield.is-focused:not(.has-outline) {
+    .nx-formfield__input-container {
+        border-bottom-color: v(formfield-active-border-bottom-color);
+        position: relative;
+
+        &:after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: calc(v(formfield-active-border-width) * -1 + v(formfield-border-width));
+            border-radius: v(formfield-active-border-radius);
+            height: v(formfield-active-border-width);
+            background-color: v(formfield-active-border-color);
+            width: 100%;
+        }
+    }
+
+    &.nx-formfield--negative {
+        .nx-formfield__input-container {
+            &:after {
+                background-color: v(negative);
+            }
+        }
+    }
+
+    &.has-error {
+        .nx-formfield__input-container {
+            &:after {
+                background-color: v(danger);
+            }
+        }
     }
 }
 
@@ -252,6 +287,7 @@ $outline-padding: 7px;
     }
 
     .nx-formfield__wrapper {
+        padding-bottom: v(formfield-outline-bottom-padding);
         padding-top: v(formfield-outline-label-height);
     }
 
@@ -265,44 +301,45 @@ $outline-padding: 7px;
     }
 
     .nx-formfield__input-container {
-        padding: 0;
+        padding: v(formfield-outline-input-container-padding);
         border-width: v(formfield-border-width);
         border-color: v(formfield-outline-border-color);
         background-color: v(formfield-outline-background-color);
         border-style: solid;
-        border-radius: nx-border-radius(s);
+        border-radius: v(formfield-outline-border-radius);
         height: v(formfield-outline-control-height);
+        gap: v(formfield-outline-gap);
     }
 
     input,
     nx-dropdown .nx-dropdown__container,
     nx-multi-select .value {
-        padding: 0 $outline-padding;
+        padding: 0 v(formfield-outline-spacing);
     }
 
     .nx-formfield__suffix {
-        margin-right: $outline-padding;
+        margin-right: v(formfield-outline-spacing);
         margin-left: 0;
 
         [dir='rtl'] & {
             margin-right: 0;
-            margin-left: $outline-padding;
+            margin-left: v(formfield-outline-spacing);
         }
     }
 
     .nx-formfield__prefix {
-        margin-left: $outline-padding;
+        margin-left: v(formfield-outline-spacing);
         margin-right: 0;
 
         [dir='rtl'] & {
-            margin-right: $outline-padding;
+            margin-right: v(formfield-outline-spacing);
             margin-left: 0;
         }
     }
 
     .nx-formfield__input textarea.nx-input {
         line-height: nx-line-height(2xs);
-        padding: $outline-padding;
+        padding: v(formfield-outline-spacing);
         min-height: v(formfield-outline-control-line-height);
     }
 
@@ -323,6 +360,7 @@ $outline-padding: 7px;
     .nx-formfield__hints {
         text-align: left;
         @include type-style(formfield-outline-hint);
+        padding: v(formfield-outline-hint-spacing);
 
         [dir='rtl'] & {
             text-align: right;
@@ -348,6 +386,28 @@ $outline-padding: 7px;
         // so we need to take the border into account
         &::-moz-placeholder {
             line-height: calc(#{v(formfield-outline-control-height)} - 2 * #{v(formfield-border-width)});
+        }
+    }
+
+    input:-webkit-autofill::first-line {
+        @include type-style(formfield-outline-control);
+    }
+    .nx-formfield__label {
+        flex-direction: row-reverse;
+        display: flex;
+        justify-content: flex-end;
+    }
+    .optional {
+        margin-left: v(formfield-outline-optional-label-gap);
+        @include type-style(formfield-outline-optional-label);
+        font-weight: nx-font-weight(regular);
+
+        &::before {
+            content: '(';
+        }
+
+        &::after {
+            content: ')';
         }
     }
 }
@@ -376,6 +436,9 @@ $outline-padding: 7px;
         // Remove the transition when the input is filled
         transition: none;
     }
+    .optional {
+        font-weight: nx-font-weight(regular);
+    }
 
     &.has-outline {
         .nx-formfield__label {
@@ -397,6 +460,13 @@ $outline-padding: 7px;
         .nx-formfield__input {
             position: unset;
         }
+    }
+}
+
+// Prevent animation for always floating
+.nx-formfield.is-auto-floating {
+    .nx-formfield__label {
+        transition: transform 0.15s ease-out, font-size 0.15s ease-out;
     }
 }
 
@@ -430,8 +500,10 @@ $outline-padding: 7px;
         }
     }
 
-    .nx-formfield__input-container {
-        border-bottom-color: v(danger);
+    &:not(.is-focused) {
+        .nx-formfield__input-container {
+            border-bottom-color: v(danger);
+        }
     }
 
     &.is-floating {
@@ -467,9 +539,31 @@ $outline-padding: 7px;
         border-color: v(formfield-disabled-border-color);
     }
 
+    &.has-outline {
+        input,
+        textarea {
+            @include input-placeholder {
+                color: v(formfield-input-native-placeholder-disabled-color);
+            }
+        }
+    }
+
     nx-datepicker-toggle button {
         color: v(formfield-disabled-text-color);
     }
+}
+
+// Ellipsis for readonly and disabled
+.nx-formfield.is-readonly,
+.nx-formfield.is-disabled {
+    input {
+        text-overflow: ellipsis;
+    }
+}
+
+.nx-formfield__tooltip {
+    width: 100%;
+    display: flex;
 }
 
 // Readonly color
@@ -521,7 +615,7 @@ $outline-padding: 7px;
 }
 
 // HIGH CONTRAST
-@media screen and (-ms-high-contrast: active) {
+@media screen and (forced-colors: active) {
     .nx-formfield__input-container,
   .nx-formfield.nx-formfield--negative .nx-formfield__input-container,
   // overwrite hover in chromium edge:
@@ -538,8 +632,8 @@ $outline-padding: 7px;
         }
 
         .nx-formfield__appendix {
-            border-bottom-color: window;
-            border-top-color: window;
+            border-bottom-color: Canvas;
+            border-top-color: Canvas;
         }
     }
 
@@ -552,7 +646,7 @@ $outline-padding: 7px;
         }
 
         .nx-formfield__hints {
-            color: windowText;
+            color: CanvasText;
         }
 
         &.has-outline .nx-formfield__input-container {
@@ -593,11 +687,5 @@ input:-webkit-autofill {
         @include type-style(formfield-control);
         font-family: v(font-family);
         color: v(formfield-control-color);
-    }
-}
-
-.nx-formfield.has-outline {
-    input:-webkit-autofill::first-line {
-        @include type-style(formfield-outline-control);
     }
 }

@@ -2,21 +2,17 @@
     <nx-code-input
         #codeInput
         [length]="4"
-        nxConvertTo="upper"
+        convertTo="upper"
         formControlName="keyCode"
-    ></nx-code-input>
-
-    <div *ngIf="codeInput.errorState">
-        <nx-error *ngIf="keyCode?.hasError('required')" class="nx-margin-y-xs">
-            Entry is required.
-        </nx-error>
-        <nx-error *ngIf="keyCode?.hasError('pattern')" class="nx-margin-y-xs">
-            Entry must match pattern.
-        </nx-error>
-        <nx-error *ngIf="keyCode?.hasError('minlength')" class="nx-margin-y-xs">
-            Entry is too short.
-        </nx-error>
-    </div>
+    >
+        @if (keyCode?.hasError('required')) {
+        <nx-error class="nx-margin-y-xs"> Entry is required. </nx-error>
+        } @if (keyCode?.hasError('pattern')) {
+        <nx-error class="nx-margin-y-xs"> Entry must match pattern. </nx-error>
+        } @if (keyCode?.hasError('minlength')) {
+        <nx-error class="nx-margin-y-xs"> Entry is too short. </nx-error>
+        }
+    </nx-code-input>
 
     <p>Disabled: {{ this.keyCode?.disabled }}</p>
     <button nxButton="primary small" type="submit">Submit</button>

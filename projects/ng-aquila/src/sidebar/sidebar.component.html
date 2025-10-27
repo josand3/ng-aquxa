@@ -5,10 +5,10 @@
     <ng-content select="nx-sidebar-footer"></ng-content>
 </div>
 
+@if (resizeable) {
 <button
     #resizeHandle
     class="nx-sidebar__handle"
-    *ngIf="resizeable"
     tabindex="0"
     type="button"
     (mousedown)="_onResizeStart($event)"
@@ -17,3 +17,4 @@
     (click)="_onResizeHandleClick($event)"
     [attr.aria-label]="resizeHandleAriaLabel"
 ></button>
+}

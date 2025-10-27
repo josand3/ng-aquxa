@@ -1,7 +1,7 @@
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { OverlayContainer } from '@angular/cdk/overlay';
 import { CommonModule } from '@angular/common';
-import { Component, NgModule, TemplateRef, ViewChild } from '@angular/core';
+import { Component, forwardRef, NgModule, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, inject, TestBed, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -121,6 +121,38 @@ describe('NxMessageToast', () => {
 
             const containerElement = overlayContainerElement.querySelector('nx-message-toast')!;
             expect(containerElement.textContent).toContain('Testing template');
+
+            toastRef.dismiss();
+            fixture.detectChanges();
+            flush();
+
+            expect(overlayContainerElement.childNodes).toHaveSize(0);
+        }));
+    });
+
+    describe('open from component', () => {
+        let componentFixture: ComponentFixture<BasicMessageToastTest>;
+
+        beforeEach(() => {
+            componentFixture = TestBed.createComponent(BasicMessageToastTest);
+            componentFixture.detectChanges();
+        });
+
+        it('should be able to open', () => {
+            messageToastService.openFromComponent(SimpleMessageToastComponent);
+            componentFixture.detectChanges();
+
+            const containerElement = overlayContainerElement.querySelector('nx-message-toast')!;
+
+            expect(containerElement.textContent).toContain('Message from a component');
+        });
+
+        it('should be able to open and close', fakeAsync(() => {
+            const toastRef = messageToastService.openFromComponent(SimpleMessageToastComponent, { context: 'success' });
+            componentFixture.detectChanges();
+
+            const containerElement = overlayContainerElement.querySelector('nx-message-toast')!;
+            expect(containerElement.textContent).toContain('Message from a component');
 
             toastRef.dismiss();
             fixture.detectChanges();
@@ -252,8 +284,7 @@ describe('NxMessageToast with parent and child service', () => {
 
     beforeEach(fakeAsync(() => {
         TestBed.configureTestingModule({
-            imports: [NxMessageToastTestModule, NoopAnimationsModule],
-            declarations: [ComponentProvidingService],
+            imports: [NxMessageToastTestModule, NoopAnimationsModule, ComponentProvidingService],
         }).compileComponents();
     }));
 
@@ -318,11 +349,13 @@ describe('NxMessageToast with parent and child service', () => {
 
 @Component({
     template: ``,
+    standalone: true,
 })
 class BasicMessageToastTest {}
 
 @Component({
     template: `<ng-template> Testing template </ng-template>`,
+    standalone: true,
 })
 class ComponentWithTemplateRef {
     @ViewChild(TemplateRef) templateRef!: TemplateRef<any>;
@@ -331,14 +364,24 @@ class ComponentWithTemplateRef {
 @Component({
     template: '',
     providers: [NxMessageToastService],
+    standalone: true,
+    imports: [forwardRef(() => NxMessageToastTestModule)],
 })
 class ComponentProvidingService {
     constructor(readonly messageToastService: NxMessageToastService) {}
 }
 
 @NgModule({
-    imports: [CommonModule, NxMessageModule],
+    imports: [CommonModule, NxMessageModule, BasicMessageToastTest, ComponentWithTemplateRef],
     exports: [BasicMessageToastTest, ComponentWithTemplateRef],
-    declarations: [BasicMessageToastTest, ComponentWithTemplateRef],
 })
 class NxMessageToastTestModule {}
+
+@Component({
+    standalone: true,
+    template: `<div class="u-text-center">
+        <h3>Message from a component</h3>
+        <p>This text comes from the SimpleMessageToastComponent.</p>
+    </div>`,
+})
+class SimpleMessageToastComponent {}

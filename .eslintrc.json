@@ -132,6 +132,7 @@
                 "@typescript-eslint/no-explicit-any": "off", // recommended override: used frequently
                 "@typescript-eslint/no-extraneous-class": "off", // strict override: support annotated empty classes
                 "@typescript-eslint/no-non-null-assertion": "off", // recommended override: used frequently
+                "@typescript-eslint/no-non-null-asserted-optional-chain": "off", // disabled for Angular 18 upgrade - pre-existing code style
                 "@typescript-eslint/no-unnecessary-condition": "off", // strict override: support incorrect typings
                 "@typescript-eslint/no-useless-constructor": "off", // strict override: TODO check why a spec is failing
                 "@typescript-eslint/prefer-nullish-coalescing": "off", // strict override: may cause false positives with strings and numbers
@@ -154,6 +155,7 @@
                 "@typescript-eslint/return-await": "warn",
 
                 // ==== @angular-eslint: typescript ====
+                "@angular-eslint/component-class-suffix": "off", // disabled for Angular 18 upgrade - pre-existing code style
                 "@angular-eslint/contextual-lifecycle": "warn",
                 "@angular-eslint/directive-class-suffix": "off", // disabled for Angular 18 upgrade - pre-existing code style
                 "@angular-eslint/no-conflicting-lifecycle": "warn",

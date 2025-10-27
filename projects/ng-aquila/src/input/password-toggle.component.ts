@@ -1,6 +1,7 @@
 import { FocusMonitor } from '@angular/cdk/a11y';
 import { ENTER, SPACE } from '@angular/cdk/keycodes';
 import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Input, OnDestroy } from '@angular/core';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
 
 const visibilityIcons = {
     show: 'password-show-o',
@@ -20,6 +21,8 @@ const visibilityIcons = {
         '(keydown)': '_onKeydown($event)',
     },
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxIconModule],
 })
 export class NxPasswordToggleComponent implements AfterViewInit, OnDestroy {
     /** Input element using the toggle functionality. */
@@ -47,11 +50,11 @@ export class NxPasswordToggleComponent implements AfterViewInit, OnDestroy {
     }
     private _ariaLabel = 'Show password';
 
-    constructor(private readonly _cdr: ChangeDetectorRef, private readonly _elementRef: ElementRef, private readonly _focusMonitor: FocusMonitor) {
-        this._focusMonitor.monitor(this._elementRef);
-    }
+    constructor(private readonly _cdr: ChangeDetectorRef, private readonly _elementRef: ElementRef, private readonly _focusMonitor: FocusMonitor) {}
 
     ngAfterViewInit(): void {
+        this._focusMonitor.monitor(this._elementRef);
+
         if (!this.control) {
             console.warn('You need to pass an input as a control to the password toggle.');
             return;

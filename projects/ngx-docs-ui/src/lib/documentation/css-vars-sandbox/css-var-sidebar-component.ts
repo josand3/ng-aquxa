@@ -1,4 +1,8 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { NxButtonModule } from '@aposin/ng-aquila/button';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
+import { ColorPickerModule } from 'ngx-color-picker';
 import parseColor from 'parse-color';
 
 @Component({
@@ -9,6 +13,8 @@ import parseColor from 'parse-color';
         '[class.sidebar-hidden]': '!shown',
     },
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxButtonModule, NxIconModule, FormsModule, ColorPickerModule],
 })
 export class CssVarSidebarComponent {
     shown = true;
@@ -20,10 +26,10 @@ export class CssVarSidebarComponent {
     constructor(private readonly _cdr: ChangeDetectorRef) {}
 
     getCustomProperties() {
-        return Array.from(document.styleSheets).reduce((rules, styleSheet: CSSStyleSheet) => {
+        return Array.from(document.styleSheets).reduce((rules, styleSheet: CSSStyleSheet, currIdx) => {
             if (styleSheet.cssRules) {
                 Array.from(styleSheet.cssRules).reduce((innerRules: string[], cssRule: any) => {
-                    if (cssRule.selectorText === ':root') {
+                    if (cssRule.selectorText?.includes(':root')) {
                         let css = cssRule.cssText.split('{');
                         css = css[1].replace('}', '').split(';');
                         for (let i = 0; i < css.length; i++) {

@@ -5,11 +5,16 @@ b2c: true
 expert: true
 stable: done
 alias: dialog
+a1: true
 ---
 
 The `NxDialogService` can be used to open modals from components or predefined templates.
 
+The class `nx-modal-margin-bottom` can be used to get the correct vertical spacing for the elements withing the modal.
+
 **Important:** Please note that the module for this component depends on the Angular animations module, so in case you do not already have it, you need to explicitly import the `BrowserModule` and `BrowserAnimationsModule` in your app.module.
+
+The visual representation of modal overlay depends on Angular CDK styles. Make sure you [enable Angular CDK styles](./documentation/overlay/overview#angular-cdk) in your application.
 
 ### Modal Opening
 
@@ -58,7 +63,7 @@ By default, the modal will close if the user clicks on the backdrop or hits the 
 
 ### Modal Content Directives
 
-You can separate the dialog body into dialog content and dialog actions by using the directives `nxModalContent` and `nxModalActions`. `nxModalActions` is container for action buttons placed at the bottom of the dialog. The example below shows how to apply them for a Dialog with a disclaimer look.
+You can separate the dialog body into dialog content and dialog actions by using the directives `nxModalContent` and `nxModalActions`. `nxModalActions` is container for action buttons placed at the bottom of the dialog. `nxModalTitle` can be used to put the title above or inside the `nxModalContent`. Placed inside `nxModalContent` the headline will scroll with the content, placed on top it will stay fixed. The example below shows how to apply them for a Dialog with a disclaimer look.
 
 <!-- example(modal-content-actions) -->
 
@@ -67,6 +72,16 @@ You can separate the dialog body into dialog content and dialog actions by using
 By default the width of the modal dialog is `736px`. You can change this behavior by setting the `width` property in the `NxModalConfig`.
 
 <!-- example(modal-fixed-width) -->
+
+ ### Modal with status
+ Below is an example of how to create a modal with status by using the `nxModalTitle`
+ <!-- example(modal-status) -->
+
+### Fullscreen
+
+Set `fullscreen` to `true` to show the modal in fullscreen. When using `fullscreen` the `width`, `height`, `maxWidth` and `maxHeight` are overwritten.
+
+<!-- example(modal-fullscreen) -->
 
 ### Configuration
 
@@ -122,7 +137,7 @@ If you want to use a custom scroll strategy, you can use the `NX_MODAL_SCROLL_ST
 
 ```ts
 function scrollStrategyFactory(overlay: Overlay): () => ScrollStrategy {
-    return () => overlay.scrollStrategies.close({ threshold: 100 });
+    return () => overlay.scrollStrategies.close();
 }
 
 @NgModule({
@@ -146,15 +161,34 @@ To get your app direction we recommend using [Directionality](https://material.a
 
 <!-- example(modal-with-direction)> -->
 
+
+ ### Block modal closing
+The following example demonstrates the usage of the `shouldClose` and `closeDenied` APIs to create a modal that displays a popover notification when attempting to close the modal with unsaved data.
+ <!-- example(modal-unsaved) -->
+
+
+ ### Autofocus
+ The `autofocus` property allows you to control which element receives focus when a modal is opened. The following options are available:
+
+- `dialog` or `false`: Focuses on the modal dialog itself.
+- `first-tabbable` or `true`: Focuses on the first tabbable element, such as a button (this is the default behavior).
+- `first-header`: Focuses on the first header element (e.g., `h1`, `h2`, `h3`).
+- Custom CSS selectors: You can specify a custom element to focus using a selector like `div` or `.element`.
+ <!-- example(modal-autofocus) -->
+
 ### Accessibility
 
 By default, each modal has `role="dialog"` on the root element. The role can be changed to `alertdialog` via the `NxModalConfig`.
 
-The aria-label, aria-labelledby, and aria-describedby attributes of the modal as well as the aria-label of the optional close button can be set via the `NxModalConfig` as well. It is recommended to at least give a modal an aria-label or aria-labelledby attribute.
+The aria-label, aria-labelledby, and aria-describedby attributes of the modal as well as the aria-label of the optional close button can be set via the `NxModalConfig` as well. It is recommended to at least give a modal an aria-label or aria-labelledby attribute. (**Note:** `aria-label` or `aria-labelledby` is required for _Voiceover_. )
 
 When a dialog opens, the first focusable element will be focused. The CdkOverlay used in the dialog traps the focus in itself in order to prevent users from interacting with elements in the background. Per default, the focus will be given back to the element which has been focused before the opening of the dialog.
 
 Pressing the escape key will close the dialog per default. You can disable this behaviour by setting the `disabledClose` option to false in the `NxModalConfig`, but it is recommended to keep it on as it is the expected behaviour of a modal dialog.
+
+#### Scrollable areas and long content
+
+Non interactive scrollable areas and long content in size restricted containers can be problematic for keyboard users. [Have a look into our general accessibility guide on that.](/documentation/accessibility/overview#scroll-containers-and-keyboard-navigation) TLDR: setting `tabindex="0"` on the scrollable container is a valid workaround until this will be supported natively by browsers.
 
 ### Deprecated Modal Component
 
@@ -166,8 +200,8 @@ For using it you have to import the `NxModalModule` as follows:
 import { NxModalModule } from '@aposin/ng-aquila/modal';
 
 @NgModule({
-  imports: [
-    NxModalModule.forRoot()
+    imports: [
+        NxModalModule.forRoot()
   ]
 })
 ```

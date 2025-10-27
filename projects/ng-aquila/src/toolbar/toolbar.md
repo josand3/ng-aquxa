@@ -4,6 +4,7 @@ category: components
 b2c: false
 expert: true
 stable: done
+a1: true
 ---
 
 <div class="docs-deprecation-warning">
@@ -14,6 +15,12 @@ stable: done
 The toolbar is a visual container for elements (e.g. icons, buttons, icon tooltips). It is recommended to keep the total number of icons as short as possible as well as to avoid combining a back button with breadcrumbs. The toolbar should only contain CTA elements that influence the content area. It is not used for information or global navigation (e.g progress bar).
 
 <!-- example(toolbar) -->
+
+### Toolbar with divider
+
+In combination with a business description and a divider line, an icon only back-link can be used. Use `<nx-toolbar-divider>` for the divider.
+
+<!-- example(toolbar-divider) -->
 
 ### Positioning toolbar content
 

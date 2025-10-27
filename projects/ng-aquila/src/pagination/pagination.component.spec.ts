@@ -1,11 +1,11 @@
 import { BidiModule, Direction } from '@angular/cdk/bidi';
-import { Component, DebugElement, Directive, Type, ViewChild } from '@angular/core';
+import { Component, DebugElement, Directive, ElementRef, QueryList, Type, ViewChild, ViewChildren } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { NxPaginationComponent } from './pagination.component';
 import { NxPaginationModule } from './pagination.module';
-import { IPaginationTexts, NX_PAGINATION_TEXTS } from './pagination-texts';
+import { DefaultPaginationTexts, IPaginationTexts, NX_PAGINATION_TEXTS } from './pagination-texts';
 import { NxPaginationUtils } from './pagination-utils';
 
 const customTexts: IPaginationTexts = {
@@ -15,13 +15,14 @@ const customTexts: IPaginationTexts = {
     ariaLabel: 'myAriaLabel',
 };
 
-@Directive()
+@Directive({ standalone: true })
 abstract class PaginationTest {
     @ViewChild(NxPaginationComponent) paginationInstance!: NxPaginationComponent;
     page = 1;
     prevPage = jasmine.createSpy('prevPageSpy');
     nextPage = jasmine.createSpy('nextPageSpy');
     goToPage = jasmine.createSpy('goToPageSpy');
+    ariaLabel = '';
 }
 
 describe('NxPaginationComponent', () => {
@@ -44,6 +45,8 @@ describe('NxPaginationComponent', () => {
     let mobileListElements: DebugElement[];
     let mobilePageElements: DebugElement[];
 
+    let sliderElements: DebugElement[];
+
     function createTestComponent(component: Type<PaginationTest>) {
         fixture = TestBed.createComponent(component);
         fixture.detectChanges();
@@ -64,12 +67,15 @@ describe('NxPaginationComponent', () => {
         mobileListElements = fixture.nativeElement.querySelectorAll('.nx-pagination__item.nx-pagination__item--mobile');
         pageElements = fixture.nativeElement.querySelectorAll('.nx-pagination__item:not(.nx-pagination__item--mobile) .nx-pagination--number');
         mobilePageElements = fixture.nativeElement.querySelectorAll('.nx-pagination__item.nx-pagination__item--mobile .nx-pagination--number');
+
+        sliderElements = fixture.nativeElement.querySelectorAll('.nx-pagination__item:not(.nx-pagination__item--mobile) .nx-pagination--icon');
     }
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [NxPaginationModule, BidiModule],
-            declarations: [
+            imports: [
+                NxPaginationModule,
+                BidiModule,
                 SimplePagination,
                 SimplePaginationBeginat10,
                 AdvancedPagination,
@@ -79,8 +85,10 @@ describe('NxPaginationComponent', () => {
                 LocalizationToken,
                 SimplePaginationWithDirection,
                 AdvancedPaginationWithDirection,
+                SliderPagination,
+                SliderPaginationBeginat6,
             ],
-            providers: [NxPaginationUtils, { provide: NX_PAGINATION_TEXTS, useValue: { previous: 'Before', next: 'Later' } }],
+            providers: [NxPaginationUtils],
         }).compileComponents();
     }));
 
@@ -100,7 +108,7 @@ describe('NxPaginationComponent', () => {
             expect(currentPage && totalPages && nextArrowSimple).not.toBeNull();
             expect(currentPage.textContent).toContain('1');
             expect(totalPages.textContent).toContain('21');
-            expect(spanElement.nativeElement.textContent).toBe(' Before ');
+            expect(spanElement.nativeElement.textContent).toBe(` ${DefaultPaginationTexts.previous} `);
         });
 
         it('should emit an event when click next arrow', () => {
@@ -132,6 +140,19 @@ describe('NxPaginationComponent', () => {
             simpleInstance.count = 100;
             fixture.detectChanges();
             expect(paginationInstance.totalNumberPages).toBe(10);
+        });
+
+        it('should keep focus after interaction', () => {
+            createTestComponent(SimplePagination);
+            const simpleInstance = testInstance as SimplePagination;
+            const spy = spyOn(simpleInstance.paginationInstance, 'onNext');
+            fixture.detectChanges();
+            nextArrowSimple.focus();
+            nextArrowSimple.click();
+            fixture.detectChanges();
+
+            expect(spy).toHaveBeenCalled();
+            expect(nextArrowSimple).toHaveClass('cdk-program-focused');
         });
     });
 
@@ -209,6 +230,93 @@ describe('NxPaginationComponent', () => {
             arrowFirst.click();
             expect(testInstance.goToPage).toHaveBeenCalledWith(1);
         });
+
+        it('should keep focus after interaction', () => {
+            createTestComponent(AdvancedPagination);
+            const simpleInstance = testInstance as AdvancedPagination;
+            const spy = spyOn(simpleInstance.paginationInstance, 'onPage');
+            fixture.detectChanges();
+
+            const pageLinkNodes = pageElements as unknown as NodeList;
+            const page2Button = pageLinkNodes.item(1) as any;
+            page2Button.focus();
+            page2Button.click();
+            fixture.detectChanges();
+
+            expect(spy).toHaveBeenCalled();
+            expect(page2Button).toHaveClass('cdk-program-focused');
+        });
+    });
+
+    describe('slider variation', () => {
+        it('displays a slider pagination', () => {
+            createTestComponent(SliderPagination);
+            expect(sliderElements).not.toBeNull();
+            expect(listElements).not.toHaveSize(0);
+        });
+
+        it('should emit an event when click next arrow', () => {
+            createTestComponent(SliderPagination);
+            fixture.detectChanges();
+            nextArrow.click();
+            expect(testInstance.nextPage).toHaveBeenCalled();
+        });
+
+        it('should emit an event when click next arrow', () => {
+            createTestComponent(SliderPagination);
+            fixture.detectChanges();
+            nextArrow.click();
+            expect(testInstance.nextPage).toHaveBeenCalled();
+        });
+
+        it('should have aria lables for individual page buttons', () => {
+            createTestComponent(SliderPagination);
+            fixture.detectChanges();
+
+            const paginationButtons = fixture.debugElement.queryAll(By.css('button.nx-pagination--icon'));
+
+            expect(paginationButtons.length).toBe(6);
+            expect(paginationButtons[0].nativeElement.getAttribute('aria-label')).toEqual('1');
+        });
+
+        it('should emit an event when click prev arrow', () => {
+            createTestComponent(SliderPaginationBeginat6);
+            fixture.detectChanges();
+            prevArrow.click();
+            expect(testInstance.prevPage).toHaveBeenCalled();
+        });
+
+        it('should emit an event when click a page', () => {
+            createTestComponent(SliderPagination);
+            fixture.detectChanges();
+            const pages = fixture.debugElement.nativeElement.querySelector('.nx-pagination--icon');
+            pages.click();
+            expect(testInstance.goToPage).toHaveBeenCalled();
+        });
+
+        it('should emit an event when click a page', () => {
+            createTestComponent(SliderPagination);
+            const pages = fixture.debugElement.nativeElement.querySelector('.nx-pagination--icon');
+            pages.click();
+            expect(testInstance.goToPage).toHaveBeenCalled();
+        });
+
+        it('should keep focus after interaction', () => {
+            createTestComponent(SliderPagination);
+            const simpleInstance = testInstance as SliderPagination;
+            const spy = spyOn(simpleInstance.paginationInstance, 'onPage');
+            fixture.detectChanges();
+
+            const pageLinkNodes = listElements as unknown as NodeList;
+            const page2ListItem = pageLinkNodes.item(1) as any;
+            const page2Button = page2ListItem.children.item(0);
+            page2Button.focus();
+            page2Button.click();
+            fixture.detectChanges();
+
+            expect(spy).toHaveBeenCalled();
+            expect(page2Button).toHaveClass('cdk-program-focused');
+        });
     });
 
     describe('mobile pagination', () => {
@@ -222,12 +330,16 @@ describe('NxPaginationComponent', () => {
 
     describe('localization', () => {
         it('should use injected NX_PAGINATION_TEXTS token', () => {
+            TestBed.overrideProvider(NX_PAGINATION_TEXTS, { useValue: customTexts });
             createTestComponent(LocalizationToken);
+
             expect(paginationInstance.paginationTexts).toEqual(customTexts);
             expect(nextArrowSimple.querySelector('.nx-pagination-compact__direction-label')?.textContent?.trim()).toBe('myNext');
             expect(prevArrowSimple.querySelector('.nx-pagination-compact__direction-label')?.textContent?.trim()).toBe('myPrevious');
             expect(pageSeparator.textContent?.trim()).toBe('myOf');
+
             const navElement = fixture.nativeElement.querySelector('.nx-pagination-compact') as HTMLElement;
+
             expect(navElement.attributes.getNamedItem('aria-label')?.value).toBe('myAriaLabel');
         });
     });
@@ -310,22 +422,75 @@ describe('NxPaginationComponent', () => {
             createTestComponent(SimplePagination);
             await expectAsync(fixture.nativeElement).toBeAccessible();
         });
+
+        it('should only render one nav element', () => {
+            createTestComponent(AdvancedPagination);
+            (testInstance as AdvancedPagination).type = 'simple';
+            fixture.detectChanges();
+            expect(fixture.nativeElement.querySelectorAll('nav').length).toBe(1);
+            (testInstance as AdvancedPagination).type = 'advanced';
+            fixture.detectChanges();
+            expect(fixture.nativeElement.querySelectorAll('nav').length).toBe(1);
+        });
+
+        it('should use ariaLabel input over paginationTexts', () => {
+            createTestComponent(AdvancedPagination);
+            testInstance.ariaLabel = 'custom aria-label';
+            fixture.detectChanges();
+
+            const navElement = fixture.nativeElement.querySelector('nav') as HTMLElement;
+
+            expect(navElement.attributes.getNamedItem('aria-label')?.value).toBe('custom aria-label');
+        });
+
+        it('should use paginationTexts when ariaLabel input is falsy', () => {
+            createTestComponent(AdvancedPagination);
+            testInstance.ariaLabel = '';
+            fixture.detectChanges();
+
+            const navElement = fixture.nativeElement.querySelector('nav') as HTMLElement;
+
+            expect(navElement.attributes.getNamedItem('aria-label')?.value).toBe(DefaultPaginationTexts.ariaLabel);
+        });
+    });
+
+    describe('focusCurrentPageButton', () => {
+        it('should focus the current page button', () => {
+            createTestComponent(FocusCurrentPageButtonPagination);
+
+            testInstance.page = 3;
+            (testInstance as FocusCurrentPageButtonPagination).lastInteractedButtonIsPage = true;
+
+            const mockButtonElement = jasmine.createSpyObj('ElementRef', ['focus']);
+            mockButtonElement.nativeElement = { innerText: '3', focus: jasmine.createSpy('focus') };
+
+            (testInstance as FocusCurrentPageButtonPagination)._linkElements = new QueryList<ElementRef>();
+            (testInstance as FocusCurrentPageButtonPagination)._linkElements.reset([mockButtonElement]);
+
+            fixture.detectChanges();
+
+            (testInstance as FocusCurrentPageButtonPagination).focusCurrentPageButton();
+            expect(mockButtonElement.nativeElement.focus).toHaveBeenCalled();
+        });
     });
 });
 
 @Component({
     template: `
         <nx-pagination
-            [nxCount]="count"
-            [nxPage]="page"
-            [nxPerPage]="perPage"
-            [nxType]="type"
-            (nxGoPrev)="prevPage()"
-            (nxGoNext)="nextPage()"
-            (nxGoPage)="goToPage($event)"
+            [count]="count"
+            [page]="page"
+            [perPage]="perPage"
+            [type]="type"
+            (goPrev)="prevPage()"
+            (goNext)="nextPage()"
+            (goPage)="goToPage($event)"
+            [ariaLabel]="ariaLabel"
         >
         </nx-pagination>
     `,
+    standalone: true,
+    imports: [NxPaginationModule, BidiModule],
 })
 class AdvancedPagination extends PaginationTest {
     count = 210;
@@ -336,14 +501,16 @@ class AdvancedPagination extends PaginationTest {
 @Component({
     template: `
         <nx-pagination
-            [nxCount]="count"
-            [nxPage]="page"
-            [nxPerPage]="perPage"
-            (nxGoPrev)="prevPage()"
-            (nxGoNext)="nextPage()"
-            (nxGoPage)="goToPage($event)"
+            [count]="count"
+            [page]="page"
+            [perPage]="perPage"
+            (goPrev)="prevPage()"
+            (goNext)="nextPage()"
+            (goPage)="goToPage($event)"
         ></nx-pagination>
     `,
+    standalone: true,
+    imports: [NxPaginationModule, BidiModule],
 })
 class SimplePagination extends PaginationTest {
     count = 210;
@@ -353,16 +520,18 @@ class SimplePagination extends PaginationTest {
 @Component({
     template: `
         <nx-pagination
-            [nxCount]="count"
-            [nxPage]="page"
-            [nxPerPage]="perPage"
-            nxType="advanced"
-            (nxGoPrev)="prevPage()"
-            (nxGoNext)="nextPage()"
-            (nxGoPage)="goToPage($event)"
+            [count]="count"
+            [page]="page"
+            [perPage]="perPage"
+            type="advanced"
+            (goPrev)="prevPage()"
+            (goNext)="nextPage()"
+            (goPage)="goToPage($event)"
         >
         </nx-pagination>
     `,
+    standalone: true,
+    imports: [NxPaginationModule, BidiModule],
 })
 class AdvancedPaginationLess10 extends PaginationTest {
     count = 30;
@@ -373,16 +542,18 @@ class AdvancedPaginationLess10 extends PaginationTest {
 @Component({
     template: `
         <nx-pagination
-            [nxCount]="count"
-            [nxPage]="page"
-            [nxPerPage]="perPage"
-            nxType="advanced"
-            (nxGoPrev)="prevPage()"
-            (nxGoNext)="nextPage()"
-            (nxGoPage)="goToPage($event)"
+            [count]="count"
+            [page]="page"
+            [perPage]="perPage"
+            type="advanced"
+            (goPrev)="prevPage()"
+            (goNext)="nextPage()"
+            (goPage)="goToPage($event)"
         >
         </nx-pagination>
     `,
+    standalone: true,
+    imports: [NxPaginationModule, BidiModule],
 })
 class AdvancedPaginationMore10 extends PaginationTest {
     count = 210;
@@ -393,16 +564,18 @@ class AdvancedPaginationMore10 extends PaginationTest {
 @Component({
     template: `
         <nx-pagination
-            [nxCount]="count"
-            [nxPage]="page"
-            [nxPerPage]="perPage"
-            nxType="advanced"
-            (nxGoPrev)="prevPage()"
-            (nxGoNext)="nextPage()"
-            (nxGoPage)="goToPage($event)"
+            [count]="count"
+            [page]="page"
+            [perPage]="perPage"
+            type="advanced"
+            (goPrev)="prevPage()"
+            (goNext)="nextPage()"
+            (goPage)="goToPage($event)"
         >
         </nx-pagination>
     `,
+    standalone: true,
+    imports: [NxPaginationModule, BidiModule],
 })
 class AdvancedPaginationBeginat10 extends PaginationTest {
     count = 210;
@@ -414,14 +587,16 @@ class AdvancedPaginationBeginat10 extends PaginationTest {
 @Component({
     template: `
         <nx-pagination
-            [nxCount]="count"
-            [nxPage]="page"
-            [nxPerPage]="perPage"
-            (nxGoPrev)="prevPage()"
-            (nxGoNext)="nextPage()"
-            (nxGoPage)="goToPage($event)"
+            [count]="count"
+            [page]="page"
+            [perPage]="perPage"
+            (goPrev)="prevPage()"
+            (goNext)="nextPage()"
+            (goPage)="goToPage($event)"
         ></nx-pagination>
     `,
+    standalone: true,
+    imports: [NxPaginationModule, BidiModule],
 })
 class SimplePaginationBeginat10 extends PaginationTest {
     count = 210;
@@ -431,16 +606,11 @@ class SimplePaginationBeginat10 extends PaginationTest {
 
 @Component({
     template: `
-        <nx-pagination
-            [nxCount]="count"
-            [nxPage]="2"
-            [nxPerPage]="perPage"
-            (nxGoPrev)="prevPage()"
-            (nxGoNext)="nextPage()"
-            (nxGoPage)="goToPage($event)"
-        ></nx-pagination>
+        <nx-pagination [count]="count" [page]="2" [perPage]="perPage" (goPrev)="prevPage()" (goNext)="nextPage()" (goPage)="goToPage($event)"></nx-pagination>
     `,
     providers: [{ provide: NX_PAGINATION_TEXTS, useValue: customTexts }],
+    standalone: true,
+    imports: [NxPaginationModule, BidiModule],
 })
 class LocalizationToken extends PaginationTest {
     count = 210;
@@ -451,15 +621,17 @@ class LocalizationToken extends PaginationTest {
     template: `
         <div [dir]="direction">
             <nx-pagination
-                [nxCount]="count"
-                [nxPage]="page"
-                [nxPerPage]="perPage"
-                (nxGoPrev)="prevPage()"
-                (nxGoNext)="nextPage()"
-                (nxGoPage)="goToPage($event)"
+                [count]="count"
+                [page]="page"
+                [perPage]="perPage"
+                (goPrev)="prevPage()"
+                (goNext)="nextPage()"
+                (goPage)="goToPage($event)"
             ></nx-pagination>
         </div>
     `,
+    standalone: true,
+    imports: [NxPaginationModule, BidiModule],
 })
 class SimplePaginationWithDirection extends PaginationTest {
     direction: Direction = 'ltr';
@@ -471,21 +643,93 @@ class SimplePaginationWithDirection extends PaginationTest {
     template: `
         <div [dir]="direction">
             <nx-pagination
-                [nxCount]="count"
-                [nxPage]="page"
-                [nxPerPage]="perPage"
-                [nxType]="type"
-                (nxGoPrev)="prevPage()"
-                (nxGoNext)="nextPage()"
-                (nxGoPage)="goToPage($event)"
+                [count]="count"
+                [page]="page"
+                [perPage]="perPage"
+                [type]="type"
+                (goPrev)="prevPage()"
+                (goNext)="nextPage()"
+                (goPage)="goToPage($event)"
             >
             </nx-pagination>
         </div>
     `,
+    standalone: true,
+    imports: [NxPaginationModule, BidiModule],
 })
 class AdvancedPaginationWithDirection extends PaginationTest {
     direction: Direction = 'ltr';
     count = 210;
     perPage = 10;
     type = 'advanced';
+}
+
+@Component({
+    template: `
+        <nx-pagination
+            [count]="slides"
+            [page]="activeSlide"
+            type="slider"
+            (goPrev)="prevPage()"
+            (goNext)="nextPage()"
+            (goPage)="goToPage($event)"
+        ></nx-pagination>
+    `,
+    standalone: true,
+    imports: [NxPaginationModule, BidiModule],
+})
+class SliderPagination extends PaginationTest {
+    slides = 6;
+    activeSlide = 1;
+}
+
+@Component({
+    template: `
+        <nx-pagination [count]="slides" [page]="activeSlide" type="slider" (goPrev)="prevPage()" (goNext)="nextPage()" (goPage)="goToPage($event)">
+        </nx-pagination>
+    `,
+    standalone: true,
+    imports: [NxPaginationModule, BidiModule],
+})
+class SliderPaginationBeginat6 extends PaginationTest {
+    slides = 6;
+    activeSlide = 6;
+}
+
+@Component({
+    template: `
+        <nx-pagination
+            [count]="count"
+            [page]="page"
+            [perPage]="perPage"
+            (goPrev)="prevPage()"
+            (goNext)="nextPage()"
+            (goPage)="goToPage($event)"
+        ></nx-pagination>
+    `,
+    standalone: true,
+    imports: [NxPaginationModule, BidiModule],
+})
+class FocusCurrentPageButtonPagination extends PaginationTest {
+    @ViewChildren('link') _linkElements!: QueryList<ElementRef>;
+    lastInteractedButtonIsPage = true;
+    count = 210;
+    perPage = 10;
+
+    focusCurrentPageButton(): void {
+        if (!!this._linkElements && (this.lastInteractedButtonIsPage || this._isPaginationPreviousDisabled() || this._isPaginationNextDisabled())) {
+            const currentButton = this._linkElements.find(el => el.nativeElement.innerText === this.page.toString());
+            if (currentButton) {
+                currentButton.nativeElement.focus();
+            }
+        }
+    }
+
+    _isPaginationPreviousDisabled(): boolean {
+        return false;
+    }
+
+    _isPaginationNextDisabled(): boolean {
+        return false;
+    }
 }

@@ -15,14 +15,26 @@
         class="nx-margin-bottom-s"
         nxFileUploadButton
     >
-        <nx-icon name="plus" class="nx-margin-right-2xs"></nx-icon>
+        <nx-icon
+            name="plus"
+            class="nx-margin-right-2xs"
+            aria-hidden="true"
+        ></nx-icon>
         Add File
     </button>
 </nx-file-uploader>
 
-<nx-error *ngIf="showUploadError"> An error occured while uploading. </nx-error>
-<nx-error *ngIf="ngModel.control.hasError('required')">Required!</nx-error>
-
+@if (showUploadError) {
+<nx-error>
+    <div class="nx-font-weight-bold">Error</div>
+    <ul>
+        <li>An error occured while uploading.</li>
+        @if (ngModel.control.hasError('required')) {
+        <li>Required!</li>
+        }
+    </ul>
+</nx-error>
+}
 <button
     nxButton="secondary small"
     type="button"
@@ -69,11 +81,11 @@
                 >Do you own all rights to this picture?</nx-label
             >
             <div class="horizontal-buttons">
-                <nx-radio [nxValue]="true" class="nx-margin-bottom-m"
+                <nx-radio [value]="true" class="nx-margin-bottom-m"
                     >Yes</nx-radio
                 >
                 <nx-radio
-                    [nxValue]="false"
+                    [value]="false"
                     class="nx-margin-left-s nx-margin-bottom-m"
                     >No</nx-radio
                 >

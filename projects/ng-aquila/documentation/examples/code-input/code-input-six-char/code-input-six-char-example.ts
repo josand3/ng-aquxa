@@ -1,9 +1,14 @@
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import {
-    UntypedFormControl,
-    UntypedFormGroup,
+    FormControl,
+    FormGroup,
+    FormsModule,
+    ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
+import { NxErrorComponent } from '@aposin/ng-aquila/base';
+import { NxButtonComponent } from '@aposin/ng-aquila/button';
+import { NxCodeInputComponent } from '@aposin/ng-aquila/code-input';
 
 /**
  * @title Six character code input example
@@ -13,14 +18,22 @@ import {
     templateUrl: 'code-input-six-char-example.html',
     styleUrls: ['code-input-six-char-example.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        NxCodeInputComponent,
+        NxErrorComponent,
+        NxButtonComponent,
+    ],
 })
 export class CodeInputSixCharExampleComponent implements OnInit {
     inputValue = '';
-    codeForm!: UntypedFormGroup;
+    codeForm!: FormGroup;
 
     ngOnInit() {
-        this.codeForm = new UntypedFormGroup({
-            keyCode: new UntypedFormControl(this.inputValue, {
+        this.codeForm = new FormGroup({
+            keyCode: new FormControl(this.inputValue, {
                 validators: [Validators.required, Validators.minLength(6)],
                 updateOn: 'blur',
             }),

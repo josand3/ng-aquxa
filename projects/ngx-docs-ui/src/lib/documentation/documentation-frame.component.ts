@@ -1,15 +1,24 @@
-import { AfterViewInit, Component, Inject, InjectionToken, OnDestroy, Optional, ViewChild } from '@angular/core';
-import { ActivatedRoute, NavigationEnd, NavigationStart, Router } from '@angular/router';
-import { NxIconRegistry } from '@aposin/ng-aquila/icon';
+import { AsyncPipe, NgComponentOutlet } from '@angular/common';
+import { AfterViewInit, Component, effect, Inject, InjectionToken, OnDestroy, Optional, viewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, NavigationEnd, NavigationStart, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NxErrorModule } from '@aposin/ng-aquila/base';
+import { NxButtonModule } from '@aposin/ng-aquila/button';
+import { NxHeaderModule } from '@aposin/ng-aquila/header';
+import { NxIconModule, NxIconRegistry } from '@aposin/ng-aquila/icon';
+import { NxLinkModule } from '@aposin/ng-aquila/link';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-import { NX_DOCS_GITHUB_LINK, NX_DOCS_LOGO_PATH } from '../core/tokens';
-import { GithubLinkConfig, LogoPath } from '../core/types';
+import { NX_ANNOUNCEMENT, NX_DOCS_GITHUB_LINK, NX_DOCS_HEADER_SLOT, NX_DOCS_LOGO_PATH } from '../core/tokens';
+import { GithubLinkConfig, LogoPath, NxAnnouncement } from '../core/types';
 import { ManifestService } from '../service/manifest.service';
+import { NxVersionSelectComponent } from './component-documentation/version-select/version-select.component';
 import { CssVarSidebarComponent } from './css-vars-sandbox/css-var-sidebar-component';
 import { Egg } from './egg';
 import { RabbitHole } from './rabbit-hole.service';
+import { NxvSearchInputComponent } from './search-input/search-input.component';
+import { NxvThemeSwitcherComponent } from './theme-switcher/theme-switcher.component';
 import { Theme, ThemeSwitcherService } from './theme-switcher/theme-switcher.service';
 
 export class NxDocFeatures {
@@ -24,13 +33,29 @@ export const NX_DOCS_FEATURE_FLAGS = new InjectionToken<NxDocFeatures>('NX_DOCS_
     styleUrls: ['./documentation-frame.scss'],
     host: {
         '[class.hide-nav]': 'hideNavigation',
+        '[style.padding-top.px]': 'showAnnouncement ? 120 : null',
     },
+    standalone: true,
+    imports: [
+        NxHeaderModule,
+        NxErrorModule,
+        NxLinkModule,
+        RouterLink,
+        RouterLinkActive,
+        NxvSearchInputComponent,
+        NxvThemeSwitcherComponent,
+        NxVersionSelectComponent,
+        NgComponentOutlet,
+        NxButtonModule,
+        NxIconModule,
+        RouterOutlet,
+        FormsModule,
+        CssVarSidebarComponent,
+        AsyncPipe,
+    ],
 })
 export class DocumentationFrameComponent implements OnDestroy, AfterViewInit {
     manifestFile!: Blob;
-    selectedTheme: Theme;
-    themes: Theme[];
-
     mobileSidebar = false;
 
     showThemingSwitcher = false;
@@ -39,10 +64,11 @@ export class DocumentationFrameComponent implements OnDestroy, AfterViewInit {
 
     showMobileMenuButton = false;
 
+    showAnnouncement = false;
+
     hideNavigation = false;
 
-    @ViewChild(CssVarSidebarComponent)
-    cssVarSidebar!: CssVarSidebarComponent;
+    cssVarSidebar = viewChild(CssVarSidebarComponent);
 
     private readonly _destroyed = new Subject<void>();
 
@@ -51,27 +77,27 @@ export class DocumentationFrameComponent implements OnDestroy, AfterViewInit {
         private readonly _rabbitHole: RabbitHole,
         private readonly _route: ActivatedRoute,
         private readonly _router: Router,
-        private readonly _themeSwitcherService: ThemeSwitcherService,
+        protected readonly _themeSwitcherService: ThemeSwitcherService,
         private readonly iconRegistry: NxIconRegistry,
         @Optional() @Inject(NX_DOCS_FEATURE_FLAGS) private readonly _featureFlags: NxDocFeatures | null,
         @Inject(NX_DOCS_LOGO_PATH) readonly logoPath: LogoPath,
         @Inject(NX_DOCS_GITHUB_LINK) readonly githubLinkConfig: GithubLinkConfig,
+        @Optional() @Inject(NX_DOCS_HEADER_SLOT) readonly headerSlot: new () => Component,
+        @Optional() @Inject(NX_ANNOUNCEMENT) readonly announcement: NxAnnouncement,
     ) {
-        this.themes = this._themeSwitcherService.themes();
         this.showThemingSwitcher = this._featureFlags ? this._featureFlags.themeSwitcher : false;
+        this.showAnnouncement = this.announcement && this.announcement?.endTime >= new Date();
 
         const themeQuery = this._route.snapshot.queryParamMap.get('theme');
         const themeFromQuery = this._themeSwitcherService.get(themeQuery!);
         if (themeFromQuery) {
-            this.selectedTheme = themeFromQuery;
-            this._themeSwitcherService.switchTheme(this.selectedTheme);
-        } else {
-            this.selectedTheme = this.themes[0];
+            this._themeSwitcherService.switchTheme(themeFromQuery);
         }
 
         this._rabbitHole.showThemeEgg.pipe(takeUntil(this._destroyed)).subscribe(showTheming => {
+            console.log('rabbit hole', showTheming);
             if (showTheming) {
-                this._themeSwitcherService.switchTheme(this.selectedTheme);
+                this._themeSwitcherService.switchTheme(this._themeSwitcherService.selectedTheme());
             } else if (themeFromQuery) {
                 this._themeSwitcherService.switchTheme(themeFromQuery);
             } else {
@@ -85,10 +111,17 @@ export class DocumentationFrameComponent implements OnDestroy, AfterViewInit {
 
         this.hideNavigation = !!this._route.snapshot.queryParamMap.get('hideNav');
 
-        this._themeSwitcherService.themeChanged.pipe(takeUntil(this._destroyed)).subscribe(theme => {
-            this.selectedTheme = theme;
-            if (this.cssVarSidebar) {
-                this.cssVarSidebar.reset();
+        effect(() => {
+            if (this.cssVarSidebar()) {
+                this.cssVarSidebar()?.reset();
+            }
+        });
+
+        effect(() => {
+            // we need this that the effect fires
+            const theme = this._themeSwitcherService.selectedTheme();
+            if (this.cssVarSidebar()) {
+                this.cssVarSidebar()?.reset();
             }
         });
 
@@ -108,7 +141,6 @@ export class DocumentationFrameComponent implements OnDestroy, AfterViewInit {
     }
 
     selectTheme(theme: Theme) {
-        this.selectedTheme = theme;
         this._themeSwitcherService.switchTheme(theme);
     }
 

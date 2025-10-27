@@ -1,13 +1,11 @@
-import { BACKSPACE, DELETE } from '@angular/cdk/keycodes';
 import { ChangeDetectionStrategy, Component, Directive, Type, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { dispatchKeyboardEvent } from '../cdk-test-utils';
 import { NxTaglistComponent } from './taglist.component';
 import { NxTaglistModule } from './taglist.module';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class TaglistTest {
     @ViewChild(NxTaglistComponent) taglistInstance!: NxTaglistComponent;
     tags: (string | object)[] = ['foo', 'bar'];
@@ -39,8 +37,7 @@ describe('NxTaglistComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [BasicTaglist, TaglistNoDelete, TaglistObjects, TaglistWithFormatter, AriaLabelledByTaglist, TaglistOnPush],
-            imports: [NxTaglistModule],
+            imports: [NxTaglistModule, BasicTaglist, TaglistNoDelete, TaglistObjects, TaglistWithFormatter, AriaLabelledByTaglist, TaglistOnPush],
         }).compileComponents();
     }));
 
@@ -73,14 +70,23 @@ describe('NxTaglistComponent', () => {
 
     it('deletes tags on delete button click and focuses the next one', () => {
         createTestComponent(BasicTaglist);
-        const firstTag = tagElements.item(0);
-        firstTag.focus();
-        dispatchKeyboardEvent(firstTag, 'keydown', DELETE);
-
+        const firstTagDeleteButton = tagElements.item(0).querySelector('.nx-tag__close') as HTMLButtonElement;
+        firstTagDeleteButton.click();
         fixture.detectChanges();
 
         expect(taglistInstance.tags).toHaveSize(1);
         expect(document.activeElement).toEqual(tagElements.item(1));
+    });
+
+    it('deletes tags on delete button click and focuses the previous one', () => {
+        createTestComponent(BasicTaglist);
+        const lastTag = tagElements.item(tagElements.length - 1);
+        const lastTagDeleteButton = lastTag.querySelector('.nx-tag__close') as HTMLButtonElement;
+        lastTagDeleteButton.click();
+        fixture.detectChanges();
+
+        expect(taglistInstance.tags).toHaveSize(1);
+        expect(document.activeElement).toEqual(tagElements.item(tagElements.length - 2));
     });
 
     it('emits event on click', () => {
@@ -204,7 +210,7 @@ describe('NxTaglistComponent', () => {
             fixture.detectChanges();
             tagElements = getTagElements();
             expect(tagElements.item(0).textContent?.trim()).toBe('');
-            testInstance.taglistInstance.labelProp = 'customLabelProp';
+            testInstance.taglistInstance.labelProperty = 'customLabelProp';
             fixture.detectChanges();
             tagElements = getTagElements();
             expect(tagElements.item(0).textContent?.trim()).toBe('a');
@@ -227,19 +233,11 @@ describe('NxTaglistComponent', () => {
     });
 
     describe('a11y', () => {
-        it('emits (removed) event on BACKSPACE key pressed', () => {
+        it('emits (removed) event on delete', () => {
             createTestComponent(BasicTaglist);
             spyOn(taglistInstance.tagsChange, 'emit');
-            const tag = listNativeElement.querySelectorAll('li').item(0).querySelector('nx-tag');
-            dispatchKeyboardEvent(tag as Node, 'keydown', BACKSPACE);
-            expect(taglistInstance.tagsChange.emit).toHaveBeenCalledWith(['bar']);
-        });
-
-        it('emits (removed) event on DELETE key pressed', () => {
-            createTestComponent(BasicTaglist);
-            spyOn(taglistInstance.tagsChange, 'emit');
-            const tag = listNativeElement.querySelectorAll('li').item(0).querySelector('nx-tag');
-            dispatchKeyboardEvent(tag as Node, 'keydown', DELETE);
+            const tag = listNativeElement.querySelectorAll('li').item(0).querySelector('.nx-tag__close') as HTMLButtonElement;
+            tag.click();
             expect(taglistInstance.tagsChange.emit).toHaveBeenCalledWith(['bar']);
         });
 
@@ -264,24 +262,32 @@ describe('NxTaglistComponent', () => {
 });
 
 @Component({
-    template: `<nx-taglist [nxTags]="tags">empty</nx-taglist>`,
+    template: `<nx-taglist [tags]="tags">empty</nx-taglist>`,
+    standalone: true,
+    imports: [NxTaglistModule],
 })
 class BasicTaglist extends TaglistTest {}
 
 @Component({
-    template: `<nx-taglist [nxTags]="tags" [nxAllowTagDeletion]="false"></nx-taglist>`,
+    template: `<nx-taglist [tags]="tags" [allowTagDeletion]="false"></nx-taglist>`,
+    standalone: true,
+    imports: [NxTaglistModule],
 })
 class TaglistNoDelete extends TaglistTest {}
 
 @Component({
-    template: `<nx-taglist [nxTags]="tags" nxLabelProperty="testLabelProp"></nx-taglist>`,
+    template: `<nx-taglist [tags]="tags" labelProperty="testLabelProp"></nx-taglist>`,
+    standalone: true,
+    imports: [NxTaglistModule],
 })
 class TaglistObjects extends TaglistTest {
     tags = [{ testLabelProp: 'foo' }, { testLabelProp: 'bar' }];
 }
 
 @Component({
-    template: `<nx-taglist [nxTags]="tags" [nxValueFormatter]="myFormatter">empty</nx-taglist>`,
+    template: `<nx-taglist [tags]="tags" [valueFormatter]="myFormatter">empty</nx-taglist>`,
+    standalone: true,
+    imports: [NxTaglistModule],
 })
 class TaglistWithFormatter extends TaglistTest {
     myFormatter = (value: any) => `my ${value}`;
@@ -289,7 +295,9 @@ class TaglistWithFormatter extends TaglistTest {
 
 @Component({
     changeDetection: ChangeDetectionStrategy.OnPush,
-    template: `<nx-taglist [nxTags]="tags">empty</nx-taglist>`,
+    template: `<nx-taglist [tags]="tags">empty</nx-taglist>`,
+    standalone: true,
+    imports: [NxTaglistModule],
 })
 class TaglistOnPush extends TaglistTest {}
 
@@ -297,8 +305,10 @@ class TaglistOnPush extends TaglistTest {}
     template: `
         <h5 id="taglist-headline">Aria label</h5>
         <h5 id="taglist-headline2">Other label</h5>
-        <nx-taglist [nxTags]="tags" [aria-labelledby]="labelledBy"></nx-taglist>
+        <nx-taglist [tags]="tags" [aria-labelledby]="labelledBy"></nx-taglist>
     `,
+    standalone: true,
+    imports: [NxTaglistModule],
 })
 class AriaLabelledByTaglist extends TaglistTest {
     labelledBy = 'taglist-headline';

@@ -1,33 +1,48 @@
 import { Component, Injectable, OnInit } from '@angular/core';
 import {
-    UntypedFormControl,
-    UntypedFormGroup,
+    FormControl,
+    FormGroup,
+    FormsModule,
+    ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
-import { NxCodeInputIntl } from '@aposin/ng-aquila/code-input';
+import { NxErrorComponent } from '@aposin/ng-aquila/base';
+import { NxButtonComponent } from '@aposin/ng-aquila/button';
+import {
+    NxCodeInputComponent,
+    NxCodeInputIntl,
+} from '@aposin/ng-aquila/code-input';
 
 @Injectable()
 export class MyIntl extends NxCodeInputIntl {
-    inputFieldAriaLabel = 'Key eingeben';
+    inputFieldAriaLabel = 'Geben Sie den OTP-Code ein';
     ofLabel = 'von';
 }
 
 /**
- * @title Localization example
+ * @title Aria labelling example
  */
 @Component({
     selector: 'code-input-localize-example',
     templateUrl: 'code-input-localize-example.html',
     styleUrls: ['code-input-localize-example.css'],
     providers: [{ provide: NxCodeInputIntl, useClass: MyIntl }],
+    standalone: true,
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        NxCodeInputComponent,
+        NxErrorComponent,
+        NxButtonComponent,
+    ],
 })
 export class CodeInputLocalizeExampleComponent implements OnInit {
     inputValue = '';
-    codeForm!: UntypedFormGroup;
+    codeForm!: FormGroup;
 
     ngOnInit() {
-        this.codeForm = new UntypedFormGroup({
-            keyCode: new UntypedFormControl(this.inputValue, {
+        this.codeForm = new FormGroup({
+            keyCode: new FormControl(this.inputValue, {
                 validators: [
                     Validators.required,
                     Validators.pattern('[A-Z]+'),

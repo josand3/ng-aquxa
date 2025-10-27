@@ -5,6 +5,7 @@ b2c: true
 expert: true
 stable: done
 alias: container, column, layout
+a1: true
 ---
 
 The application grid is based on 12 columns with tiers spread over the given set of breakpoints. That way, you can maintain different layouts corresponding to each group of devices.
@@ -25,7 +26,7 @@ This bar will show you the current tier of the grid. Change the size of your bro
 
 #### Breakpoints
 
-You can size columns and apply modifications (like justify, push, pull properties) depending on a given set of breakpoints. You will find a set of 7 tiers called tiny, small, medium, large, xlarge, 2xlarge and 3xlarge. We are mobile first, so you will never use tiny as it's the default case.
+You can size columns and apply modifiers (like justify or offset properties) depending on a given set of breakpoints. You will find a set of 7 tiers called tiny, small, medium, large, xlarge, 2xlarge and 3xlarge. We are mobile first, so you will never use tiny as it's the default case.
 
 When you specify a tier, it is always understood as from that tier up.
 
@@ -80,7 +81,30 @@ Never forget a row when using a column; otherwise you will have spacing problems
 
 The grid is based on the common 12 column base. This means that a single column takes up 1/12 of the available width. You can configure a column to take up more space ranging from 1 to 12 columns by using the directive `nxCol`.
 
-There are modifiers available like `align-self-start`, `push`, `pull` and `offset`.
+There are modifiers available like `align-self-start` and `offset`.
+
+### CSS Media and Container Queries
+
+CSS Media Queries allow for the styling of web content based on the characteristics of the device or browser that it is being viewed on, while CSS Container Queries enable responsive design by allowing elements to adapt their styling based on the size of their container rather than the viewport.
+You can choose the query type for each grid based on your needs.
+
+#### Media Queries
+
+Media queries are based on the browser where the web page is viewed on.
+We use CSS Media Queries as the default. All components and examples are based on Media Queries if not stated otherwise.
+
+#### Container Queries
+
+Container queries are a way to create layouts that are based on the size of each individual container, rather than the viewport.
+Checkout the [mozilla container queries documentation](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_container_queries) for more information.
+
+To enable container querying use `[containerQuery]="true"` on the grid.
+
+This example illustrates the difference between media and container queries. Both sub grids use the same definitions for __rows__ and __columns__. The only difference is the query type.
+Watch the container grid adjust to changes of the container size in contrast to the media query grid.
+
+<!-- example(grid-query-comparison) -->
+
 
 ### Examples
 
@@ -124,7 +148,7 @@ For example:
 
 #### nxCol: Offset columns
 
-If you want to offset a column you can use the `nxColOffset` property similar to the `nxCol` logic.
+If you want to offset a column you can use the `colOffset` property similar to the `nxCol` logic.
 
 <!-- example(grid-offset) -->
 
@@ -135,7 +159,7 @@ Use `nogutters` to remove the spacing from rows and (direct) columns. Use `nopad
 <!-- example(grid-nogutter) -->
 
 #### Grid in grid
-You can nest grids inside of other grids to get subdivided columns and achieve more granular positioning. Make sure to use `nogutter` and `nopadding` for [grid in grid scenario](./documentation/grid/overview#nogutters-and-nopadding).
+You can nest grids inside of other grids to get subdivided columns and achieve more granular positioning. Make sure to use `nogutters` and `nopadding` for [grid in grid scenario](./documentation/grid/overview#nogutters-and-nopadding).
 <!-- example(grid-in-grid) -->
 
 #### MaxWidth
@@ -144,32 +168,33 @@ In order to constrain the grid, define an overall maximum width (width: 1184px a
 
 <!-- example(grid-maxwidth) -->
 
-#### nxRowJustify
+#### rowJustify
 
-The `nxRowJustify` directive aligns the flexible container's items when the items do not use all available space on the main axis (horizontally).
+The `rowJustify` directive aligns the flexible container's items when the items do not use all available space on the main axis (horizontally).
 
 <!-- example(grid-justify) -->
 
-#### nxRowAlignContent
+#### rowAlignContent
 
-To modify the behavior of the flex-wrap property, use the `nxRowAlignContent` directive. It is similar to `nxRowAlignItems`, but instead of aligning flex items, it aligns flex lines.
+To modify the behavior of the flex-wrap property, use the `rowAlignContent` directive. It is similar to `rowAlignItems`, but instead of aligning flex items, it aligns flex lines.
 
 <!-- example(grid-align-content) -->
 
-#### nxRowAlignItems
+#### rowAlignItems
 
-The `nxRowAlignItems` directive defines the default vertical alignment for items inside the flexible container.
+The `rowAlignItems` directive defines the default vertical alignment for items inside the flexible container.
 
 <!-- example(grid-align-items) -->
 
-#### nxAlignSelf
+#### alignSelf
 
-The `nxAlignSelf` property specifies the alignment for a selected item inside the flexible container.
+The `alignSelf` property specifies the alignment for a selected item inside the flexible container.
 
 <!-- example(grid-align-self) -->
 
-#### nxColOrder
+#### colOrder
 
-To specify the order within the row, apply the `nxColOrder` property.
+To specify the order within the row, apply the `colOrder` property.
 
 <!-- example(grid-col-order) -->
+

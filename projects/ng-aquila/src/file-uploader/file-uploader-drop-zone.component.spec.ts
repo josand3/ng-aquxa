@@ -1,7 +1,7 @@
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { Component, DebugElement, Directive, Type, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { NxErrorModule, NxLabelModule } from '@aposin/ng-aquila/base';
 import { NxIconModule } from '@aposin/ng-aquila/icon';
@@ -11,11 +11,11 @@ import { FileItem } from './file-uploader.model';
 import { NxFileUploaderModule } from './file-uploader.module';
 import { NxFileUploaderDropZoneComponent } from './file-uploader-drop-zone.component';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class FileUploaderTest {
     @ViewChild(NxFileUploaderComponent, { static: false }) fileUploaderInstance!: NxFileUploaderComponent;
 
-    form!: UntypedFormGroup;
+    form!: FormGroup;
     queueList!: null | FileItem[];
     required = false;
     multiple = false;
@@ -41,8 +41,8 @@ describe('NxFileUploaderComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DropZoneFileUpload],
-            imports: [NxFileUploaderModule, NxLabelModule, NxIconModule, ReactiveFormsModule, FormsModule, NxErrorModule, HttpClientModule],
+            imports: [NxFileUploaderModule, NxLabelModule, NxIconModule, ReactiveFormsModule, FormsModule, NxErrorModule, DropZoneFileUpload],
+            providers: [provideHttpClient(withInterceptorsFromDi())],
         }).compileComponents();
     }));
 
@@ -109,16 +109,21 @@ describe('NxFileUploaderComponent', () => {
                         Add Files
                     </button>
                 </nx-file-uploader-drop-zone>
-                <nx-error *ngIf="form.controls['documents'].hasError('required')">Required!</nx-error>
-                <nx-error *ngIf="form.controls['documents'].hasError('NxFileUploadMaxFileSize')">
+                @if (form.controls['documents'].hasError('required')) {
+                <nx-error>Required!</nx-error>
+                } @if (form.controls['documents'].hasError('NxFileUploadMaxFileSize')) {
+                <nx-error>
                     File „ {{ form.controls['documents'].getError('NxFileUploadMaxFileSize').fileName | json }}“ can not be uploaded. File size exceeds size
                     limit!
                 </nx-error>
+                }
             </nx-file-uploader>
 
             <button nxButton="primary" type="submit" id="submit-button">Upload files</button>
         </form>
     `,
+    standalone: true,
+    imports: [NxFileUploaderModule, NxLabelModule, NxIconModule, ReactiveFormsModule, FormsModule, NxErrorModule],
 })
 class DropZoneFileUpload extends FileUploaderTest {
     fb;
@@ -129,7 +134,7 @@ class DropZoneFileUpload extends FileUploaderTest {
     constructor() {
         super();
 
-        this.fb = new UntypedFormBuilder();
+        this.fb = new FormBuilder();
         this.form = this.fb.group({
             documents: [this.queueList, Validators.required],
         });

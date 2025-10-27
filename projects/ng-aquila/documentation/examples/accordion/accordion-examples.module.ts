@@ -9,11 +9,13 @@ import { AccordionExampleComponent } from './accordion/accordion-example';
 import { AccordionErrorExampleComponent } from './accordion-error/accordion-error-example';
 import { AccordionExtraLightExampleComponent } from './accordion-extra-light/accordion-extra-light-example';
 import { AccordionExtraLightNegativeExampleComponent } from './accordion-extra-light-negative/accordion-extra-light-negative-example';
+import { AccordionFlushExampleComponent } from './accordion-flush/accordion-flush-example';
 import { AccordionLazyExampleComponent } from './accordion-lazy/accordion-lazy-example';
 import { AccordionLightExampleComponent } from './accordion-light/accordion-light-example';
 import { AccordionLightNegativeExampleComponent } from './accordion-light-negative/accordion-light-negative-example';
 import { AccordionMultiExampleComponent } from './accordion-multi/accordion-multi-example';
 import { AccordionNegativeExampleComponent } from './accordion-negative/accordion-negative-example';
+import { AccordionScrollSmoothExampleComponent } from './accordion-scroll-smooth/accordion-scroll-smooth-example';
 import { AccordionStandaloneExampleComponent } from './accordion-standalone/accordion-standalone-example';
 
 const EXAMPLES = [
@@ -27,6 +29,7 @@ const EXAMPLES = [
     AccordionMultiExampleComponent,
     AccordionNegativeExampleComponent,
     AccordionStandaloneExampleComponent,
+    AccordionScrollSmoothExampleComponent,
 ];
 
 @NgModule({
@@ -36,8 +39,8 @@ const EXAMPLES = [
         NxIconModule,
         NxMessageModule,
         ExamplesSharedModule,
+        EXAMPLES,
     ],
-    declarations: [EXAMPLES],
     exports: [EXAMPLES],
 })
 export class AccordionExamplesModule {
@@ -54,6 +57,8 @@ export class AccordionExamplesModule {
             'accordion-multi': AccordionMultiExampleComponent,
             'accordion-negative': AccordionNegativeExampleComponent,
             'accordion-standalone': AccordionStandaloneExampleComponent,
+            'accordion-scroll-smooth': AccordionScrollSmoothExampleComponent,
+            'accordion-flush': AccordionFlushExampleComponent,
         };
     }
 }

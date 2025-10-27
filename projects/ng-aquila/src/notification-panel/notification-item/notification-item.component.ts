@@ -1,6 +1,6 @@
 import { FocusableOption, FocusMonitor, FocusOrigin } from '@angular/cdk/a11y';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Component, ElementRef, Input, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Input, OnDestroy } from '@angular/core';
 import { Subject } from 'rxjs';
 
 @Component({
@@ -14,8 +14,9 @@ import { Subject } from 'rxjs';
         '(focus)': 'focus()',
         '(blur)': '_blur()',
     },
+    standalone: true,
 })
-export class NxNotificationPanelItemComponent implements FocusableOption, OnDestroy {
+export class NxNotificationPanelItemComponent implements FocusableOption, OnDestroy, AfterViewInit {
     @Input() set read(value: BooleanInput) {
         this._read = coerceBooleanProperty(value);
     }
@@ -36,7 +37,9 @@ export class NxNotificationPanelItemComponent implements FocusableOption, OnDest
 
     private _hasFocus = false;
 
-    constructor(private readonly _elementRef: ElementRef, private readonly _focusMonitor: FocusMonitor) {
+    constructor(private readonly _elementRef: ElementRef, private readonly _focusMonitor: FocusMonitor) {}
+
+    ngAfterViewInit(): void {
         this._focusMonitor.monitor(this._elementRef);
     }
 

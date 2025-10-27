@@ -1,6 +1,15 @@
-import { Component, Injectable } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { NxBadgeComponent } from '@aposin/ng-aquila/badge';
+import { NxLinkComponent } from '@aposin/ng-aquila/link';
 import {
-    NxSortHeaderIntl,
+    NxHeaderCellDirective,
+    NxSortDirective,
+    NxSortHeaderComponent,
+    NxTableCellComponent,
+    NxTableComponent,
+    NxTableRowComponent,
     SortDirection,
     SortEvent,
 } from '@aposin/ng-aquila/table';
@@ -15,14 +24,6 @@ interface Contract {
     statusText: string;
 }
 
-@Injectable()
-export class MyIntl extends NxSortHeaderIntl {
-    sortAscendingAriaLabel = 'click to sort ascending';
-    sortDescendingAriaLabel = 'click to sort descending';
-    sortedAscendingAriaLabel = 'sorted ascending by';
-    sortedDescendingAriaLabel = 'sorted descending by';
-}
-
 /**
  * @title Sorting example
  */
@@ -30,7 +31,19 @@ export class MyIntl extends NxSortHeaderIntl {
     selector: 'table-sorting-example',
     templateUrl: './table-sorting-example.html',
     styleUrls: ['table-sorting-example.css'],
-    providers: [{ provide: NxSortHeaderIntl, useClass: MyIntl }],
+    standalone: true,
+    imports: [
+        NxTableComponent,
+        NxSortDirective,
+        NxTableRowComponent,
+        NxSortHeaderComponent,
+        NxHeaderCellDirective,
+        NxTableCellComponent,
+        NxLinkComponent,
+        RouterLink,
+        NxBadgeComponent,
+        DatePipe,
+    ],
 })
 export class TableSortingExampleComponent {
     tableElements: Contract[] = [
@@ -95,6 +108,11 @@ export class TableSortingExampleComponent {
         b: number | string | Date,
         direction: SortDirection,
     ) {
-        return (a < b ? -1 : 1) * (direction === 'asc' ? 1 : -1);
+        if (a < b) {
+            return direction === 'asc' ? -1 : 1;
+        } else if (a > b) {
+            return direction === 'asc' ? 1 : -1;
+        }
+        return 0;
     }
 }

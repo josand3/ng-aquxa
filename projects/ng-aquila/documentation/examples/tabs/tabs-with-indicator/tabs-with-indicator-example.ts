@@ -1,4 +1,10 @@
 import { Component } from '@angular/core';
+import { NxIndicatorComponent } from '@aposin/ng-aquila/indicator';
+import {
+    NxTabComponent,
+    NxTabGroupComponent,
+    NxTabLabelDirective,
+} from '@aposin/ng-aquila/tabs';
 
 /**
  * @title Tab group with indicators
@@ -7,6 +13,13 @@ import { Component } from '@angular/core';
     selector: 'tabs-with-indicator-example',
     templateUrl: './tabs-with-indicator-example.html',
     styleUrls: ['./tabs-with-indicator-example.css'],
+    standalone: true,
+    imports: [
+        NxTabGroupComponent,
+        NxTabComponent,
+        NxTabLabelDirective,
+        NxIndicatorComponent,
+    ],
 })
 export class TabsWithIndicatorExampleComponent {
     tabs = [
@@ -27,11 +40,12 @@ export class TabsWithIndicatorExampleComponent {
             label: 'Fourth tab',
             notification: true,
             notificationCount: 105,
+            disabled: true,
         },
     ];
 
     setSelectedTab(selectedTab: number) {
-        this.tabs[selectedTab]; // TODO do something
+        this.tabs[selectedTab];
     }
 
     getIndicatorText(notificationCount: number) {

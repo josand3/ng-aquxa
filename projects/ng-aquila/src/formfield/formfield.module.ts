@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { NxErrorModule, NxLabelModule } from '@aposin/ng-aquila/base';
+import { NxTooltipModule } from '@aposin/ng-aquila/tooltip';
 
 import { NxFormfieldAppendixDirective } from './appendix.directive';
 import { NxFormfieldErrorDirective } from './error.directive';
@@ -12,8 +13,9 @@ import { NxFormfieldPrefixDirective } from './prefix.directive';
 import { NxFormfieldSuffixDirective } from './suffix.directive';
 
 @NgModule({
-    imports: [CommonModule],
-    declarations: [
+    imports: [
+        CommonModule,
+        NxTooltipModule,
         NxFormfieldComponent,
         NxFormfieldHintDirective,
         NxFormfieldErrorDirective,

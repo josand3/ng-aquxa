@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
-import { NxListModule } from '@aposin/ng-aquila/list';
 
 import { ListCirclesExampleComponent } from './list-circles/list-circles-example';
+import { ListCondensedExampleComponent } from './list-condensed/list-condensed-example';
 import { ListCopytextExampleComponent } from './list-copytext/list-copytext-example';
 import { ListCustomColorExampleComponent } from './list-custom-color/list-custom-color-example';
 import { ListIconsExampleComponent } from './list-icons/list-icons-example';
@@ -19,11 +19,11 @@ const EXAMPLES = [
     ListNestingExampleComponent,
     ListOrderedExampleComponent,
     ListUnorderedExampleComponent,
+    ListCondensedExampleComponent,
 ];
 
 @NgModule({
-    imports: [NxListModule],
-    declarations: [EXAMPLES],
+    imports: [EXAMPLES],
     exports: [EXAMPLES],
 })
 export class ListExamplesModule {
@@ -37,6 +37,7 @@ export class ListExamplesModule {
             'list-nesting': ListNestingExampleComponent,
             'list-ordered': ListOrderedExampleComponent,
             'list-unordered': ListUnorderedExampleComponent,
+            'list-condensed': ListCondensedExampleComponent,
         };
     }
 }

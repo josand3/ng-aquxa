@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, ElementRef, Input, OnInit } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, ElementRef, inject, Input, isDevMode, Optional } from '@angular/core';
 import { mapClassNames } from '@aposin/ng-aquila/utils';
 
-import { addStylesFromDimensions, isEmptyArray, processSplit, validateClassInElement } from './utils';
+import { NxLayoutComponent } from './layout.component';
+import { NxRowComponent } from './row.component';
+import { addStylesFromDimensions, isEmptyArray, processSplit } from './utils';
 
 const MAPPING = {
     '': 'nx-grid__column-',
@@ -55,10 +57,14 @@ export type ColOrder = 'first' | 'last' | 'unordered';
     changeDetection: ChangeDetectionStrategy.OnPush,
     styleUrls: ['col.component.scss'],
     host: {
+        '[class.nx-grid__column]': 'true',
+        '[class.nx-grid__column--container-query]': 'gridLayoutComponent?.containerQuery ?? false',
+        '[class.nx-grid__column--media-query]': '!gridLayoutComponent?.containerQuery ?? true',
         '[class]': '_classNames',
     },
+    standalone: true,
 })
-export class NxColComponent implements OnInit {
+export class NxColComponent {
     /**
      * Overwrite default class property to access user provided class.
      *
@@ -78,6 +84,7 @@ export class NxColComponent implements OnInit {
             this.generateError('Exception: NxColDirective. Empty nxCol attribute.');
         }
     }
+
     private _columnClasses = '';
 
     /**
@@ -85,34 +92,41 @@ export class NxColComponent implements OnInit {
      *
      * Values: 1 - 12, default value: 12.
      */
-    @Input('nxColOffset') set offset(value: string) {
+    @Input('colOffset') set offset(value: string) {
         this._offsetClasses = this._mapTiers(value, [], OFFSET_MAPPING);
     }
+
     private _offsetClasses = '';
 
     /** The alignment for a column inside the flexible container. */
-    @Input('nxAlignSelf') set itemSelf(value: ColSelfAlignment | string) {
+    @Input('alignSelf') set itemSelf(value: ColSelfAlignment | string) {
         /** Values: auto, start, end, center, baseline, stretch */
         this._alignSelfClasses = value ? addStylesFromDimensions(value, MAPPING_ALIGN_SELF) : '';
     }
+
     private _alignSelfClasses = '';
 
     /** Order of the column within the row. */
-    @Input('nxColOrder') set order(value: ColOrder | string) {
+    @Input('colOrder') set order(value: ColOrder | string) {
         /** Values: first, last or unordered */
         this._orderClasses = value ? addStylesFromDimensions(value, MAPPING_ORDER) : '';
     }
+
     private _orderClasses = '';
 
     get _classNames() {
         return [this._columnClasses, this._offsetClasses, this._alignSelfClasses, this._orderClasses, this.class].filter(classes => classes?.length).join(' ');
     }
 
-    constructor(private readonly el: ElementRef) {}
+    private readonly row = inject(NxRowComponent, { optional: true });
 
-    ngOnInit(): void {
-        if (!validateClassInElement(this.el.nativeElement.parentElement, 'nxRow')) {
-            this.generateError("Exception: NxColDirective. nxRow don't exist");
+    constructor(private readonly el: ElementRef, @Optional() protected readonly gridLayoutComponent?: NxLayoutComponent) {
+        if (isDevMode()) {
+            afterNextRender(() => {
+                if (!this.row) {
+                    console.warn('NxColComponent: no nxRow found. Please make sure to use the nxCol directive within an element with the nxRow component.');
+                }
+            });
         }
     }
 

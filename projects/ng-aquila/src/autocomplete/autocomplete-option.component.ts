@@ -31,10 +31,12 @@ let _uniqueIdCounter = 0;
         '(click)': '_selectViaInteraction()',
         '(keydown)': '_handleKeydown($event)',
         '[class.nx-active]': 'active',
+        '(mousedown)': '_onMouseDown($event)',
         '[class.nx-disabled]': 'disabled',
         '[style.display]': '"block"', // needed for to be able to calculate offset height
     },
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
 })
 export class NxAutocompleteOptionComponent {
     /** Id of the autocomplete option. By default it is set to an incremented value. */
@@ -180,5 +182,10 @@ export class NxAutocompleteOptionComponent {
         if (typeof element.focus === 'function') {
             element.focus();
         }
+    }
+
+    _onMouseDown(event: Event) {
+        // this prevent focus which cause early error on input field.
+        event.preventDefault();
     }
 }

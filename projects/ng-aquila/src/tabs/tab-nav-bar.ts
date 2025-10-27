@@ -2,6 +2,7 @@ import { FocusMonitor } from '@angular/cdk/a11y';
 import { Directionality } from '@angular/cdk/bidi';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import {
+    AfterViewInit,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
@@ -17,7 +18,9 @@ import {
     SkipSelf,
     ViewChild,
 } from '@angular/core';
+import { NxViewportService } from '@aposin/ng-aquila/utils';
 
+import { NxTabScrollIndicator } from './scroll-indicator/scroll-indicator';
 import { NxScrollableTabBar } from './scrollable-tab-bar';
 import { NxTabsAppearance, TAB_NAV_BAR_DEFAULT_OPTIONS, TabNavBarDefaultOptions } from './tabs.models';
 
@@ -34,6 +37,8 @@ import { NxTabsAppearance, TAB_NAV_BAR_DEFAULT_OPTIONS, TabNavBarDefaultOptions 
         '[class.at-start]': '_isScrolledToStart',
         '[class.scrollable]': 'scrollable',
     },
+    standalone: true,
+    imports: [NxTabScrollIndicator],
 })
 export class NxTabNavBarComponent extends NxScrollableTabBar {
     @ViewChild('tabsList') scrollableTabsList!: ElementRef<HTMLElement>;
@@ -86,8 +91,9 @@ export class NxTabNavBarComponent extends NxScrollableTabBar {
         @Optional() _dir: Directionality | null,
         @Optional() @Inject(TAB_NAV_BAR_DEFAULT_OPTIONS) private readonly _defaultOptions: TabNavBarDefaultOptions | null,
         _element: ElementRef,
+        viewportService: NxViewportService,
     ) {
-        super(_cdr, _dir, _element);
+        super(_cdr, _dir, _element, viewportService);
     }
 }
 
@@ -101,8 +107,9 @@ export class NxTabNavBarComponent extends NxScrollableTabBar {
         '[attr.tabindex]': '_getTabIndex()',
         '[attr.aria-disabled]': 'disabled.toString()',
     },
+    standalone: true,
 })
-export class NxTabLinkDirective implements OnDestroy {
+export class NxTabLinkDirective implements OnDestroy, AfterViewInit {
     /** Whether the tab link is active and has the active styling. */
     @Input() set active(value: BooleanInput) {
         const newValue = coerceBooleanProperty(value);
@@ -135,7 +142,9 @@ export class NxTabLinkDirective implements OnDestroy {
         if (!this._tabNavBar) {
             throw Error(`The nx-tab-link element has to be wrapped in a nx-tab-nav-bar to work.`);
         }
+    }
 
+    ngAfterViewInit(): void {
         this._focusMonitor.monitor(this._elementRef);
     }
 

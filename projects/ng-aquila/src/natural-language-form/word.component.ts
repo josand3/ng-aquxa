@@ -20,10 +20,10 @@ import {
 } from '@angular/core';
 import { NxDropdownComponent } from '@aposin/ng-aquila/dropdown';
 import { NxFormfieldControl, NxFormfieldErrorDirective } from '@aposin/ng-aquila/formfield';
-import { NxPopoverComponent } from '@aposin/ng-aquila/popover';
+import { NxPopoverComponent, NxPopoverModule } from '@aposin/ng-aquila/popover';
 import { getFontShorthand } from '@aposin/ng-aquila/utils';
-import { Subject } from 'rxjs';
-import { startWith, takeUntil } from 'rxjs/operators';
+import { asapScheduler, Subject } from 'rxjs';
+import { observeOn, startWith, takeUntil } from 'rxjs/operators';
 
 /** Type to determine the minimal width of a word. */
 export type SIZES = 'regular' | 'short' | 'long';
@@ -42,6 +42,8 @@ export type SIZES = 'regular' | 'short' | 'long';
         '[class.has-dropdown]': 'hasDropdown',
     },
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxPopoverModule],
 })
 export class NxWordComponent implements AfterContentInit, OnDestroy, OnInit {
     private measureCanvas!: HTMLCanvasElement;
@@ -64,14 +66,23 @@ export class NxWordComponent implements AfterContentInit, OnDestroy, OnInit {
 
     // this will apply different min-widths to our component through our styles
     /** Provide a hint for a minimal width. The actual size will be determined for inputs for each change. */
-    @Input('nxSize') size: SIZES = 'regular';
+    @Input() size: SIZES = 'regular';
 
     /**
      * A word doesn't have a set place to show labels.
      * In order to be accessible, you have to provide a label with this property.
      * It will be attached to the given input through `aria-label`.
      */
-    @Input('nxLabel') label = '';
+    @Input('label') label = '';
+
+    /**
+     * Sets the `aria-describedby` for the formfield.
+     * Will be automatically set for nxErrors within the `nx-word` component.
+     * Set if necessary for custom hint/error logic.
+     *
+     * Should be space seperated list of `id`s.
+     */
+    @Input('describedBy') describedBy = '';
 
     private readonly _destroyed = new Subject<void>();
 
@@ -96,21 +107,17 @@ export class NxWordComponent implements AfterContentInit, OnDestroy, OnInit {
             this._cdr.markForCheck();
         });
 
-        // if we have a ngcontrol available stick to its valueChanges subject
-        if (this._control.ngControl) {
-            this._control.ngControl.valueChanges!.pipe(takeUntil(this._destroyed)).subscribe(value => {
-                this.updateCurrentTextWidth();
-                this.inputChanges.next();
-            });
-            // in any other case it is a bre input and input changes are signaled through simple state changes
-        } else {
-            this._control.stateChanges.pipe(takeUntil(this._destroyed)).subscribe(value => {
-                this.updateCurrentTextWidth();
-                this.inputChanges.next();
-            });
-        }
+        this._control.stateChanges.pipe(takeUntil(this._destroyed)).subscribe(value => {
+            this.updateCurrentTextWidth();
+            this.inputChanges.next();
+        });
 
-        this._control.setAriaLabel!(this.label);
+        this._errorChildren.changes.pipe(startWith(null), observeOn(asapScheduler), takeUntil(this._destroyed)).subscribe(() => {
+            // Update the aria-described by when the number of errors changes.
+            this._syncDescribedByIds();
+            this._cdr.markForCheck();
+            this.updateErrorPopoverState();
+        });
     }
 
     ngOnDestroy(): void {
@@ -136,11 +143,16 @@ export class NxWordComponent implements AfterContentInit, OnDestroy, OnInit {
         }
 
         const ctx = this.measureCanvas.getContext('2d');
+        if (!ctx) {
+            return;
+        }
+
         const inputRef = this._control.elementRef;
         const styles = window.getComputedStyle(inputRef.nativeElement);
         ctx!.font = getFontShorthand(styles);
 
-        const metrics = ctx!.measureText(this._control.value);
+        const metrics = ctx!.measureText(inputRef.nativeElement.value);
+
         // add 1px (cursor width) to prevent jumping of the text on blur.
         const newWidth = metrics.width + parseInt(styles.paddingRight, 10) + parseInt(styles.paddingLeft, 10) + 1;
 
@@ -203,6 +215,10 @@ export class NxWordComponent implements AfterContentInit, OnDestroy, OnInit {
     }
 
     setupErrorPopover() {
+        // error popovers should not be focusable because they will be read via aria-describedby
+        this._popover.triggerType = 'manual';
+        this._popover.tabIndex = null;
+
         const positionStrategy = this._overlayPositionBuilder
             .flexibleConnectedTo(this.elementRef)
             .withLockedPosition(true)
@@ -270,5 +286,11 @@ export class NxWordComponent implements AfterContentInit, OnDestroy, OnInit {
 
     hidePopover() {
         this._overlayRef.detach();
+    }
+
+    private _syncDescribedByIds() {
+        let ids: string[] = this.describedBy.length > 0 ? [this.describedBy] : [];
+        ids = [...this._errorChildren.map(error => error.id), ...ids];
+        this._control.setDescribedByIds(ids);
     }
 }

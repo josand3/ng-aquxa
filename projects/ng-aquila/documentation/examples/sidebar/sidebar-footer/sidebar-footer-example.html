@@ -1,15 +1,20 @@
-<nx-sidebar class="my-sidebar" resizeable #sidebar>
-    <button
+<nx-sidebar
+    resizeHandleAriaLabel="Toggle sidebar width"
+    class="my-sidebar"
+    resizeable
+    #sidebar
+>
+    @for (action of actions; track action) {
+    <a
         nxAction
-        *ngFor="let action of actions"
         routerLink="./"
         [queryParams]="action.query"
         routerLinkActive="is-selected"
-        type="button"
     >
-        <nx-icon nxActionIcon [name]="action.icon"></nx-icon>
+        <nx-icon nxActionIcon [name]="action.icon" aria-hidden="true"></nx-icon>
         {{action.label}}
-    </button>
+    </a>
+    }
 
     <nx-sidebar-footer>
         <button
@@ -19,7 +24,7 @@
             class="nx-margin-0"
             type="button"
         >
-            <nx-icon name="setting"></nx-icon>
+            <nx-icon name="setting" aria-hidden="true"></nx-icon>
         </button>
         <button
             nxSidebarToggle

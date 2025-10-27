@@ -10,7 +10,9 @@ assignees: ''
 
 ### ⚡ Reproduction
 
-StackBlitz link to reproduce the issue: <https://stackblitz.com/fork/aquila-issue> <!-- Replace with your StackBlitz link -->
+StackBlitz example to reproduce the issue: [Stackblitz starter](https://stackblitz.com/fork/github/allianz/ng-aquila/tree/main/projects/ng-aquila/documentation/assets/stackblitz-issue-template?file=src%2Fapp%2Fexample.component.html)
+```suggestion
+Replace this link with the forked StackBlitz link that reproduces the issue. You can also use any of our examples in the documentation as a starter by clicking the "Edit in StackBlitz" button and share the link here.
 
 Steps to reproduce:
 

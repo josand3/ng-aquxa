@@ -1,4 +1,4 @@
-<nx-formfield nxLabel="Template bound">
+<nx-formfield label="Template bound">
     <input
         nxInput
         type="text"
@@ -8,17 +8,16 @@
     />
 </nx-formfield>
 <nx-autocomplete #auto3="nxAutocomplete">
-    <nx-autocomplete-option
-        *ngFor="let item of simpleFilteredOptions(modelBoundData)"
-        [value]="item"
-    >
+    @for (item of simpleFilteredOptions(modelBoundData); track item) {
+    <nx-autocomplete-option [value]="item">
         {{item | lowercase}}
     </nx-autocomplete-option>
+    }
 </nx-autocomplete>
 Template bound: {{ modelBoundData }}
 
 <form [formGroup]="testForm">
-    <nx-formfield nxLabel="Reactive bound">
+    <nx-formfield label="Reactive bound">
         <input
             nxInput
             type="text"
@@ -33,7 +32,7 @@ Reactive form: {{ testForm.controls.autocomplete.value }}
 
 <nx-natural-language-form>
     Here is a word
-    <nx-word nxLabel="Provide this required field">
+    <nx-word label="Provide this required field">
         <input
             nxInput
             ngModel

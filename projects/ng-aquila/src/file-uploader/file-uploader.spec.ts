@@ -1,17 +1,18 @@
 import {
     HTTP_INTERCEPTORS,
     HttpClient,
-    HttpClientModule,
     HttpEvent,
     HttpHandler,
     HttpInterceptor,
     HttpParams,
     HttpRequest,
     HttpResponse,
+    provideHttpClient,
+    withInterceptorsFromDi,
 } from '@angular/common/http';
 import { Component, Directive, Injectable, Type, ViewChild } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NxLabelModule } from '@aposin/ng-aquila/base';
 import { Observable, of } from 'rxjs';
 import { delay } from 'rxjs/operators';
@@ -32,10 +33,10 @@ export class UploadInterceptor implements HttpInterceptor {
     }
 }
 
-@Directive()
+@Directive({ standalone: true })
 abstract class FileUploaderTest {
     @ViewChild(NxFileUploaderComponent, { static: false }) fileUploaderInstance!: NxFileUploaderComponent;
-    form!: UntypedFormGroup;
+    form!: FormGroup;
     files!: null | FileItem[];
 
     uploader!: NxFileUploader;
@@ -54,6 +55,7 @@ describe('NxFileUploaderComponent', () => {
     let testInstance: FileUploaderTest;
     let fileUploaderInstance: NxFileUploaderComponent;
     let triggerButton: HTMLButtonElement;
+    let addFileButton: HTMLButtonElement;
 
     function createTestComponent(component: Type<FileUploaderTest>) {
         fixture = TestBed.createComponent(component);
@@ -61,21 +63,32 @@ describe('NxFileUploaderComponent', () => {
         testInstance = fixture.componentInstance;
         fileUploaderInstance = testInstance.fileUploaderInstance;
         triggerButton = fixture.nativeElement.querySelector('#upload-trigger') as HTMLButtonElement;
+        addFileButton = fixture.nativeElement.querySelector('#add-file') as HTMLButtonElement;
     }
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [BasicFileUpload],
-            imports: [NxFileUploaderModule, NxLabelModule, HttpClientModule, ReactiveFormsModule, FormsModule],
-            providers: [{ provide: HTTP_INTERCEPTORS, useClass: UploadInterceptor, multi: true }],
+            imports: [NxFileUploaderModule, NxLabelModule, ReactiveFormsModule, FormsModule, BasicFileUpload],
+            providers: [{ provide: HTTP_INTERCEPTORS, useClass: UploadInterceptor, multi: true }, provideHttpClient(withInterceptorsFromDi())],
         }).compileComponents();
     }));
+
+    describe('basic', () => {
+        it('should correctly assign id and label', () => {
+            createTestComponent(BasicFileUpload);
+            fixture.detectChanges();
+
+            expect(fileUploaderInstance._inputId).toMatch(/nx-file-uploader-.+-input/);
+            expect(fileUploaderInstance._labelId).toMatch(/nx-file-uploader-.+-label/);
+        });
+    });
 
     describe('trigger directive', () => {
         it('should call uploadFiles when triggerButton was clicked', () => {
             createTestComponent(BasicFileUpload);
             const spy = spyOn(testInstance.uploader, 'uploadFiles');
             triggerButton.click();
+
             fixture.detectChanges();
             expect(spy).toHaveBeenCalled();
         });
@@ -305,6 +318,30 @@ describe('NxFileUploaderComponent', () => {
 
             fileUploaderInstance.uploadFiles();
         });
+
+        it('should emit opened event when open file-picker dialog', done => {
+            createTestComponent(BasicFileUpload);
+            const opened = jasmine.createSpy('spy');
+            fileUploaderInstance._openedStream.subscribe(() => {
+                opened();
+                done();
+            });
+            addFileButton.click();
+            expect(opened).toHaveBeenCalled();
+        });
+
+        it('should emit closed event when closed file-picker dialog', done => {
+            createTestComponent(BasicFileUpload);
+            const closed = jasmine.createSpy('spy');
+            fileUploaderInstance._closedStream.subscribe(() => {
+                closed();
+                done();
+            });
+            addFileButton.click();
+            addFileButton.focus();
+            fixture.detectChanges();
+            expect(closed).toHaveBeenCalled();
+        });
     });
 });
 
@@ -314,20 +351,22 @@ describe('NxFileUploaderComponent', () => {
             <nx-file-uploader #documentUpload formControlName="documents" [uploader]="uploader" multiple>
                 <nx-label>Required file to upload</nx-label>
                 <span nxFileUploadHint>All files are accepted</span>
-                <button type="button" nxFileUploadButton>Add Files</button>
+                <button type="button" nxFileUploadButton id="add-file">Add Files</button>
             </nx-file-uploader>
 
             <button id="upload-trigger" [nxFileUploadTriggerFor]="documentUpload" type="button">Upload files</button>
         </form>
     `,
+    standalone: true,
+    imports: [NxFileUploaderModule, NxLabelModule, ReactiveFormsModule, FormsModule],
 })
 class BasicFileUpload extends FileUploaderTest {
-    fb: UntypedFormBuilder;
+    fb: FormBuilder;
 
     constructor(private readonly http: HttpClient) {
         super();
 
-        this.fb = new UntypedFormBuilder();
+        this.fb = new FormBuilder();
         this.form = this.fb.group({
             documents: [this.files],
         });

@@ -1,5 +1,17 @@
+import { JsonPipe } from '@angular/common';
 import { Component } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import {
+    FormBuilder,
+    FormGroup,
+    FormsModule,
+    ReactiveFormsModule,
+} from '@angular/forms';
+import { NxErrorComponent, NxLabelComponent } from '@aposin/ng-aquila/base';
+import { NxButtonComponent } from '@aposin/ng-aquila/button';
+import {
+    NxRadioToggleButtonComponent,
+    NxRadioToggleComponent,
+} from '@aposin/ng-aquila/radio-toggle';
 
 /**
  * @title Validation Example
@@ -8,6 +20,17 @@ import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
     selector: 'radio-toggle-validation-example',
     templateUrl: './radio-toggle-validation-example.html',
     styleUrls: ['./radio-toggle-validation-example.css'],
+    standalone: true,
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        NxRadioToggleComponent,
+        NxRadioToggleButtonComponent,
+        NxButtonComponent,
+        JsonPipe,
+        NxErrorComponent,
+        NxLabelComponent,
+    ],
 })
 export class RadioToggleValidationExampleComponent {
     readonly data = ['A', 'B', 'C'];
@@ -18,9 +41,9 @@ export class RadioToggleValidationExampleComponent {
 
     isSubmitted = false;
 
-    constructor(private readonly fb: UntypedFormBuilder) {}
+    constructor(private readonly fb: FormBuilder) {}
 
-    private customValidation(formGroup: UntypedFormGroup) {
+    private customValidation(formGroup: FormGroup) {
         return formGroup.value !== 'B' ? { valid: false } : null;
     }
 

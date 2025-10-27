@@ -2,13 +2,19 @@ import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { getSupportedInputTypes, Platform } from '@angular/cdk/platform';
 import { AutofillMonitor } from '@angular/cdk/text-field';
 import { Directive, DoCheck, ElementRef, Inject, InjectionToken, Input, OnChanges, OnDestroy, OnInit, Optional, Self } from '@angular/core';
-import { FormGroupDirective, NgControl, NgForm, UntypedFormControl } from '@angular/forms';
+import { FormControl, FormGroupDirective, NgControl, NgForm, Validators } from '@angular/forms';
 import { NxFormfieldControl, NxFormfieldUpdateEventType } from '@aposin/ng-aquila/formfield';
+import { NxAbstractControl } from '@aposin/ng-aquila/shared';
 import { ErrorStateMatcher } from '@aposin/ng-aquila/utils';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-export const NX_INPUT_VALUE_ACCESSOR = new InjectionToken<{ value: any }>('NX_INPUT_VALUE_ACCESSOR');
+export const NX_INPUT_VALUE_ACCESSOR = new InjectionToken<NxInputValueAccessor>('NX_INPUT_VALUE_ACCESSOR');
+
+export interface NxInputValueAccessor {
+    value: any;
+    setReadonly?(value: boolean): void;
+}
 
 const INVALID_TYPES = ['button', 'checkbox', 'file', 'hidden', 'image', 'radio', 'range', 'reset', 'submit'];
 
@@ -38,12 +44,16 @@ let nextUniqueId = 0;
         '(focusout)': '_focusChanged(false)',
         '(focus)': '_focusChanged(true)',
     },
-    providers: [{ provide: NxFormfieldControl, useExisting: NxInputDirective }],
+    providers: [
+        { provide: NxFormfieldControl, useExisting: NxInputDirective },
+        { provide: NxAbstractControl, useExisting: NxInputDirective },
+    ],
+    standalone: true,
 })
-export class NxInputDirective implements OnInit, DoCheck, OnChanges, OnDestroy, NxFormfieldControl<any> {
+export class NxInputDirective implements OnInit, DoCheck, OnChanges, OnDestroy, NxFormfieldControl<any>, NxAbstractControl {
     protected _uid = `nx-input-${nextUniqueId++}`;
     protected _previousNativeValue: any;
-    private _inputValueAccessor: { value: any };
+    private _inputValueAccessor: NxInputValueAccessor;
     _ariaDescribedby!: string;
 
     @Input('nxAriaLabel') _ariaLabel!: string;
@@ -89,12 +99,20 @@ export class NxInputDirective implements OnInit, DoCheck, OnChanges, OnDestroy, 
     /** Whether the element is readonly. */
     @Input() set readonly(value: BooleanInput) {
         this._readonly = coerceBooleanProperty(value);
+        if (this._inputValueAccessor && this._inputValueAccessor.setReadonly) {
+            this._inputValueAccessor.setReadonly?.(this._readonly);
+        }
         this.stateChanges.next();
     }
     get readonly(): boolean {
         return this._readonly;
     }
     private _readonly = false;
+
+    /** set readonly state */
+    setReadonly(value: boolean) {
+        this.readonly = value;
+    }
 
     /** Whether the input is disabled. */
     @Input() set disabled(value: BooleanInput) {
@@ -120,9 +138,9 @@ export class NxInputDirective implements OnInit, DoCheck, OnChanges, OnDestroy, 
         this._required = coerceBooleanProperty(value);
     }
     get required() {
-        return this._required;
+        return this._required ?? this.ngControl?.control?.hasValidator(Validators.required) ?? false;
     }
-    protected _required = false;
+    protected _required: boolean | undefined;
 
     /** Sets the type of the input element (e.g. password, text etc). */
     @Input() set type(value: string) {
@@ -175,7 +193,7 @@ export class NxInputDirective implements OnInit, DoCheck, OnChanges, OnDestroy, 
         @Optional() private readonly _parentForm: NgForm | null,
         @Optional() private readonly _parentFormGroup: FormGroupDirective | null,
         private readonly _errorStateMatcher: ErrorStateMatcher,
-        @Optional() @Self() @Inject(NX_INPUT_VALUE_ACCESSOR) inputValueAccessor: { value: any } | null,
+        @Optional() @Self() @Inject(NX_INPUT_VALUE_ACCESSOR) private inputValueAccessor: NxInputValueAccessor | null,
         private readonly _autofillMonitor: AutofillMonitor,
     ) {
         const id = this.id;
@@ -211,7 +229,7 @@ export class NxInputDirective implements OnInit, DoCheck, OnChanges, OnDestroy, 
     }
 
     _focusChanged(isFocused: boolean) {
-        if (isFocused !== this.focused && !this.readonly) {
+        if (isFocused !== this.focused) {
             this.focused = isFocused;
             this.stateChanges.next();
 
@@ -259,7 +277,7 @@ export class NxInputDirective implements OnInit, DoCheck, OnChanges, OnDestroy, 
     updateErrorState() {
         const oldState = this.errorState;
         const parent = this._parentFormGroup || this._parentForm;
-        const control = this.ngControl ? (this.ngControl.control as UntypedFormControl) : null;
+        const control = this.ngControl ? (this.ngControl.control as FormControl) : null;
         const newState = this._errorStateMatcher.isErrorState(control, parent);
 
         if (newState !== oldState) {

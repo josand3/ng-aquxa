@@ -1,12 +1,12 @@
 import { Component, Directive, Type, ViewChild } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule, UntypedFormControl } from '@angular/forms';
+import { FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { NxInputDirective, NxInputModule } from '@aposin/ng-aquila/input';
 
 import { createFakeEvent } from '../cdk-test-utils';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class InputTest {
     @ViewChild(NxInputDirective) inputInstance!: NxInputDirective;
     type = 'text';
@@ -36,18 +36,21 @@ describe('NxInputDirective', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
+            imports: [
+                FormsModule,
+                NxInputModule,
+                ReactiveFormsModule,
                 BasicInput,
                 BasicTextarea,
                 TypedAndRequiredInput,
                 RequiredInput,
                 NgModelInput,
                 BasicInputWithFormControl,
+                BasicInputWithRequiredFormControl,
                 ConfigurableInput,
                 InputWithLabelAndPlaceholder,
                 NoChangeDetectionInput,
             ],
-            imports: [FormsModule, NxInputModule, ReactiveFormsModule],
         }).compileComponents();
     }));
 
@@ -204,6 +207,19 @@ describe('NxInputDirective', () => {
             expect(spy).toHaveBeenCalled();
             subscription.unsubscribe();
         });
+
+        it('should reflect readonly state when setReadonly changed', () => {
+            createTestComponent(BasicInput);
+            const container = fixture.debugElement.query(By.css('nx-formfield'))!.nativeElement;
+
+            inputInstance.setReadonly(true);
+            fixture.detectChanges();
+            expect(container).toHaveClass('is-readonly');
+
+            inputInstance.setReadonly(false);
+            fixture.detectChanges();
+            expect(container).not.toHaveClass('is-readonly');
+        });
     });
 
     describe('formControl', () => {
@@ -295,6 +311,13 @@ describe('NxInputDirective', () => {
             expect(ariaRequired).toBe('true');
         }));
 
+        it('sets aria-required when form control is required', waitForAsync(() => {
+            createTestComponent(BasicInputWithRequiredFormControl);
+            const ariaRequired = nativeElement.attributes.getNamedItem('aria-required')!.value;
+
+            expect(ariaRequired).toBe('true');
+        }));
+
         it('sets aria-invalid', fakeAsync(() => {
             createTestComponent(NgModelInput);
             inputInstance.ngControl!.control!.markAsTouched();
@@ -321,64 +344,95 @@ describe('NxInputDirective', () => {
 
 @Component({
     template: `
-        <nx-formfield nxLabel="Input">
+        <nx-formfield label="Input">
             <input nxInput />
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [FormsModule, NxInputModule, ReactiveFormsModule],
 })
 class BasicInput extends InputTest {}
 
 @Component({
     template: `<input nxInput [type]="type" />`,
+    standalone: true,
+    imports: [FormsModule, NxInputModule, ReactiveFormsModule],
 })
 class TypedAndRequiredInput extends InputTest {}
 
 @Component({
     template: `<input nxInput required />`,
+    standalone: true,
+    imports: [FormsModule, NxInputModule, ReactiveFormsModule],
 })
 class RequiredInput extends InputTest {}
 
 @Component({
     template: `<input nxInput [(ngModel)]="currentValue" required />`,
+    standalone: true,
+    imports: [FormsModule, NxInputModule, ReactiveFormsModule],
 })
 class NgModelInput extends InputTest {}
 
 @Component({
     template: `<input nxInput [(ngModel)]="currentValue" required [updateOn]="blur" />`,
+    standalone: true,
+    imports: [FormsModule, NxInputModule, ReactiveFormsModule],
 })
 class NoChangeDetectionInput extends InputTest {}
 
 @Component({
     template: `
-        <nx-formfield nxLabel="Textarea">
+        <nx-formfield label="Textarea">
             <textarea nxInput></textarea>
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [FormsModule, NxInputModule, ReactiveFormsModule],
 })
 class BasicTextarea extends InputTest {}
 
 @Component({
     template: `
-        <nx-formfield nxLabel="Label">
-            <input required nxInput [formControl]="formControl" />
+        <nx-formfield label="Label">
+            <input nxInput [formControl]="formControl" />
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [FormsModule, NxInputModule, ReactiveFormsModule],
 })
 class BasicInputWithFormControl extends InputTest {
-    formControl = new UntypedFormControl();
+    formControl = new FormControl('');
+}
+
+@Component({
+    template: `
+        <nx-formfield label="Label">
+            <input nxInput [formControl]="formControl" />
+        </nx-formfield>
+    `,
+    standalone: true,
+    imports: [FormsModule, NxInputModule, ReactiveFormsModule],
+})
+class BasicInputWithRequiredFormControl extends InputTest {
+    formControl = new FormControl('', Validators.required);
 }
 
 @Component({
     template: `<input nxInput [required]="required" [disabled]="disabled" [readonly]="readonly" />`,
+    standalone: true,
+    imports: [FormsModule, NxInputModule, ReactiveFormsModule],
 })
 class ConfigurableInput extends InputTest {}
 
 @Component({
     template: `
-        <nx-formfield nxLabel="Label" [nxFloatLabel]="floatLabel" [appearance]="appearance">
+        <nx-formfield label="Label" [floatLabel]="floatLabel" [appearance]="appearance">
             <input nxInput [placeholder]="placeholderText" />
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [FormsModule, NxInputModule, ReactiveFormsModule],
 })
 class InputWithLabelAndPlaceholder extends InputTest {
     floatLabel = 'auto';

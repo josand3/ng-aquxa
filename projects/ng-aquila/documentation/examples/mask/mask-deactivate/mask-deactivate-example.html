@@ -2,14 +2,14 @@
     <div nxRow>
         <div nxCol="6">
             <nx-radio-group [(ngModel)]="templateModel">
-                <nx-radio nxValue="activate" class="nx-margin-bottom-m"
+                <nx-radio value="activate" class="nx-margin-bottom-m"
                     >Activate</nx-radio
                 >
-                <nx-radio nxValue="deactivate">De-activate</nx-radio>
+                <nx-radio value="deactivate">De-activate</nx-radio>
             </nx-radio-group>
         </div>
         <div nxCol="6">
-            <nx-formfield nxLabel="ID">
+            <nx-formfield label="ID">
                 <input
                     nxInput
                     nxMask="SS-AAAAA"
@@ -20,6 +20,7 @@
                     Mask: SS-AAAAA (mask deactivated: {{ templateModel ===
                     'deactivate' ? true : false }})
                 </span>
+                <nx-error nxFormfieldError> Error: Invalid format. </nx-error>
             </nx-formfield>
             Model value: {{ modelVal }}<br />
         </div>

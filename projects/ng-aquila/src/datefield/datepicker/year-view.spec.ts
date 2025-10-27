@@ -27,11 +27,10 @@ describe('NxYearView', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [NxNativeDateModule],
-            declarations: [
+            imports: [
+                NxNativeDateModule,
                 NxCalendarBodyComponent,
                 NxYearViewComponent,
-
                 // Test components.
                 StandardYearView,
                 YearViewWithDateFilter,
@@ -57,7 +56,7 @@ describe('NxYearView', () => {
         });
 
         it('has 12 months', () => {
-            const cellEls = yearViewNativeElement.querySelectorAll('.nx-calendar-body-cell');
+            const cellEls = yearViewNativeElement.querySelectorAll('.nx-calendar-body-cell-content');
             expect(cellEls).toHaveSize(12);
         });
 
@@ -75,7 +74,7 @@ describe('NxYearView', () => {
         });
 
         it('fires selected change event on cell clicked', () => {
-            const cellEls = yearViewNativeElement.querySelectorAll('.nx-calendar-body-cell');
+            const cellEls = yearViewNativeElement.querySelectorAll('.nx-calendar-body-cell-content');
             (cellEls[cellEls.length - 1] as HTMLElement).click();
             fixture.detectChanges();
 
@@ -84,7 +83,7 @@ describe('NxYearView', () => {
         });
 
         it('should emit the selected month on cell clicked', () => {
-            const cellEls = yearViewNativeElement.querySelectorAll('.nx-calendar-body-cell');
+            const cellEls = yearViewNativeElement.querySelectorAll('.nx-calendar-body-cell-content');
 
             (cellEls[cellEls.length - 1] as HTMLElement).click();
             fixture.detectChanges();
@@ -95,7 +94,7 @@ describe('NxYearView', () => {
         });
 
         it('should mark active date', () => {
-            const cellEls = yearViewNativeElement.querySelectorAll('.nx-calendar-body-cell');
+            const cellEls = yearViewNativeElement.querySelectorAll('.nx-calendar-body-cell-content');
             expect((cellEls[0] as HTMLElement).innerText.trim()).toBe('Jan');
             expect(cellEls[0]).toHaveClass('nx-calendar-body-active');
         });
@@ -309,7 +308,7 @@ describe('NxYearView', () => {
         });
 
         it('should disable months with no enabled days', () => {
-            const cells = yearViewNativeElement.querySelectorAll('.nx-calendar-body-cell');
+            const cells = yearViewNativeElement.querySelectorAll('.nx-calendar-body-cell-content');
             expect(cells[0]).not.toHaveClass('nx-calendar-body-disabled');
             expect(cells[1]).toHaveClass('nx-calendar-body-disabled');
         });
@@ -318,6 +317,8 @@ describe('NxYearView', () => {
 
 @Component({
     template: `<nx-year-view [(activeDate)]="date" [(selected)]="selected" (monthSelected)="selectedMonth = $event"></nx-year-view>`,
+    standalone: true,
+    imports: [NxNativeDateModule, NxYearViewComponent],
 })
 class StandardYearView {
     date = new Date(2017, JAN, 5);
@@ -329,6 +330,8 @@ class StandardYearView {
 
 @Component({
     template: `<nx-year-view [(activeDate)]="activeDate" [dateFilter]="dateFilter"></nx-year-view>`,
+    standalone: true,
+    imports: [NxNativeDateModule, NxYearViewComponent],
 })
 class YearViewWithDateFilter {
     activeDate = new Date(2017, JAN, 1);

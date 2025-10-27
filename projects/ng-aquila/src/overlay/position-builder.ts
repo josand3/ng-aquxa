@@ -74,7 +74,7 @@ export const ORIGIN_POSITIONS: { [key in NxOverlayDirection]: (arg0: boolean) =>
     },
 };
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class NxOverlayPositionBuilder {
     constructor(private readonly _overlay: Overlay, @Optional() private readonly _dir: Directionality | null) {}
 

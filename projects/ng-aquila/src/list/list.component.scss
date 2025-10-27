@@ -20,6 +20,7 @@ $dot-border-radius: 50%;
 
 :host(.nx-list--xsmall) {
     @include type-style(paragraph-04);
+    font-weight: 400;
 }
 
 // Inverting the color is enough for most states,
@@ -72,8 +73,30 @@ $dot-border-radius: 50%;
     }
 }
 
-:host ::ng-deep li:not(:last-child) {
-    margin-bottom: nx-spacer(s);
+// Item spacing
+::ng-deep li:not(:last-child) {
+    :host(.nx-list--xsmall) & {
+        margin-bottom: v(list-xsmall-item-spacing);
+    }
+    :host(.nx-list--small) & {
+        margin-bottom: v(list-small-item-spacing);
+    }
+
+    :host(.nx-list--normal) & {
+        margin-bottom: v(list-normal-item-spacing);
+    }
+
+    :host(.nx-list--xsmall-condensed) & {
+        margin-bottom: v(list-xsmall-condensed-item-spacing);
+    }
+
+    :host(.nx-list--small-condensed) & {
+        margin-bottom: v(list-small-condensed-item-spacing);
+    }
+
+    :host(.nx-list--normal-condensed) & {
+        margin-bottom: v(list-normal-condensed-item-spacing);
+    }
 }
 
 // apply the default dot for unordered (ul) lists, always exclude items with icons
@@ -97,8 +120,8 @@ $dot-border-radius: 50%;
             transform: translateX(50%);
         }
 
-        @media screen and (-ms-high-contrast: active) {
-            background-color: windowText !important;
+        @media screen and (forced-colors: active) {
+            background-color: CanvasText !important;
         }
     }
 }
@@ -153,8 +176,8 @@ $dot-border-radius: 50%;
             left: auto;
         }
 
-        @media screen and (-ms-high-contrast: active) {
-            border: nx-border-size(xs) solid windowText;
+        @media screen and (forced-colors: active) {
+            border: nx-border-size(xs) solid CanvasText;
             border-radius: 50%;
         }
     }
@@ -174,8 +197,8 @@ $dot-border-radius: 50%;
             left: auto;
         }
 
-        @media screen and (-ms-high-contrast: active) {
-            color: windowText;
+        @media screen and (forced-colors: active) {
+            color: CanvasText;
         }
     }
 }

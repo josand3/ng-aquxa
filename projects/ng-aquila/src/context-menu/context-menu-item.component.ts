@@ -1,11 +1,16 @@
 import { FocusMonitor, FocusOrigin } from '@angular/cdk/a11y';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
+import { ENTER } from '@angular/cdk/keycodes';
 import { DOCUMENT } from '@angular/common';
 import {
+    AfterViewInit,
+    booleanAttribute,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    ContentChild,
     ContentChildren,
+    Directive,
     ElementRef,
     Inject,
     Input,
@@ -13,8 +18,9 @@ import {
     Optional,
     QueryList,
 } from '@angular/core';
+import { NxCheckboxComponent } from '@aposin/ng-aquila/checkbox';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
 import { Subject } from 'rxjs';
-
 /**
  * This directive is intended to be used inside an nx-context-menu tag.
  * It exists mostly to set the role attribute, disabled state and styling.
@@ -25,25 +31,40 @@ import { Subject } from 'rxjs';
     host: {
         class: 'nx-context-menu-item',
         role: 'menuitem',
+        tabindex: '0',
         '[class.is-highlighted]': '_highlighted',
-        '[attr.tabindex]': '_getTabIndex()',
+        '[attr.disabled]': 'null',
         '[attr.aria-disabled]': 'disabled.toString()',
-        '[attr.disabled]': 'disabled || null',
         '(mouseenter)': '_handleMouseEnter()',
         '(click)': '_checkDisabled($event)',
+        '[class.is-selectable]': '_selectable',
+        '[class.is-disabled]': 'disabled',
     },
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <div class="nx-context-menu-item__content-wrapper" [class.has-submenu]="_triggersSubmenu">
             <ng-content></ng-content>
-            <nx-icon *ngIf="_triggersSubmenu" class="nx-context-menu-item__expand" name="chevron-right-small"> </nx-icon>
+            @if (_triggersSubmenu) {
+            <nx-icon class="nx-context-menu-item__expand" name="chevron-right-small"> </nx-icon>
+            }
         </div>
     `,
     styleUrls: ['./context-menu-item.component.scss'],
+    standalone: true,
+    imports: [NxIconModule],
 })
-export class NxContextMenuItemComponent implements OnDestroy {
+export class NxContextMenuItemComponent implements OnDestroy, AfterViewInit {
     /** Stream that emits when the context menu item is hovered. */
     readonly _hovered = new Subject<NxContextMenuItemComponent>();
+
+    /** Whether the context menu item is selectable */
+    @Input({ transform: booleanAttribute }) set selectable(value) {
+        this._selectable = value;
+    }
+    get selectable(): boolean {
+        return this._selectable;
+    }
+    private _selectable = false;
 
     /** Whether the context menu item is disabled. */
     @Input() set disabled(value: BooleanInput) {
@@ -77,7 +98,14 @@ export class NxContextMenuItemComponent implements OnDestroy {
         private readonly _cdr: ChangeDetectorRef,
         private readonly _focusMonitor: FocusMonitor,
     ) {
-        this._focusMonitor.monitor(this._elementRef);
+        // register a click event listener that can block if this element is disabled
+        this._elementRef.nativeElement.addEventListener(
+            'click',
+            $event => {
+                this._handleClick($event);
+            },
+            true,
+        );
     }
 
     /** Focuses this context menu item. */
@@ -89,19 +117,30 @@ export class NxContextMenuItemComponent implements OnDestroy {
         }
     }
 
+    ngAfterViewInit(): void {
+        this._focusMonitor.monitor(this._elementRef);
+    }
+
     ngOnDestroy(): void {
         this._hovered.complete();
         this._focusMonitor.stopMonitoring(this._elementRef);
     }
 
-    /** Used to set the `tabindex`. */
-    _getTabIndex(): string {
-        return this.disabled ? '-1' : '0';
-    }
-
     /** Returns the host DOM element. */
     _getHostElement(): HTMLElement {
         return this._elementRef.nativeElement;
+    }
+
+    /**
+     * Blocks the click event from propagating to the origin component if this is disabled.
+     * If not disabled it has no effect
+     *
+     * @param event The MouseEvent that happened on click
+     */
+    _handleClick(event: MouseEvent) {
+        if (this.disabled) {
+            event.stopImmediatePropagation();
+        }
     }
 
     /** Prevents the default element actions if it is disabled. */
@@ -144,6 +183,25 @@ export class NxContextMenuItemComponent implements OnDestroy {
     }
 }
 
+@Directive({
+    selector: '[nxContextMenuItemCheckbox]',
+    host: {
+        '[attr.role]': '"menuitemcheckbox"',
+        '[attr.aria-checked]': 'checkbox.checked',
+        '(keydown)': 'onKeyDown($event)',
+    },
+    standalone: true,
+})
+export class NxContextMenuItemCheckboxDirective {
+    @ContentChild(NxCheckboxComponent) checkbox!: NxCheckboxComponent;
+
+    onKeyDown(event: KeyboardEvent) {
+        if (event.keyCode === ENTER) {
+            this.checkbox.toggle();
+        }
+    }
+}
+
 /**
  * This directive is need when [nx-context-menu-item] is not directly under [nx-context-menu].
  *
@@ -161,6 +219,7 @@ export class NxContextMenuItemComponent implements OnDestroy {
     selector: 'nx-context-menu-item-wrap',
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `<ng-content></ng-content> `,
+    standalone: true,
 })
 export class NxContextMenuItemWrapComponent {
     @ContentChildren(NxContextMenuItemComponent) _items!: QueryList<NxContextMenuItemComponent>;

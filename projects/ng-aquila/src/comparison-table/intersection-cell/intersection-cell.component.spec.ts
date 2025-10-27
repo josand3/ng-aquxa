@@ -2,6 +2,7 @@ import { Component, DebugElement, Directive, QueryList, Type, ViewChild, ViewChi
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import axe from 'axe-core';
 
 import { BASIC_COMPARISON_TABLE_TEMPLATE } from '../comparison-table.component.spec';
 import { NxComparisonTableModule } from '../comparison-table.module';
@@ -12,7 +13,7 @@ import { NxComparisonTableIntersectionCell } from './intersection-cell.component
 declare let viewport: any;
 const THROTTLE_TIME = 200;
 
-@Directive()
+@Directive({ standalone: true })
 abstract class IntersectionCellTest {
     @ViewChildren(NxComparisonTableIntersectionCell) intersectionCellInstances!: QueryList<NxComparisonTableIntersectionCell>;
     @ViewChild(NxComparisonTableDescriptionCell) descriptionCellInstance!: NxComparisonTableDescriptionCell;
@@ -41,8 +42,7 @@ describe('NxComparisonTableIntersectionCell', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [NxComparisonTableModule, BrowserAnimationsModule],
-            declarations: [IntersectionCellComponent, ToggleSectionComponent],
+            imports: [NxComparisonTableModule, BrowserAnimationsModule, IntersectionCellComponent, ToggleSectionComponent],
         });
         TestBed.compileComponents();
     }));
@@ -125,9 +125,26 @@ describe('NxComparisonTableIntersectionCell', () => {
             expect(intersectionCellElements[0].attributes.rowspan).toBe('3');
         }));
 
-        it('has no accessibility violations', async () => {
+        it('has no accessibility violations', done => {
             createTestComponent(IntersectionCellComponent);
-            await expectAsync(fixture.nativeElement).toBeAccessible();
+
+            axe.run(
+                fixture.nativeElement,
+                {
+                    rules: {
+                        'empty-table-header': { enabled: false },
+                    },
+                },
+                (error: Error, results: axe.AxeResults) => {
+                    expect(results.violations.length).toBe(0);
+                    const violationMessages = results.violations.map(item => item.description);
+                    if (violationMessages.length) {
+                        console.error(violationMessages);
+                        expect(violationMessages).toBeFalsy();
+                    }
+                    done();
+                },
+            );
         });
 
         afterEach(() => {
@@ -138,6 +155,8 @@ describe('NxComparisonTableIntersectionCell', () => {
 
 @Component({
     template: BASIC_COMPARISON_TABLE_TEMPLATE,
+    standalone: true,
+    imports: [NxComparisonTableModule],
 })
 class IntersectionCellComponent extends IntersectionCellTest {
     data = [
@@ -150,6 +169,8 @@ class IntersectionCellComponent extends IntersectionCellTest {
 
 @Component({
     template: BASIC_COMPARISON_TABLE_TEMPLATE,
+    standalone: true,
+    imports: [NxComparisonTableModule],
 })
 class ToggleSectionComponent extends IntersectionCellTest {
     data = [

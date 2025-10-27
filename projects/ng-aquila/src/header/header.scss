@@ -1,6 +1,6 @@
 @import '../shared-styles/index';
 
-$header-height: 60px;
+$header-height: 64px;
 $header-link-border-width: nx-border-size(xl);
 
 :host {
@@ -23,8 +23,12 @@ $header-link-border-width: nx-border-size(xl);
     justify-content: space-between;
     background: v(header-background-color);
 
-    @media screen and (-ms-high-contrast: active) {
-        background-color: window;
+    @media screen and (forced-colors: active) {
+        background-color: Canvas;
+    }
+
+    @media screen and (max-width: 703px) {
+        padding: nx-border-size(xs) nx-spacer(s) 0 nx-spacer(s);
     }
 }
 
@@ -70,7 +74,7 @@ $header-link-border-width: nx-border-size(xl);
     }
 }
 
-@media screen and (-ms-high-contrast: active) {
+@media screen and (forced-colors: active) {
     ::ng-deep .nx-header__link {
         border-bottom: none;
 
@@ -127,7 +131,7 @@ $header-link-border-width: nx-border-size(xl);
     border-radius: nx-border-radius(s);
 }
 
-::ng-deep a:focus {
+:host ::ng-deep a:focus {
     outline: none;
 }
 

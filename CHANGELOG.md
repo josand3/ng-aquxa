@@ -2,6 +2,1055 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [18.7.0](https://github.com/allianz/ng-aquila/compare/v18.6.1...v18.7.0) (2025-01-17)
+
+
+### Features ✨
+
+* **number-stepper:** link error messages to input for assistive tools ([1824f2b](https://github.com/allianz/ng-aquila/commit/1824f2b17a839c9084fa8929ac4cee87b0b4735d))
+
+
+### Bug Fixes 🐛
+
+* **badge:** make single character circle ([a121099](https://github.com/allianz/ng-aquila/commit/a121099041c66dfa0348e9d0cd69f74dd40a6a80))
+* **dropdown:** add aria-controls to filter input ([05f2928](https://github.com/allianz/ng-aquila/commit/05f29283f0c6e06dd7e8d8bb323b879ae12a0f3f))
+* **dropdown:** add group role to make screenreader read correctly ([6b4abb7](https://github.com/allianz/ng-aquila/commit/6b4abb7db65490c3c81204733ddd51ef2e6b2abd))
+* **dropdown:** open flyout and focus item when characters are typed ([5df221a](https://github.com/allianz/ng-aquila/commit/5df221a1180cce903a26cc7bd4a24be32b164536))
+* **multi-select:** prevent close emit twice ([8a75b24](https://github.com/allianz/ng-aquila/commit/8a75b24aedf3b1025a383ff26434bbb204a92326))
+* **radio-button:** mark control as touched only when leave group ([831c04e](https://github.com/allianz/ng-aquila/commit/831c04e9c292df5814fd4dcf348647f240e3b22d))
+* **selectable-card:** prevent overflow style cut out ([2f93b23](https://github.com/allianz/ng-aquila/commit/2f93b23323a61e2ad877cd25bc583e378608a612))
+* **table:** add selector for multiple expandable rows ([1fe4c3a](https://github.com/allianz/ng-aquila/commit/1fe4c3a813b4710c2b35471aadfedef88506a791))
+* **table:** prevent resize column break sticky column ([1ebc90a](https://github.com/allianz/ng-aquila/commit/1ebc90a2535b126483a333ae733c84b2686e3ce3))
+* **timefield:** update errorState handling to use signal ([158bed2](https://github.com/allianz/ng-aquila/commit/158bed21337aba713806937b1ef346d9c3ebde8c))
+* **tree:** role treeitem for nodes to be counted correctly ([b5a7023](https://github.com/allianz/ng-aquila/commit/b5a7023c0fe00389a626b885ca6c105030b11e4f))
+
+### [18.6.1](https://github.com/allianz/ng-aquila/compare/v18.6.0...v18.6.1) (2024-12-05)
+
+
+### Documentation 📚
+
+* activate a1 for all components ([ba59316](https://github.com/allianz/ng-aquila/commit/ba59316f0130294f320838b32811558741a82855))
+
+
+### Bug Fixes 🐛
+
+* **breadcrumb:** make nxBreadcrumbItem more lenient and add example with context menu and buttons ([e4a24ad](https://github.com/allianz/ng-aquila/commit/e4a24ad3682e7bd5cafb722ffd8a0529744d065b))
+* **circle toggle:** link error message to controls ([56ad612](https://github.com/allianz/ng-aquila/commit/56ad612b00fb85bcb5a94ad71659b02f194197fe))
+* **context-menu:** replace onStable with afterNextRender for zoneless compatability ([e7709bd](https://github.com/allianz/ng-aquila/commit/e7709bd7dce5645bca792620f51c017bc97a29ff))
+* **context-menu:** stop propagation on esc ([24e0fb6](https://github.com/allianz/ng-aquila/commit/24e0fb611a021bd51b30aaceda87d544d6c615c6))
+* **datefield:** add role="button" to the dates in the datepicker ([36daeee](https://github.com/allianz/ng-aquila/commit/36daeee1441e222e47dbbff57e5c12567463e9ca))
+* **datepicker:** disabled selected styling ([c55a66b](https://github.com/allianz/ng-aquila/commit/c55a66bdd9a5a6526ed134f4905994fa4576e05b))
+* **docs:** replace px with rem ([0bc5fd1](https://github.com/allianz/ng-aquila/commit/0bc5fd1059a8c1e30d5ae7034768ca3171d275a9))
+* **dropdown:** prevent unnecessary macrotasks ([7cec758](https://github.com/allianz/ng-aquila/commit/7cec758e323989d5bb715772ee22070eb533185e))
+* **formfield, autocomplete, datefield, multi-select:** fix accessibility issues with aria owns ([137e136](https://github.com/allianz/ng-aquila/commit/137e1361f88d8069377ab66fab891c40d5d41885))
+* **modal:** use inert to block content outside of dialog ([581b574](https://github.com/allianz/ng-aquila/commit/581b574bb0a3f8e0c573c1267199795054ec12d0))
+* **natural-language-form:** replace zone.onStable for zoneless compatibility ([7e7d1da](https://github.com/allianz/ng-aquila/commit/7e7d1da6b7f2f56f74043f50eefcd0fceac2a8d9))
+* **pagination:** improve and maintain focus state ([e8448b5](https://github.com/allianz/ng-aquila/commit/e8448b5a55d8826dc1744957490bc355f99b5118))
+* **popover:** fix IntersectionObserver not defined error in SSR when popover can only be opened through client interaction ([9a92304](https://github.com/allianz/ng-aquila/commit/9a92304c173f1d4f2f3990cab607fa98e7dc73bd))
+* **popover:** set active state for trigger button ([d33c2da](https://github.com/allianz/ng-aquila/commit/d33c2da91d2f21a6cbe2b7bd7cb1e28c4ce57116))
+* **rating:** implement radio behaviour ([e1c9842](https://github.com/allianz/ng-aquila/commit/e1c984261dc0d95b10adda609a7aed62bf9632b3))
+* **table:** fix condensed styling ([ccb6e11](https://github.com/allianz/ng-aquila/commit/ccb6e11479ed0a72e15d5186bf85ad7e4197877b))
+* **tabs:** make tabs ssr ready ([77f4235](https://github.com/allianz/ng-aquila/commit/77f42354d099b7a8f3ea72e0b60365ce07fcce80))
+* **tree:** fix errors for undefined treeControl and elementRef with separate declarations ([a560ac5](https://github.com/allianz/ng-aquila/commit/a560ac53fd8c91321def0220520d77de4c5ce4d2))
+* **word:** width of input should adapt to rendered value ([1499c01](https://github.com/allianz/ng-aquila/commit/1499c015bea727f6a73868afdb15dd5415cfe388))
+
+## [18.6.0](https://github.com/allianz/ng-aquila/compare/v18.5.1...v18.6.0) (2024-10-31)
+
+### Timefield built in validator
+The timefield component now has a built in validator to check if the entered time is valid. The feature can be enabled by an opt-in setting `enableTimeValidation`.
+
+
+### Features ✨
+
+* **modal:** add more autofocus options ([a2eb516](https://github.com/allianz/ng-aquila/commit/a2eb5162fa137b35c042dd4597903091c3c9f452))
+* **switcher:** always show tickmark when checked ([6f3f5a2](https://github.com/allianz/ng-aquila/commit/6f3f5a213cb34db0166fc2c5934ea6018b732bde))
+* **timefield:** add custom validator for invalid time ([ce55e71](https://github.com/allianz/ng-aquila/commit/ce55e710c1d8259b885aa8b6ef86e9b022dfb267))
+
+
+### Bug Fixes 🐛
+
+* **checkbox:** active and error hover/active styles ([b3dbac7](https://github.com/allianz/ng-aquila/commit/b3dbac782d15e5cf00fd43617fdd1a514900c231))
+* **circle-toggle:** allow any value ([5866d47](https://github.com/allianz/ng-aquila/commit/5866d47115076029039312021f6deeb47d762375))
+* **datefield:** use spacebar to select date ([4622d74](https://github.com/allianz/ng-aquila/commit/4622d74d7e1cde19b6f7a5afe5853b65b36a1291))
+* **grid:** convert scss example file to css ([3b7ea9e](https://github.com/allianz/ng-aquila/commit/3b7ea9e54410f65268101f057fc6c9d41358e3e6))
+* **headline:** add css for links inside of headline ([ae0cd54](https://github.com/allianz/ng-aquila/commit/ae0cd54c29e0c4f7f264f5d6777a80000ad1f281))
+* **message-toast:** add NxMessageToastService to providers ([bab33f4](https://github.com/allianz/ng-aquila/commit/bab33f497e7a1e055a8658ba0e75126265f0a1b4))
+* **message-toast:** replace onMicrotaskEmpty with queueMicrotask for zoneless compatability ([3fcde39](https://github.com/allianz/ng-aquila/commit/3fcde39fe6fa511b00ffd3ef6d71679f6652815a))
+* **sidebar:** item position while resizing and when closed([0d5cf74](https://github.com/allianz/ng-aquila/commit/0d5cf745b7cecdf9ea624bbd2df93d41411c04f4))
+* **table:** change sorting direction ([e67a600](https://github.com/allianz/ng-aquila/commit/e67a6006b358fcba00d7be9f77a0f6a415728aac))
+* **tooltip:** replace onMicrotaskEmpty with afterNextRender for zoneless compatability ([7357258](https://github.com/allianz/ng-aquila/commit/7357258a582fbb5890db2669a8a70997e9b1196c))
+
+### [18.5.1](https://github.com/allianz/ng-aquila/compare/v18.5.0...v18.5.1) (2024-10-11)
+
+
+### Bug Fixes 🐛
+
+* **autocomplete:** replace onStable to make it zoneless compatible ([5fcc2ec](https://github.com/allianz/ng-aquila/commit/5fcc2ecaac535d292a83e15299a290d9223e870f))
+* **checkbox:** link aria-describedby with projected nx-error ([32bbdde](https://github.com/allianz/ng-aquila/commit/32bbdde3ede04acbc5afc9068000178ac89ebfab))
+* **formfield:** remove css coloring icons blue in appendix ([dcea5da](https://github.com/allianz/ng-aquila/commit/dcea5da381245292147190052c30ecad69bc54a3))
+* **formfield:** remove reveal icon in Edge only when password toggle exists ([7036b7a](https://github.com/allianz/ng-aquila/commit/7036b7a82b36dbb73327a158319a83b151fbeef2))
+* **number-stepper:** allow comma as decimal separator, add commaDecimal input ([f144496](https://github.com/allianz/ng-aquila/commit/f14449607a31518ae1e7a310c47c809b87346812))
+* **radio-toggle-button:** fix disable-mobile styles ([2daa138](https://github.com/allianz/ng-aquila/commit/2daa13855c161cf99b2e2840cf9a4e48f6f3ca11))
+* **switcher:** fix css for label left ([22354ca](https://github.com/allianz/ng-aquila/commit/22354ca8dbb45b94400917568d81124d77f950ad))
+* **table:** fix sticky column not working ([c0f5b36](https://github.com/allianz/ng-aquila/commit/c0f5b366b5a6deaf7c0720463719c291bc1cff2c))
+
+## [18.5.0](https://github.com/allianz/ng-aquila/compare/v18.4.0...v18.5.0) (2024-09-30)
+
+
+### Documentation 📚
+
+* **file-uploader:** make screenreader read error message ([7a5ac74](https://github.com/allianz/ng-aquila/commit/7a5ac749d8cb8ac10823953a68f3fa7279f296c5))
+* only show implemented components for A1 themes ([9d190ed](https://github.com/allianz/ng-aquila/commit/9d190ed302ed44d05b26685eb0fa8f2df4f85936))
+
+
+### Bug Fixes 🐛
+
+* **radio-button, circle-toggle:** add tabindex="-1" to label element in radio groups ([e3ada6b](https://github.com/allianz/ng-aquila/commit/e3ada6b3f60a8564bf71e1d307afd74f2193c877))
+
+
+### Features ✨
+
+* **radio toggle:** link error message to radio toggle by aria-describedby ([50249cf](https://github.com/allianz/ng-aquila/commit/50249cf52bfa4ef8b77cbe13aa4d094fcf0aa614))
+* **spinner:** add ariaPoliteness input ([0aa0483](https://github.com/allianz/ng-aquila/commit/0aa0483889e04317291a94fded6df0838eb8b6b0))
+
+## [18.4.0](https://github.com/allianz/ng-aquila/compare/v18.3.0...v18.4.0) (2024-09-26)
+
+
+### Documentation 📚
+
+* add aquila issue template ([05515fd](https://github.com/allianz/ng-aquila/commit/05515fd58d1e2a5478c2afb007b353ff5ea32d15))
+* update icon version info ([e6c02ea](https://github.com/allianz/ng-aquila/commit/e6c02eaf75d01ca8775105ee126043fbdf189d76))
+* update safari just to most recent ([6193c65](https://github.com/allianz/ng-aquila/commit/6193c658c2cca374f24fb0a9b7ed709c4b0c776f))
+* update screenreader support page ([feaae27](https://github.com/allianz/ng-aquila/commit/feaae27f9b84ecd433d4abfe4d37d212bb32ce85))
+
+
+### Bug Fixes 🐛
+
+* **checkbox:** link checkbox group aria-labelledby with projected nx-error ([1793088](https://github.com/allianz/ng-aquila/commit/1793088a10734af02d93ad84a77a29f7adcd02e9))
+* **datefield:** make the datepicker zoneless ready ([e64213d](https://github.com/allianz/ng-aquila/commit/e64213da6ad6b47ddd285a4aee7f05eacd5f73e5))
+* **foooter:** first year then company ([78da2e8](https://github.com/allianz/ng-aquila/commit/78da2e81e2e30c7cc4bef3cbc227b8a05158d2e7))
+* **list:** icons missing aria-labels ([50da7ee](https://github.com/allianz/ng-aquila/commit/50da7ee3c2f639dbbdea6ef85d7e2996a838dd24))
+* **multi-stepper:** remove unnecessary aria role ([967aea3](https://github.com/allianz/ng-aquila/commit/967aea32ad1da17f8dcec887e6d8939a7113ca75))
+* **table:** add :host to ::ng-deep for block-scoped styles ([d1014e3](https://github.com/allianz/ng-aquila/commit/d1014e3e63b01468f7c84e05836b32603d4b08e7))
+* **table:** spacing issues with ndbx-base-integrated styles ([4d4dc1c](https://github.com/allianz/ng-aquila/commit/4d4dc1cf9725126aa349eee1d0fdd54e61686bc8))
+
+
+### Features ✨
+
+* **formfield-harness:** add isReadonly query and filter ([93c1149](https://github.com/allianz/ng-aquila/commit/93c1149ded8b85dbe74da1c27361866f3f60b47b))
+* **formfield:** add example of customizing spacing with theming tokens ([6b25bac](https://github.com/allianz/ng-aquila/commit/6b25bacfdb5ffd5e534ece77c843d008405455b0))
+* **switcher:** announce errors by screen readers by linking error message  ([4ba485f](https://github.com/allianz/ng-aquila/commit/4ba485f6702903c099dc36677c57a26f2b80ea44))
+
+## [18.3.0](https://github.com/allianz/ng-aquila/compare/v18.2.0...v18.3.0) (2024-09-09)
+
+### Readonly states for radio- and checkbox-style components
+With this release we added a readonly state to the circle toggle, radio button, checkbox, switcher and toggle button components. The number stepper has to be delayed until the next major version because of a necessary breaking change.
+Please note: the readonly states on these elements is only approved for internal (expert) applications because of accessibility constraints.
+
+
+### Features ✨
+
+* **accordion:** add flush alignment option ([28a37fd](https://github.com/allianz/ng-aquila/commit/28a37fd1dfb2b288790e5a6ff755b99fd7d9da4b))
+* **circle-toggle:** add readonly state ([c2abe67](https://github.com/allianz/ng-aquila/commit/c2abe678743f9048771aab840ac8fc1b062416a9))
+* **multi-select:** add filterInput output  ([d61712c](https://github.com/allianz/ng-aquila/commit/d61712cfe04cda0f8ec564638f0d6329cd5609f7))
+* **radio-button:** add readonly state ([b6ef4f6](https://github.com/allianz/ng-aquila/commit/b6ef4f6e8997c95dad641777a35ca68fb534a966))
+* **switcher:** add readonly state ([a72712a](https://github.com/allianz/ng-aquila/commit/a72712a0ab4036cdf175b82ea101057d208acb72))
+* **toggle-button:** add readonly state ([571e1df](https://github.com/allianz/ng-aquila/commit/571e1df916779ee42a91299a6c3bf025e0d261c4))
+
+
+### Bug Fixes 🐛
+
+* **circle-toggle:** invalid aria-required attributes in radio group ([79e18ce](https://github.com/allianz/ng-aquila/commit/79e18ce252076f0a153ffa347cac5e2e97d461b9))
+* **datefield:** to use plain buttons and update cell font-weight ([ea29b77](https://github.com/allianz/ng-aquila/commit/ea29b77f2360122328056babba084bd03c4571ac))
+* **grid:** use DI for missing nxRow warning ([8d4a236](https://github.com/allianz/ng-aquila/commit/8d4a236d85e70f7d587392270567a16f6dd91799))
+* **header:** change height of header to match figma designs ([d5bf893](https://github.com/allianz/ng-aquila/commit/d5bf893e171a37fbe77dda9facd354faf14859e7))
+* **multi-select:** open dropdown with arrow keys ([785b98e](https://github.com/allianz/ng-aquila/commit/785b98eec814969e898f7d58a55366f3535ba8f6))
+* **radio-toggle:** forward focus to toggleInput ([7c6edda](https://github.com/allianz/ng-aquila/commit/7c6edda7a4dc22fb993fb4ba82054c5bd04fdf5f))
+* **sidenavigation,action:** text and icon alignment in the navigation items ([b6b2c79](https://github.com/allianz/ng-aquila/commit/b6b2c796811c598a19d647e75d5455551b946e17))
+
+
+### Documentation 📚
+
+* **accordion:** add aria-hidden to error icons ([74c9106](https://github.com/allianz/ng-aquila/commit/74c9106eb620f6c34d2c59b50cbc9ff921d48c46))
+
+## [18.2.0](https://github.com/allianz/ng-aquila/compare/v18.1.0...v18.2.0) (2024-08-26)
+
+
+### Features ✨
+
+* **checkbox:** add readonly state ([96e717c](https://github.com/allianz/ng-aquila/commit/96e717c0e80f344fd1c8bf546c48f3f7fbe50214))
+
+
+### Bug Fixes 🐛
+
+* **code-input:** link error message with  aria-describedby ([ce2c995](https://github.com/allianz/ng-aquila/commit/ce2c995a6852d1ba5b8e98607c21f490e6fb5e32))
+* **comparision-table:** track expression warning ([f400dd8](https://github.com/allianz/ng-aquila/commit/f400dd8ed1f444bcdad9a462899053efe0b6e539))
+* **context-menu:** change behavior to match a11y guidelines ([5595eaf](https://github.com/allianz/ng-aquila/commit/5595eaf76bf778f18467539586097364842bbb1a))
+* **dropdown:** change keyboard behavior ([7f23419](https://github.com/allianz/ng-aquila/commit/7f23419a4022634b1823b7191b395ec9f9a570bf))
+* **input:** remove a password reveal button in Microsoft Edge ([f1f55df](https://github.com/allianz/ng-aquila/commit/f1f55dfc97ca4df70161a0fb0b28ee1513e1cf1d))
+* **multi-select:** add aria-describedby, aria-invalid ([98f784d](https://github.com/allianz/ng-aquila/commit/98f784d1cb30f5b04ebf62c0a82b33f1dba66a3f))
+* **phone-input:** correct focused state ([71527c5](https://github.com/allianz/ng-aquila/commit/71527c5054b2fb4d9fb3319f191c4dfdfbbe1eb5))
+* **phone-input:** remove binding from role attribute ([bfe1f23](https://github.com/allianz/ng-aquila/commit/bfe1f23e666a0187207a7a137d68379bfdc38f1b))
+* **popover:** change aria-haspopup to dialog ([7e4cdf5](https://github.com/allianz/ng-aquila/commit/7e4cdf5589e0876e8a911061a29d2b62b2f6b25e))
+
+
+### Documentation 📚
+
+* add documentation for non interactive scrollable content ([e4e201f](https://github.com/allianz/ng-aquila/commit/e4e201f1aae049a07f3b473e44f11531aa0b169f))
+* fix opening examples in stackblitz ([ea96a78](https://github.com/allianz/ng-aquila/commit/ea96a78890e18f8185dc497c65f00462f5cd6e2b))
+
+## [18.1.0](https://github.com/allianz/ng-aquila/compare/v18.0.0...v18.1.0) (2024-08-08)
+
+### Emphasis button update
+The emphasis button was deprecated in 18.0.0 because there was no plan to make the colors accessibility compliant. This decision was changed and now the orange colors got updated to fulfill WCAG contrast requirements. The emphasis button is not deprecated anymore and can be used again.
+
+### Features ✨
+
+* **dropdown:** align dropdown checkmark ([5fed95d](https://github.com/allianz/ng-aquila/commit/5fed95ddd5cba2ee510600a9c3f6f5850559b09c))
+* **natural-language-form:** enable `aria-describedby` for words  ([d418a65](https://github.com/allianz/ng-aquila/commit/d418a6584bf0a6b98526e98a7016871bf37620ac))
+* **tag:** add nxTagIntl provider for i18n ([a4b9ffd](https://github.com/allianz/ng-aquila/commit/a4b9ffd38982784a949707eeea060602544b987d))
+
+
+### Bug Fixes 🐛
+
+* **action:** use new line instead of ellipsis for narrow space ([aa76f08](https://github.com/allianz/ng-aquila/commit/aa76f08f223227f1c84f4a36599c750d3accf696))
+* **context-menu:** adjust header styles to selection menu designs ([adb40ee](https://github.com/allianz/ng-aquila/commit/adb40ee210f4f5d2de70049607819606d92c34c5))
+* **dynamictable:** add nxContextMenuItemCheckbox to column settings checkboxes ([edd5cd0](https://github.com/allianz/ng-aquila/commit/edd5cd07805bdbe3d5c91640ccf0421cf98e6fbc))
+* **dynamictable:** remove drag and drop from custom settings ([f70cf23](https://github.com/allianz/ng-aquila/commit/f70cf2368effe12d60eb4825b5ce69c6383d7056))
+* **file-uploader:** don't intterupt adding file when an invalid file is found ([2f23c2a](https://github.com/allianz/ng-aquila/commit/2f23c2aca1330576218fe1aadf7c50735a175079))
+* **formfield:** add role group and aria label to custom formfield ([0852a44](https://github.com/allianz/ng-aquila/commit/0852a44ff245a436dffd9b3663145407282e5ba6))
+* **formfield:** change from nx-icon hover to button click for popover ([a0b8d2b](https://github.com/allianz/ng-aquila/commit/a0b8d2b6bbcdb103539e5a1c1bcf2d9d7fd353d2))
+* **formfield:** remove aria label for readonly ([b3f5125](https://github.com/allianz/ng-aquila/commit/b3f5125a00da71adc6da05ccfe0f4bc58110e27e))
+* **licence-plate:** empty value is valid in validator ([0ed5059](https://github.com/allianz/ng-aquila/commit/0ed505964d46af2ac1bfe770a7b82caca96ac3e8))
+* **popover:** change maxwidth to 100% to work for small screens ([3c7f91c](https://github.com/allianz/ng-aquila/commit/3c7f91c95ae6847762aa173154a9965c3b79214e))
+* **switcher:** set required validator, correct aria ([1e4c2e7](https://github.com/allianz/ng-aquila/commit/1e4c2e7d3f135617c6cc15905a4c3454a7c51dc1))
+* **table:** don't emit sortChange when set active, direction ([06390a9](https://github.com/allianz/ng-aquila/commit/06390a92404ee4097014acb883d6b52f0e363b0e))
+* **table:** remove nxTableCellClip from column resize table ([02143af](https://github.com/allianz/ng-aquila/commit/02143afe6257b47f7100e82d646dd3807e9f649e))
+* **tag:** remove backspace deletion use focusable button instead ([f456efe](https://github.com/allianz/ng-aquila/commit/f456efe74450381f8b5acbbb6e1340e05adff1d6))
+* **tooltip:** annouce message when show ([3d39cd5](https://github.com/allianz/ng-aquila/commit/3d39cd564fa02af10a19b05c115b8b8f19f94c78))
+
+
+### Documentation 📚
+
+* **button:** undeprecate emphasis button ([fc1d126](https://github.com/allianz/ng-aquila/commit/fc1d1265f62bce03afec162e5c505ebb8cbeebcc))
+* **checkbox:** show freedom of layouting ([7c3f680](https://github.com/allianz/ng-aquila/commit/7c3f6804433e54440b4ef833e2f0a25ea03c9b0a))
+* **datefield:** add error messages in examples ([19b76ec](https://github.com/allianz/ng-aquila/commit/19b76eccd02813fee8e751337a01c113acd76a88))
+* **file-uploader:** fix a11y screen reader issue in example  ([4b677d4](https://github.com/allianz/ng-aquila/commit/4b677d4822c73ee5cd73cda43a3b64b3a9099af3))
+* **input-mask:** add error messages in examples ([90589dd](https://github.com/allianz/ng-aquila/commit/90589dd37d8b064eac71104690a4338f48e98a37))
+* **input:** add instruction to import css when using cdkTextareaAutosize ([56b12bd](https://github.com/allianz/ng-aquila/commit/56b12bd1a4b4d688804dfadae94aee476e95c335))
+* **mask-input:** add error messages to examples ([e221643](https://github.com/allianz/ng-aquila/commit/e2216433173a8340462c1f9e783fb34dca11106e))
+* release guide update  ([e769015](https://github.com/allianz/ng-aquila/commit/e7690152a20480b11d63fc48904528578143ee42))
+* sync browser support with Angular ([318cce1](https://github.com/allianz/ng-aquila/commit/318cce1c028ab1dfad67f773eb1f55babe366163))
+
+## [18.0.0](https://github.com/allianz/ng-aquila/compare/v17.9.1...v18.0.0) (2024-07-15)
+
+### Replacement of the emphasis button
+The emphasis button was not fulfilling WCAG accessibility requirements and was replaced by the new attention button variant. The emphasis button is deprecated and will be removed in the future. As different usages could lead to other solutions than using the attention button, the change is opt-in and will not be done automatically.
+
+### Library migration to standalone
+The library has been migrated to the Angular standalone APIs. This change should not affect you and everything should work the same and you can import and use the modules as before. But the components and directives are now standalone and you can make use of new Angular features like host directives, import only components/directives instead of a module or find better solutions for mocking in tests.
+
+### Library migration to new control flow syntax
+The templates of components use the new control flow syntax from Angular. This should have no negative effect on your application or changes needed as everything should work as before.
+
+### ⚠ BREAKING CHANGES
+
+* **iso-date-adapter:** The iso date adapter was loading the requested locales from dayjs lazily by a built in feature.
+This doesn't work with the new vite based build system from Angular anymore so we remove it.
+If you did not explicitly import the necessary locales before you will have to do so with this update.
+
+Add the respective imports into your application:
+```
+import 'dayjs/locales/de';
+import 'dayjs/locales/es';
+```
+
+For lazy loading projects have to find a custom solution that works together with vite and rollup.
+* **layout:** The order of the nx-margins have been changed for specificity reasons, this can change the behaviour of current margins.
+
+EXAMPLES:
+
+class="nx-margin-0 nx-margin-top-xl"
+before: margin top: 0, left: 0 , right: 0 , bottom: 0
+now: margin: top: 64 (xl), left: 0 , right: 0 , bottom: 0
+
+class="nx-margin-s nx-margin-top-xs nx-margin-bottom-m"
+before: margin top: 16 (s), left: 16 (s), right: 16 (s), bottom: 24 (m)
+now: margin: top: 12 (xs), left: 16 (s), right: 16 (s), bottom: 24 (m)
+* **progress-indicator**: to fulfill accessibility requirements the variant with a progress bar between steps needs an accessible label. The label can be set with the `progressbarAriaLabel` or `progressbarAriaLabelledBy` input. There is an english default but you should set this to a meaningful value for your application. Please see more details in the documentatioon.
+
+### DEPRECATIONS
+* **swipebar:**: The swipebar component has been deprecated and will be removed in the future. Please rely on native scroll bars.
+* **button:**: the `emphasis` button has been deprecated and will be removed in the future. Please use the `attention` button instead.
+
+### Documentation 📚
+
+* **swipebar:** deprecate swipebar component ([88f7127](https://github.com/allianz/ng-aquila/commit/88f71273fd1ad99c7c73e78a60e71fd53960b057))
+
+
+### Features ✨
+
+* **button:** add attention button and deprecate emphasis button ([b043927](https://github.com/allianz/ng-aquila/commit/b043927f44bde4d8e396d1d1aaea23ff449a3414))
+* migrate library to standalone ([0a9b4ee](https://github.com/allianz/ng-aquila/commit/0a9b4eeda7deec1036d7cff15a796b2ff7b75b87))
+* **progress-bar:** set aria attributes and allow custom ranges ([e7fa382](https://github.com/allianz/ng-aquila/commit/e7fa3829d51875b8bce3842db582106b7eca1b37))
+* update to Angular 18 ([717db8b](https://github.com/allianz/ng-aquila/commit/717db8bd6c2620dc19070cfba16fe39922ed8c95))
+
+
+### Bug Fixes 🐛
+
+* **avatar:** add role image in examples ([1209151](https://github.com/allianz/ng-aquila/commit/120915193a23a5c8d4a845fb286d89a81a6a9baa))
+* **datefield:** propagate readonly state to all directives and components ([8ca1e89](https://github.com/allianz/ng-aquila/commit/8ca1e899ec0b9447a10e266a9eb0c1959248a247))
+* **iso-date-adapter:** remove automatic lazy loading of locales ([edb6909](https://github.com/allianz/ng-aquila/commit/edb6909ae5259ad657c2d99eb15f9d446e351628))
+* **layout:** fix nx-margin-classes for better specificity ([3b050dd](https://github.com/allianz/ng-aquila/commit/3b050ddbe029ca29aa301569e1890b3448e04d71))
+* **radio-button:** cannot access radiogroup before initialization error ([49a6346](https://github.com/allianz/ng-aquila/commit/49a634634cf163a47ff3e273196040795da78534))
+* **status-icon:** add inline-flex to status icon ([a5cdc6a](https://github.com/allianz/ng-aquila/commit/a5cdc6a059beaf5c10235c79ecba0971e944ceae))
+* **tag:** keep focus after tag deleted ([c8ee14e](https://github.com/allianz/ng-aquila/commit/c8ee14e1051a12b835961b0238e841cd03cac3ef))
+* **timefield:** group time input fields for improved screen reader us… ([3bc35e9](https://github.com/allianz/ng-aquila/commit/3bc35e99b260a62ad1d1d226f081da2024e2b6dd))
+* **timefield:** make screen readers read all infos instead of content only ([415c553](https://github.com/allianz/ng-aquila/commit/415c5537659715a341ba945598c7a926fa69f9cf))
+
+### [17.9.1](https://github.com/allianz/ng-aquila/compare/v17.9.0...v17.9.1) (2024-07-03)
+
+
+### Documentation 📚
+
+* **action:** correct content for screenreader ([5ede503](https://github.com/allianz/ng-aquila/commit/5ede503fefe02a51b59c632dd1a34928c6b2b29b))
+* **formfield:** correct count remaining example ([b3065a4](https://github.com/allianz/ng-aquila/commit/b3065a43ddd78dfd45574ae8f2d9a7f6f1fdb875))
+* **rating:** add more info for assistive technology ([671d729](https://github.com/allianz/ng-aquila/commit/671d72954bb21c95c438979028d24e0a2eb0c321))
+
+
+### Bug Fixes 🐛
+
+* **context-menu:** correct high contrast color ([b7ddf40](https://github.com/allianz/ng-aquila/commit/b7ddf40753c25de446b718664d6ab3b310a41089))
+* **context:** keyboard selection ([f2c7342](https://github.com/allianz/ng-aquila/commit/f2c7342d3f1bb2f3a1f9d0014966af54a479d4c2))
+* **dropdown:** adjust group header label styles to match figma ([820be6f](https://github.com/allianz/ng-aquila/commit/820be6fc9312b2db2e1a9a31d449bfe18176fe66))
+* **icon:** add NX_ICON_INITIALIZER for internal icons ([e5595dc](https://github.com/allianz/ng-aquila/commit/e5595dc40479fe818a15e48365563088753a8236))
+* **mask:** don't do masking if deactivate is enabled ([13df8ef](https://github.com/allianz/ng-aquila/commit/13df8eff480672dcc25832b8b679c6771f1a26fa))
+* **phone-input:** add role group, add separate aria labels for dropdown and input ([3b1e23e](https://github.com/allianz/ng-aquila/commit/3b1e23e1261b4db12a7e35fadd41848e649d4504))
+* **radio:** add describe error message for screenreader ([7a1acc6](https://github.com/allianz/ng-aquila/commit/7a1acc64a368bd935cca79db6e5f340fa1ebd609))
+
+## [17.9.0](https://github.com/allianz/ng-aquila/compare/v17.8.0...v17.9.0) (2024-06-26)
+
+### Timefield new opt-in timepicker
+A new timepicker dropdown was added to the timefield that let's users select a time from a dropdown. This feature is opt-in for now, please see the documentation page for more infos.
+
+
+### Documentation 📚
+
+* **avatar:** add aria-label in examples ([bb20e9d](https://github.com/allianz/ng-aquila/commit/bb20e9d664f99df5ce8b2e9f5d8e11974381cdb3))
+
+
+### Bug Fixes 🐛
+
+* **circle-toggle:** setting group control value reflect on child view ([302b511](https://github.com/allianz/ng-aquila/commit/302b511a9b9d31d553fe499bd915190611d069d7))
+* **schematics:** schematics and tests for standalone ([7b2037c](https://github.com/allianz/ng-aquila/commit/7b2037c766ed14698bce63c7ca43e6db0ea8d675))
+
+
+### Features ✨
+
+* **popover:** enable setting tabindex for manual trigger ([d729998](https://github.com/allianz/ng-aquila/commit/d729998eb9a917e8bce4ef2243ad9aa0b23fc94c))
+* **timefield:** add timepicker dropdown ([f912ec7](https://github.com/allianz/ng-aquila/commit/f912ec7557858bdebc3a3d0cd02e40511539c73b))
+* **toggle-button:** enable setting aria-label for the inner radio input ([e74335d](https://github.com/allianz/ng-aquila/commit/e74335d63b1781277999d9a5bd0d956189436372))
+
+## [17.8.0](https://github.com/allianz/ng-aquila/compare/v17.7.0...v17.8.0) (2024-06-18)
+
+
+### Features ✨
+
+* **checkbox-harness:** add isDisabled ([5e3a96f](https://github.com/allianz/ng-aquila/commit/5e3a96f9413fa836b5bad327be49fe09c9344382))
+
+
+### Documentation 📚
+
+* **accordion:** improve accessibility of the error state example ([bbec6d5](https://github.com/allianz/ng-aquila/commit/bbec6d5d837591e2482165f67a762607fa1b3714))
+* **circle-toggle:** correct disabled element ([20c6aab](https://github.com/allianz/ng-aquila/commit/20c6aab52af82748e6a199a447a7a407c51e8b63))
+* **comparison-table:** enhance NVDA readability for column header cells ([1bc8534](https://github.com/allianz/ng-aquila/commit/1bc853499dc0695b45d7d7668d0d6dbf60bcc933))
+* **small-stage:** focusable breadcrumb in small stage example ([f5ccd56](https://github.com/allianz/ng-aquila/commit/f5ccd56e652fd8aa546557714f82d9168fbc73da))
+* **table:** correct aria label ([656b258](https://github.com/allianz/ng-aquila/commit/656b2588d90fe7e9c9d3cd286cbba827fb5c5259))
+* **tooltip:** show focusable non-interactive tooltip ([92d09d5](https://github.com/allianz/ng-aquila/commit/92d09d5bd7a3341c00bda67ed40c14cdef63196b))
+* update allianz-icons version ([216c5b8](https://github.com/allianz/ng-aquila/commit/216c5b8d8c22193a5a2c3a33824de6cd3bff393a))
+
+
+### Bug Fixes 🐛
+
+* **autocomplete:** prevent early error ([9fe622f](https://github.com/allianz/ng-aquila/commit/9fe622f15f06f58b248430305c9a1e7b0c411730))
+* **circle-toggle:** addition check error state from group ([01e518f](https://github.com/allianz/ng-aquila/commit/01e518fe6b1faa315aaf1a1cc7d81edbbb316fa3))
+* **datefield:** add localization for de, ja and ar ([419ed09](https://github.com/allianz/ng-aquila/commit/419ed099ef04679286959049d4d9089f2025d6eb))
+* **dropdown:** only show focus when interact by keyboard ([e8ee8af](https://github.com/allianz/ng-aquila/commit/e8ee8af5b74a360a48c05755d359e169c230b25c))
+* **dropdown:** round position offset values ([5e6bca0](https://github.com/allianz/ng-aquila/commit/5e6bca03d01ba20a3f0a3e7393e7cf099917425f))
+* **header:** prevent style leak ([21a5907](https://github.com/allianz/ng-aquila/commit/21a5907412f4c5e57981827da1a1b0c1bb893113))
+* **radio-button:** focus host element ([2cd3c3d](https://github.com/allianz/ng-aquila/commit/2cd3c3d7d11c7cc0124221d85d584e82f679becd))
+* **sidebar:** add aria labels on examples ([f971fa6](https://github.com/allianz/ng-aquila/commit/f971fa6250fc3fd63325023b9ea1acfba13c307c))
+* **spinner:** announce spinner via screen reader ([9de19d4](https://github.com/allianz/ng-aquila/commit/9de19d42179e1fb91c7848593c2018902044dd4a))
+
+## [17.7.0](https://github.com/allianz/ng-aquila/compare/v17.6.0...v17.7.0) (2024-05-16)
+
+
+### Dropdown and multiselect flyout changes
+
+The label options inside the dropdown where limited to a certain character length and then cut off. This has been revised and long labels will now line break again. In addition the dropdown overlay size will now always be the size of the dropdown trigger element. As that can sometimes mean the overlay would be very narrow we introduced a new API that lets the overlay grow past the trigger element width if needed. In addition you can also set a max-width that the overlay doesn't get too long.
+
+
+### Bug Fixes 🐛
+
+* **selectable-card:** visual design enhancement ([318f6ed](https://github.com/allianz/ng-aquila/commit/318f6edb64eaff39fa3ef04bc166f2aec6a220db))
+* **table:** change sorted arial label and move myintl to docs ([072cac0](https://github.com/allianz/ng-aquila/commit/072cac07d17eae823848ade69e1333714fea6482))
+
+
+### Features ✨
+* **dropdown, multi-select:** let overlay scroll out of viewport ([61cfed2](https://github.com/allianz/ng-aquila/commit/61cfed2534305cba7da7efb30e2cbf98af890400))
+* **dropdown, multi-select:** remove ellipsis and add new api for overlaywidth ([b09e876](https://github.developer.allianz.io/ilt/ng-aquila/commit/b09e8764c9093f9418c0f1746d3dfd187efca542))
+* **dropdown:** add ariaLabelledBy input ([c96d4fe](https://github.com/allianz/ng-aquila/commit/c96d4fe43daecc364d2f5f5051f207b5942516cb))
+
+
+### Documentation 📚
+
+* **action, side nav:** a11y ([c1feff9](https://github.com/allianz/ng-aquila/commit/c1feff98778264b94bd43bd92967a42016d6cae0))
+* **comparison-table:** add error message in example ([8ce553c](https://github.com/allianz/ng-aquila/commit/8ce553c043d483b9cdfc6d1c1553ad673f57b82f))
+* **input:** enhance accessibility of documentation examples  ([463c366](https://github.com/allianz/ng-aquila/commit/463c36673a0e021a76efe9a943c830ca0f3383bb))
+* **table**: use aria-labelledby in example ([c96d4fe](https://github.com/allianz/ng-aquila/commit/c96d4fe43daecc364d2f5f5051f207b5942516cb))
+
+## [17.6.0](https://github.com/allianz/ng-aquila/compare/v17.5.0...v17.6.0) (2024-05-02)
+
+
+### Documentation 📚
+
+* **modal:** showcase correct button size for expert ([9d1e8c1](https://github.com/allianz/ng-aquila/commit/9d1e8c11d39850ca0a8bae6d8f6afcfa67d96437))
+
+
+### Features ✨
+
+* **context-menu:** selection menu styling([d03bec4](https://github.com/allianz/ng-aquila/commit/d03bec4fbb68332efad7c931f816b7caeef32dec))
+* **switcher, radio, checkbox:** add ariaLabel ([c85820f](https://github.com/allianz/ng-aquila/commit/c85820f5e03f28003779f6c1f06291b3b12640b9))
+
+
+### Bug Fixes 🐛
+
+* **checkbox:** solve circular dependency ([072b664](https://github.com/allianz/ng-aquila/commit/072b664669f69250136790f2c8778dcd8dbcb2d0))
+* **circle-toggle:** change cursor for disabled flipped circle toggle ([4a4ad48](https://github.com/allianz/ng-aquila/commit/4a4ad4896800dc2cbda0e611253c5a376b58833c))
+* **datefield:** remove days from previous month and following month in current month view ([4f88a99](https://github.com/allianz/ng-aquila/commit/4f88a991e64816c7b262f9fd34bbd932c009d6bb))
+* **datepicker:** datepicker colors ([47552d6](https://github.com/allianz/ng-aquila/commit/47552d62418b8d84e8138890817113a96188a855))
+* **dropdown:** allow focus readonly ([c41b78b](https://github.com/allianz/ng-aquila/commit/c41b78b6a489aa2bc8f89ac07b819a7a61afcd60))
+* **dropdown:** fix scrollActiveOptionIntoView for dropdown with many groups ([b63fb68](https://github.com/allianz/ng-aquila/commit/b63fb684aab64799ca6a66ae3578064bbd280c8d))
+* **formfield:** show focus style on readonly field ([5c63d95](https://github.com/allianz/ng-aquila/commit/5c63d9528ac4fb4298ae98f72c636035469a0146))
+* move focusmonitor from constructor to ngAfterViewInit ([2118d17](https://github.com/allianz/ng-aquila/commit/2118d175215252388ea5e4bc16a7c2b80c4e2fed))
+* **multi-select:** auto focus first element on open ([c771eba](https://github.com/allianz/ng-aquila/commit/c771ebaff710d4e84451d1bb3217a191d47da4c7))
+* **toolbar, header:** mobile padding ([90452e9](https://github.com/allianz/ng-aquila/commit/90452e96d1bae0fcdb4cc85cbd0631911c413a4e))
+
+## [17.5.0](https://github.com/allianz/ng-aquila/compare/v17.4.0...v17.5.0) (2024-04-15)
+
+
+### Documentation 📚
+
+* **date:** correct appearance ([494095c](https://github.com/allianz/ng-aquila/commit/494095cade74d25b2be7bc0dc9c760c4e658cd84))
+* **table:** add showcase of filter+selecting table ([9e80f60](https://github.com/allianz/ng-aquila/commit/9e80f60e065e059d886065c30f8a957339d83f61))
+
+
+### Features ✨
+
+* **card:** add clickable card ([6859993](https://github.com/allianz/ng-aquila/commit/685999363098622eb66e28f57278600c5e3f48cb))
+
+
+### Bug Fixes 🐛
+
+* **context-menu:** position icon ([5ad6feb](https://github.com/allianz/ng-aquila/commit/5ad6feb02ed4fbe76ec677eaa7f0214ef083a8d1))
+* **dropdown, multiselect:** Add tooltip only if label overflows ([bd84f4c](https://github.com/allianz/ng-aquila/commit/bd84f4c9ed230a7c7f970eee166b9ac4d1f71530))
+* **dropdown:** active filter bottom padding ([888b500](https://github.com/allianz/ng-aquila/commit/888b5000d7cbcef82ee1bdb8ebc35b3babc3652e))
+* **dropdown:** fix tests ([c9499ee](https://github.com/allianz/ng-aquila/commit/c9499ee32a3bc36a02b5644d2c65d1d0c7d6df72))
+* **dropdown:** increase time to wait for withTypeAhead ([8a1de5f](https://github.com/allianz/ng-aquila/commit/8a1de5f49a846997880f40e60959dd53cf5c30da))
+* **dropdown:** no scrolling or highlighting of the selected option if list not loaded before ([54aa4f4](https://github.com/allianz/ng-aquila/commit/54aa4f425c6308fa30a0f2f6fc27c2304fab829d))
+* **formfield:** prevent animation for label when always floating ([5b961d2](https://github.com/allianz/ng-aquila/commit/5b961d2260b2188b212f878e0efba3674a28efc1))
+* improve Accordion error accessibility ([18adddf](https://github.com/allianz/ng-aquila/commit/18adddfb88ce7727d2941356930c4d8bc4323465))
+* **link:** add x-small link ([bff886a](https://github.com/allianz/ng-aquila/commit/bff886a9bc51d9ec6761e9e792981660c7608a87))
+* **list:** add condensed option ([4e1b0d7](https://github.com/allianz/ng-aquila/commit/4e1b0d70f9d10a5a6f122d6de230f15fbbb9fe94))
+* **message:** fix injector bug ([9c9f115](https://github.com/allianz/ng-aquila/commit/9c9f1152a5a64eba2d24eb30e50e707a583c25e3))
+* **table:** add css for nxtablecellclip pagination ([6a76b5b](https://github.com/allianz/ng-aquila/commit/6a76b5b459999c4b41c95c10d1c1871d07ef3c58))
+* **table:** remove clipcell and width calculation ([f4ac95d](https://github.com/allianz/ng-aquila/commit/f4ac95d65740ff0100d08675fcc2d94aa643028c))
+* **timefield:** call ontouched only when the whole component gets blurred ([4690669](https://github.com/allianz/ng-aquila/commit/46906695feb88b1a704fa1398fc46c4b81a950d3))
+* **tree, action:** make navigation work with screenreader ([f550810](https://github.com/allianz/ng-aquila/commit/f550810f81a101214748625067ea13428df7edeb))
+
+# [17.4.0](https://github.com/allianz/ng-aquila/compare/v17.3.2...v17.4.0) (2024-03-20)
+
+
+### Bug Fixes
+
+* **grid:** throw only warning if nxRow element is missing ([bd35395](https://github.com/allianz/ng-aquila/commit/bd353956d0c5b11594759831d91a5da93e4856b2))
+
+
+### Features
+
+* **forms:** add Formfield, Dropdown and Input harnesses ([36d4b1d](https://github.com/allianz/ng-aquila/commit/36d4b1d78c21241d956faf00e6e2367ab7299713))
+
+
+
+## [17.3.2](https://github.com/allianz/ng-aquila/compare/v17.3.1...v17.3.2) (2024-03-08)
+
+
+### Bug Fixes
+
+* **circle-toggle:** inherit properties from group dynamically ([c4b899d](https://github.com/allianz/ng-aquila/commit/c4b899d00e2b32786e37a2c5918cfb655871f3fc))
+* **table:** allow sort column to read out by screeenreader ([16e71e0](https://github.com/allianz/ng-aquila/commit/16e71e076adfb0a57fa59b7c3638409c4d95af03))
+
+
+
+## [17.3.1](https://github.com/allianz/ng-aquila/compare/v17.3.0...v17.3.1) (2024-03-07)
+
+
+### Bug Fixes
+
+* **grid:** remove :host from css selectors ([ebf1c82](https://github.com/allianz/ng-aquila/commit/ebf1c825d8dfbcd13b6901646a8702116937b541))
+* **mask:** handle initial number values in form model ([42747b3](https://github.com/allianz/ng-aquila/commit/42747b3e305d500e76b18aa8f1e0cf399437e04c))
+* **small-stage:** change spacings ([5d70fb8](https://github.com/allianz/ng-aquila/commit/5d70fb80b6818903ae68a834910015376aa4766f))
+* **table:** table and ag-grid visual alignments ([f9e0c83](https://github.com/allianz/ng-aquila/commit/f9e0c83311dd69a5be065d5bb0715cf38a9a2970))
+
+
+
+# [17.3.0](https://github.com/allianz/ng-aquila/compare/v17.2.0...v17.3.0) (2024-02-27)
+
+
+### Bug Fixes
+
+* **ag-grid-theme:** remove selected row border ([457ca0c](https://github.com/allianz/ng-aquila/commit/457ca0ce4d25f60606324659f23e545f2ae7140e))
+* **formfield:** run change detection when control changes ([9cfddc8](https://github.com/allianz/ng-aquila/commit/9cfddc88328b7766b94762cc03cdf815eaba36c5))
+* **icon:** set aria-hidden ([d7f47de](https://github.com/allianz/ng-aquila/commit/d7f47deaa3e97b54a2f8cbabad9f969739351934))
+* **mask:** update model correclty when dropspecialcharacters changes ([1859690](https://github.com/allianz/ng-aquila/commit/1859690f566d2b2d52c57f817fb2bba9054fe791))
+* **multi-select:** prevent overlay scroll when text too long ([37bf2de](https://github.com/allianz/ng-aquila/commit/37bf2dec1d5ea1b432540c8b5f8b08258f64c421))
+* **progress-indicator:** change disabled colors ([e87eec4](https://github.com/allianz/ng-aquila/commit/e87eec426604f70f409425942fa30820f4de0c62))
+* **small-stage:** vertical spacing ([56834b4](https://github.com/allianz/ng-aquila/commit/56834b4f6ad8540c62ac7758e15b417602702035))
+
+
+### Features
+
+* **link,data-display,checkbox,radio,card:** add testing harnesses ([8ae0652](https://github.com/allianz/ng-aquila/commit/8ae065222ba87afc006871613bc8075eec086c3b))
+* **message-toast:** message toast from component ([882010f](https://github.com/allianz/ng-aquila/commit/882010f0a4b23b16949b79c6c6c3526e590ef9da))
+
+
+
+# [17.2.0](https://github.com/allianz/ng-aquila/compare/v17.1.2...v17.2.0) (2024-02-01)
+
+
+### Bug Fixes
+
+* **grid-examples:** wrong imports breaking the docs ([7f1a13a](https://github.com/allianz/ng-aquila/commit/7f1a13ab87a55f0490155b6f49264af2f8729cd3))
+* **multi-select:** error message shown too early([cc5f666](https://github.com/allianz/ng-aquila/commit/cc5f666f22a20722995ece8afb03010f51a82fe4))
+* **radio-button:** no random suffix for custom ID ([65d9828](https://github.com/allianz/ng-aquila/commit/65d98282c602031261541c6c12a945ab504e62a2))
+
+
+### Features
+
+* **button,icon:** add testing harness ([cd07c76](https://github.com/allianz/ng-aquila/commit/cd07c7629adf23fd9ed33d48b4e036fa5ecb4995))
+
+
+
+## [17.1.2](https://github.com/allianz/ng-aquila/compare/v17.1.1...v17.1.2) (2024-01-25)
+
+
+### Bug Fixes
+
+* **checkbox:** add custom requiredTrue validator ([081fd6a](https://github.com/allianz/ng-aquila/commit/081fd6aee12e460389122e602631d6e088894b9b))
+* **file-uploader:** disable in reactive form ([6e22a4b](https://github.com/allianz/ng-aquila/commit/6e22a4bd5729ff99510deabc66dd481ea614fd52))
+* **formfield:** ellipsis and tooltip for disabled and readonly nxInput ([7bf660d](https://github.com/allianz/ng-aquila/commit/7bf660d49f679a27ee5f1e627ef0b6c4c225f0be))
+* **table:** design alignment NDBX  and AG Grid theme ([38e9123](https://github.com/allianz/ng-aquila/commit/38e9123f0ac121f50bdefdddac30ad44ef61de21))
+* **tree:** use inputs alias to mitigate CDK change ([15caf21](https://github.com/allianz/ng-aquila/commit/15caf2136c2fef5f6c1e98018d5a4258ece1aeac))
+
+
+
+## [17.1.1](https://github.com/allianz/ng-aquila/compare/v17.1.0...v17.1.1) (2024-01-11)
+
+
+### Bug Fixes
+
+* **dropdown:** filter input resizing on focus out ([59bdd31](https://github.com/allianz/ng-aquila/commit/59bdd311c8a6a517f9dec9fd4bf60aed3be672c8))
+* **formfield:** correct focus style ([a9dffff](https://github.com/allianz/ng-aquila/commit/a9dffff96f49792efd5beb4d079e802688baa45d))
+* **popover:** defer opening of popover ([3c29a37](https://github.com/allianz/ng-aquila/commit/3c29a3797e7cb77f863dad8018788aa1bd23512b))
+
+
+
+# [17.1.0](https://github.com/allianz/ng-aquila/compare/v17.0.0...v17.1.0) (2023-12-21)
+
+### Grid structure expectations
+Some projects were affected by a change in 16.12.0 that caused a runtime error. The error is caused when `nxRow` elements are not surrounded by any `nxLayout` parent.
+As a workaround we made the `nxLayout` parent optional for now. But we want to encourage you to always use the `nxLayout` parent as it is described in the grid documentation. A warning is shown in the console when the dev mode is active to show you that you are affected. But we might change this in a future major version and make the `nxLayout` parent mandatory.
+
+For users affected in the 16.x.x versions we recommend to stay at 16.11.0 and not update to 16.12.0 before you upate to 17.1.0.
+
+### Ag-grid theme beta necessary breaking change
+We had to move away from our first approach to use the SASS API of Ag-grid for multiple reasons. This unfortunately results in a breaking change which we reserve outside of a major version while a feature is still in beta/experimental state.
+
+Please see the [ag-grid theme documentation](https://allianz.github.io/ng-aquila/documentation/ag-grid-theme) for the updated documentation.
+
+In short:
+- make sure that you import the ag-grid base styles and the alpine theme. these were compiled into the aquila theme file before which is the root of the problems. e.g. in the angular.json file:
+```
+"styles": [
+  "node_modules/ag-grid-community/styles/ag-grid.css",
+  "node_modules/ag-grid-community/styles/ag-theme-alpine.css",
+  "node_modules/@aposin/ng-aquila/themes/ag-theme-aquila.css",
+  "src/styles.scss"
+]
+```
+- add the `ag-theme-alpine` class to the grid container
+```
+<ag-grid-angular class="ag-theme-alpine ag-theme-aquila"></ag-grid-angular>
+```
+- Allianz internal projects: rename `ag-allianz-icons` to `ag-theme-allianz-icons`
+
+
+### Bug Fixes
+
+* **ag-grid:** remove SASS API usage ([0c6ab9a](https://github.com/allianz/ng-aquila/commit/0c6ab9a3832117212d860dbb064e053a0556e209))
+* **formfield:** make focus style always at the bottom ([0e43f44](https://github.com/allianz/ng-aquila/commit/0e43f442848315d5fa99f1d540095509f8b6fb40))
+* **grid:** make nxLayout parent optional for now ([5147ae6](https://github.com/allianz/ng-aquila/commit/5147ae6b02e98147764a240694d60abb9bbe5cd4))
+* **table:** hide sort button in screen reader form mode  ([0b0bad1](https://github.com/allianz/ng-aquila/commit/0b0bad144fb73d272538f3b49addc1b545dbf048))
+* **timefield:** remove ontouched from oninput ([8572312](https://github.com/allianz/ng-aquila/commit/8572312292feb080eaf7d9dbccb4faf7ebb785cd))
+
+
+### Features
+
+* **pagination:** pagination with bullets ([f334029](https://github.com/allianz/ng-aquila/commit/f334029a3f1b77212fc39a760a5b9890cf2af35e))
+
+
+
+# [17.0.0](https://github.com/allianz/ng-aquila/compare/v16.12.0...v17.0.0) (2023-11-29)
+
+
+### Features
+
+* update to Angular 17 ([ebdf31e](https://github.com/allianz/ng-aquila/commit/ebdf31e8cfcc6be87d7bc5a472e5d7e1c07cae17))
+
+
+
+# [16.12.0](https://github.com/allianz/ng-aquila/compare/v16.11.0...v16.12.0) (2023-11-29)
+
+### Container Queries
+We added a new feature to the grid component that introduces container queries. The grid will then automatically adjust the number of columns and rows based on the container size and not on the viewport size.
+
+
+### Bug Fixes
+
+* **comparision-table:** improve toggle section screen reader output([f435eb0](https://github.com/allianz/ng-aquila/commit/f435eb0b00c815695072f4590fda1c85ada6e4f7))
+* **datefield:** provide NxDatepickerIntl in root and not in module  ([36b46fe](https://github.com/allianz/ng-aquila/commit/36b46fed725350667a7e9c49988c7f99c19c3fec))
+* **dropdown:** cursor navigation in filter input field ([0f44626](https://github.com/allianz/ng-aquila/commit/0f446261d54e37c2f06b0c25e244810180919665))
+* **formfield:** formfield focus style ([ac6c1bb](https://github.com/allianz/ng-aquila/commit/ac6c1bbe64934eabec17fe0161a7ff3b4ea7f93e))
+* overflow issue on sticky header and column ([5e73c09](https://github.com/allianz/ng-aquila/commit/5e73c09cb2138cb93d2dfafe6cbd4f98f377e686))
+* **phone-input:** mark for check when setReadonly is called ([620ab37](https://github.com/allianz/ng-aquila/commit/620ab370bf6278b88161b127f66a0659c150d494))
+* remove relation icon from essential icons ([50272e9](https://github.com/allianz/ng-aquila/commit/50272e978cf7eac9f476e40876c9198b855b43e8))
+* **signal-button:** change warning icon ([1e27714](https://github.com/allianz/ng-aquila/commit/1e2771468959029e89e5b0ea19209fadaa74032c))
+* **tabs:** correct disabled style ([255377f](https://github.com/allianz/ng-aquila/commit/255377f15e85177e0851d675228f15021007fc70))
+
+
+### Features
+
+* **grid:** add container query option ([017bad2](https://github.com/allianz/ng-aquila/commit/017bad21d9e34c44a2bd2a5a27b7e9576942a813))
+* **selectable-card:** add radio button behavior ([d24d5a6](https://github.com/allianz/ng-aquila/commit/d24d5a69b96fe0b11f389739cb30e3df2cb78805))
+* **slider:** slider info icon slot ([f068681](https://github.com/allianz/ng-aquila/commit/f068681336e77991d5a81143f3ad4145c1d70bdb))
+
+
+
+# [16.11.0](https://github.com/allianz/ng-aquila/compare/v16.10.0...v16.11.0) (2023-11-09)
+
+
+### Bug Fixes
+
+* **context-menu:** checked icon position ([24c0e94](https://github.com/allianz/ng-aquila/commit/24c0e943057403e97f3b277b289d45ba3b50c640))
+* **context-menu:** revert icon size change ([ca341d4](https://github.com/allianz/ng-aquila/commit/ca341d4c89ca684f0e0ef2b1d991148cba6c0a40))
+* **file-uploader:** add aria label for file list ([8254c00](https://github.com/allianz/ng-aquila/commit/8254c00210e6f6760d637c677f00cfeca76ddfd0))
+* **formfield:** dont overwrite the formfield-outline-label-font-weight token ([5dcd3c2](https://github.com/allianz/ng-aquila/commit/5dcd3c25f3f201e15c90163641f80d2b95211e98))
+* **tabs:** fully scroll button into view ([51656a0](https://github.com/allianz/ng-aquila/commit/51656a062eb9f75757b6d3456bdb3a9ee6e2bc0d))
+
+
+### Features
+
+* **formfield:** add new active border width token ([6d08cd6](https://github.com/allianz/ng-aquila/commit/6d08cd6a5bc58bb6afc380c8ff982b92b451a751))
+* **popover:** popover width and maxwidth ([7813b54](https://github.com/allianz/ng-aquila/commit/7813b5446e7d1b8e2287cb9ab466fb684393147b))
+* **signal-button:** signal button with popover ([9abaec1](https://github.com/allianz/ng-aquila/commit/9abaec177b74a0a304c579ffd35c9befce1286c8))
+
+
+
+# [16.10.0](https://github.com/allianz/ng-aquila/compare/v16.9.0...v16.10.0) (2023-10-23)
+
+### File Uploader UX updates
+The file uploader got some updates to recent UX guideline changes. Most notable changes are:
+- the error messages are shown above the label
+- files that do not validate or have an error while uploading get removed from the file list
+- the file list shows a file icon depending on the type now
+
+
+### Bug Fixes
+
+* **ag-grid:** color and layout fixes([735d3ea](https://github.com/allianz/ng-aquila/commit/735d3ea887d9dc42ecb68ef1ac3cb4a7c60f3aa0))
+* **datefield:** accessible disabled colors ([4f96fbf](https://github.com/allianz/ng-aquila/commit/4f96fbf4531e1d44939c530679d66928db90aaa9))
+* **formfield:** update focus styles ([2fb75fe](https://github.com/allianz/ng-aquila/commit/2fb75fe979b84b783849892a03e175aa41bd2510))
+* **license-plate:** correct disable style ([9a40f97](https://github.com/allianz/ng-aquila/commit/9a40f97a039112d2aef24e38105f30f97ac86def))
+* **multi-select:** prevent value is not present in option warning ([c3291c0](https://github.com/allianz/ng-aquila/commit/c3291c0700a776f95ab08f6735c70c0dd11def0e))
+* **pagination:** add button type ([f87c95d](https://github.com/allianz/ng-aquila/commit/f87c95dd75003b5c9e4b171cd73d009313b560f0))
+* **popover:** fix for keycode enter ([28fe521](https://github.com/allianz/ng-aquila/commit/28fe521e512caf40ba4d2ad9ac39aa4fd33856fa))
+* **radio:** prevent group overwrite checked button ([cd6e2b2](https://github.com/allianz/ng-aquila/commit/cd6e2b22381be0d28298b29fafc7ed80a8382d3e))
+* **table:** set sticky header z-index ([89c05ad](https://github.com/allianz/ng-aquila/commit/89c05ad99abb63c9153f356abfadd10dcbc496c3))
+* **tabs:** remove scroll buttons from tabindex ([6738f12](https://github.com/allianz/ng-aquila/commit/6738f12c0d692e0f3b07959497c7c1bf5b6573e8))
+* **upload:** prevent error disappear when upload failed ([cffaca6](https://github.com/allianz/ng-aquila/commit/cffaca6607564d12e840903372ec84817fc79c69))
+* **word:** update focus styles ([cadd2ee](https://github.com/allianz/ng-aquila/commit/cadd2ee48590b5ccafebabbd14f5cc36165f2656))
+
+
+### Features
+
+* **accordion:** add option to scroll body into view when panel gets opened ([3cf35ab](https://github.com/allianz/ng-aquila/commit/3cf35ab331d418abaf8719a7e8c694bcb0e5d049))
+* **forms:** add programmatic readonly api to existing components ([d715947](https://github.com/allianz/ng-aquila/commit/d715947cef67f53fdb113219021ab55478b2b87d))
+* **uploader:** changes showing error, add file icon ([c4c592e](https://github.com/allianz/ng-aquila/commit/c4c592e89c72bb0f2aa4d1f88104773f54df0329))
+
+
+
+# [16.9.0](https://github.com/allianz/ng-aquila/compare/v16.8.0...v16.9.0) (2023-09-20)
+
+
+### File uploader new option to handle errors
+We identified some problems with how the file type, max file size and max files validators are handled. These validators were added to the form control validators. But as they also block the files from being added to the file list this can lead to a situation where the control is invalid but it is not obvious for the user how to resolve that.
+The mentioned validations can now be accessed via an `errors` property on the `nx-file-uploader` component. In addition you can disable that the validators are added to the form control validators by setting `noBlockingValidators="true"`. This is opt-in as it would be a breaking change. You can find more information and updated examples in the file uploader documentation page.
+
+### Bug Fixes
+
+* **ag-grid:** add more icon mappings ([8fee8a0](https://github.com/allianz/ng-aquila/commit/8fee8a07a37ce8ae06996d4a615142c9cf4cbb00))
+* **data-display:** correct font weight ([d036d23](https://github.com/allianz/ng-aquila/commit/d036d23f923ba2338d8c4ad29d2674c4db52e7b0))
+* **datepicker:** add close icon aria label ([b971a2a](https://github.com/allianz/ng-aquila/commit/b971a2a789211933b61f1c9bf5af037de599bfdc))
+* **docs:** add nxModalTitle ([12781f9](https://github.com/allianz/ng-aquila/commit/12781f985f529d39a1bf121352c572068d4b868a))
+* **error:** add aria-hidden to the icon ([0f899e3](https://github.com/allianz/ng-aquila/commit/0f899e32908594203102430ea92b32a58086f10d))
+* export themes and styles in package.json ([3b5bc1d](https://github.com/allianz/ng-aquila/commit/3b5bc1da2b8d06cd7aad0cb33fbb779a5b751c63))
+* **fileuploader:** hide file list container ([4b1fe2d](https://github.com/allianz/ng-aquila/commit/4b1fe2db17a19a72936e9cd9cad4f80c5829b5d1))
+* **mulit-select:** add readonly ([86013b1](https://github.com/allianz/ng-aquila/commit/86013b15788be3f522438aa21e8567b8ae0fe7d8))
+* **phone-input:** allow leading zero for Italy ([399cd9e](https://github.com/allianz/ng-aquila/commit/399cd9ef47cb3d9d84653c65463053cadc80a470))
+* **tooltip:** add retail ([eb82e89](https://github.com/allianz/ng-aquila/commit/eb82e89c4bcd72d14490027b7549ad47c8ad9fef))
+* **tree:** keyboard navigation ([46448ea](https://github.com/allianz/ng-aquila/commit/46448ead48380b5bf659e1157ec345cbc1b880b4))
+* **tree:** use role tree, correct aria-level ([a865a0d](https://github.com/allianz/ng-aquila/commit/a865a0d10d8ad1d0576b999403529f8ca67e7036))
+
+
+### Features
+
+* **file-uploader:** provide new error list for blocking validations ([d5f6b2e](https://github.com/allianz/ng-aquila/commit/d5f6b2e02b192e94f334136ce529d372b293de86))
+
+
+
+# [16.8.0](https://github.com/allianz/ng-aquila/compare/v16.7.1...v16.8.0) (2023-08-31)
+
+
+### Ag-grid theme
+For complex data tables we are now providing a theme for ag-grid. We wanted to provide an early version and we are looking for feedback. Please try it out and let us know what you think.
+
+### Bug Fixes
+
+* **ag-grid:** resize handle, popup backgrounds ([2a37a0e](https://github.com/allianz/ng-aquila/commit/2a37a0e6bfee11f141ba8df146a636768daf2a9a))
+* **code-input:** fix initial disabled state ([b435621](https://github.com/allianz/ng-aquila/commit/b4356219ef4c33a699a7012c5f7d6d53c01ff87d))
+* **pagination:** add font inherit ([0de0306](https://github.com/allianz/ng-aquila/commit/0de030609dabe5f035cf3b6272406634bd6f4990))
+
+
+### Features
+
+* **ag-grid:** provide theme for ag-grid ([74ada8e](https://github.com/allianz/ng-aquila/commit/74ada8ee5133c273a7f177695d85faf739c74ea6))
+
+
+
+## [16.7.1](https://github.com/allianz/ng-aquila/compare/v16.7.0...v16.7.1) (2023-08-24)
+
+
+### Bug Fixes
+
+* **code-input:** handle mobile keyboard clipboard pasting ([bf095ee](https://github.com/allianz/ng-aquila/commit/bf095ee1ce94926d70da6bbcef70a731bdec052b))
+* **multi-select:** select all with filter ([b1af230](https://github.com/allianz/ng-aquila/commit/b1af2306e73021190b2d5e34a498d1df251f4caf))
+* **slider:** increase value label font-weight ([ba1ea01](https://github.com/allianz/ng-aquila/commit/ba1ea01c3efdcaaf9408b007d84136ed4cf7e309))
+
+
+
+# [16.7.0](https://github.com/allianz/ng-aquila/compare/v16.6.0...v16.7.0) (2023-08-17)
+
+
+### Bug Fixes
+
+* **breadcrumbs:** add hover to all variants ([36b0c36](https://github.com/allianz/ng-aquila/commit/36b0c36807f291fe62b58f2170191e5df630976a))
+* **stepper:** show check mark when form  disabled ([f646b34](https://github.com/allianz/ng-aquila/commit/f646b3495172ad7647ace3099dbcf824af2ddd70))
+* **tabs:** mobileAccordion option not working with rxjs > 7.8.0 ([9307ba0](https://github.com/allianz/ng-aquila/commit/9307ba0162883e7354ccb3e84240561a3ce98fdc))
+
+
+### Features
+
+* **modal:** add modal status config ([41705dd](https://github.com/allianz/ng-aquila/commit/41705ddd72107ebe9ad7a65b50aded8235008765))
+
+
+
+# [16.6.0](https://github.com/allianz/ng-aquila/compare/v16.5.0...v16.6.0) (2023-08-03)
+
+
+### Bug Fixes
+
+* **footer:** center align navigation items on mobile ([d412e88](https://github.com/allianz/ng-aquila/commit/d412e8814182f6c0a51010c2a57374b86adfb2fd))
+* **iban-mask:** set country code earlier on browser autofill ([7c61a10](https://github.com/allianz/ng-aquila/commit/7c61a108fe30a8185ca3986de4e44859c7023c69))
+* **list:** change font weight of xsmall lists ([bad4c27](https://github.com/allianz/ng-aquila/commit/bad4c27d728e0d4eb786b5a919d2857eef213c52))
+* **modal:** revert back to old fullscreen css ([94705a8](https://github.com/allianz/ng-aquila/commit/94705a897c21c5c956adad93ce51da8ee5ad4fc1))
+* **nx-word, nxAutoResize:** prevent runtime error ([81ebd74](https://github.com/allianz/ng-aquila/commit/81ebd74e12dac1bee5001e6193d5d4bde4d26304))
+* **popover:** padding without close icon ([bb1eeb7](https://github.com/allianz/ng-aquila/commit/bb1eeb73f5f1e3abdd697d25216d4ae19d7ed21e))
+* **popover:** prevent focusing for trigger type hover ([25f5472](https://github.com/allianz/ng-aquila/commit/25f5472e7eb4d24c7cff60a48394c5a4de8b2ff7))
+* update font version in docs ([c330d6e](https://github.com/allianz/ng-aquila/commit/c330d6ecd5ae79155375bc0a46840a44f4a04419))
+
+
+### Features
+
+* **status-icon:** add status icon component ([854cbc5](https://github.com/allianz/ng-aquila/commit/854cbc56c7bca9b384fe82d51786b1f5ab50a12e))
+
+
+
+# [16.5.0](https://github.com/allianz/ng-aquila/compare/v16.4.1...v16.5.0) (2023-07-27)
+
+
+### Bug Fixes
+
+* **popover:** correct content padding and close icon size ([5a4c54a](https://github.com/allianz/ng-aquila/commit/5a4c54a7571a69fdf8eff7b7dfbe9870ce5b0756))
+
+
+### Features
+
+* **file-uploader:** add option for stricter file type validation ([37f6f32](https://github.com/allianz/ng-aquila/commit/37f6f325ad44185dbcffa8d09a25d59922d57ec7))
+* **modal:** add fullscreen config option ([0edede7](https://github.com/allianz/ng-aquila/commit/0edede7e8fb33ee81162b920d71e09a11f84fca9))
+
+
+
+## [16.4.1](https://github.com/allianz/ng-aquila/compare/v16.4.0...v16.4.1) (2023-07-20)
+
+
+### Bug Fixes
+
+* **comparison-table:** tablet layout sticky on mobile ([c6532ba](https://github.com/allianz/ng-aquila/commit/c6532ba19602b89719b9e492930300b4b8ee0d40))
+* **formfield:** correct optional label style ([3f130cf](https://github.com/allianz/ng-aquila/commit/3f130cf0343065e165f0e0250aa19c930b3dcdfe))
+* **message:** increase the right padding ([03d1879](https://github.com/allianz/ng-aquila/commit/03d187959529e64dec5bbbed54d446408de3a55c))
+* **pagination:** prevent a11y landmark duplication ([d0748e6](https://github.com/allianz/ng-aquila/commit/d0748e64ad627bc39e5c47d5a868856542230361))
+* **popover:** change role for a11y landmark ([6318c56](https://github.com/allianz/ng-aquila/commit/6318c56ad4f3502bbf7fdca41d53eb3c43e7a1ec))
+* **popover:** don't move focus and remove close button for trigger type hover ([a6c5279](https://github.com/allianz/ng-aquila/commit/a6c5279cbb17603d1b578e3ce314648753fbafee))
+* **table:** add zebra color to sticky column ([f5d071a](https://github.com/allianz/ng-aquila/commit/f5d071a6d705b81dbab29ecc082e26f017641e4a))
+
+
+
+# [16.4.0](https://github.com/allianz/ng-aquila/compare/v16.3.2...v16.4.0) (2023-07-11)
+
+### Grid bundle size reduction
+The grid component created a lot of duplicate or unused css. We optimized this now which results in a parsed size reduction of around 50% and a compressed size reduction of around 33%. We removed some css classes that were there in code but were not used by any public API of the component. The classes affected are `push-{tier}-{number}` and `pull-{tier}-{number}`. If you have applied them manually please use some other mechanism like flexbox order instead.
+
+
+### Bug Fixes
+
+* **button:** prevent click bindings from firing on disabled anchor buttons ([3d2ef2d](https://github.com/allianz/ng-aquila/commit/3d2ef2dba24ab466a327c7f85e5500a712cf9cc9))
+* **datefield:** allow NX_DATE_LOCALE to be provided in platformBrowserDynamic ([2928f7a](https://github.com/allianz/ng-aquila/commit/2928f7aaaecc13a17fdaa21afdb5737038eaee53))
+* **modal:** scope modal style ([b6e50a6](https://github.com/allianz/ng-aquila/commit/b6e50a66e07e959b2c71174e587c692a0ad12767))
+
+
+### Features
+
+* **grid:** improve css to reduce bundle size ([b9789c4](https://github.com/allianz/ng-aquila/commit/b9789c4c2def600c5745d4d46c1bb684019b1dda))
+* **modal:** add shouldClose api ([1693766](https://github.com/allianz/ng-aquila/commit/1693766be1a2d709881c009d7efeeec627974aef))
+
+
+
+## [16.3.2](https://github.com/allianz/ng-aquila/compare/v16.3.1...v16.3.2) (2023-06-30)
+
+This is a technical release containing internal documentation changes.
+
+## [16.3.1](https://github.com/allianz/ng-aquila/compare/v16.3.0...v16.3.1) (2023-06-30)
+
+
+### Bug Fixes
+
+* **card:** fix highlight background token ([2a52654](https://github.com/allianz/ng-aquila/commit/2a5265496e17e8eea80af84009fcfaf6c0270f68))
+* **multi-select:** add select all to keyboard nav ([f101dbf](https://github.com/allianz/ng-aquila/commit/f101dbfc1d63479588a5d39d4be528c7d56fb325))
+* **multi-select:** prevent incorrect sorting of the list when applying filter ([ebe1381](https://github.com/allianz/ng-aquila/commit/ebe1381b730cf135e2ed52685329e83ec09f9a15))
+* **table:** default sticky row background ([f3acc02](https://github.com/allianz/ng-aquila/commit/f3acc0273466c6fa78379f2ccb2b258da043a10e))
+
+
+
+# [16.3.0](https://github.com/allianz/ng-aquila/compare/v16.2.0...v16.3.0) (2023-06-21)
+
+
+### Bug Fixes
+
+* **datepicker:** have fallback for locale normalize format ([294027a](https://github.com/allianz/ng-aquila/commit/294027a707adbbef08e5d8bb7079010e17e69b40))
+* **schematics:** add workaround for nx workspaces ([63c361b](https://github.com/allianz/ng-aquila/commit/63c361b7b8e396e90b7e85e9542fd188d1464ce0))
+
+
+### Features
+
+* **table:** table row maystick ([7ea074a](https://github.com/allianz/ng-aquila/commit/7ea074a2241a6308674ac8adc94f8eaf726729f2))
+
+
+
+# [16.2.0](https://github.com/allianz/ng-aquila/compare/v16.1.0...v16.2.0) (2023-06-13)
+
+
+### Bug Fixes
+
+* **modal:** prevent buttons flicker when open modal ([5bcbd9f](https://github.com/allianz/ng-aquila/commit/5bcbd9f77881a11214e38cf07c3b305e733dc366))
+
+
+### Features
+
+* **headline:** add size and negative inputs ([b1ca6ff](https://github.com/allianz/ng-aquila/commit/b1ca6ff22e357582232a1052124fc2ccc53a05dd))
+* **formfield:** add new tokens for one allianz ([1979b4b](https://github.com/allianz/ng-aquila/commit/1979b4b9c6124d7c73bad53ad690efb2ce3853a7))
+
+
+
+# [16.1.0](https://github.com/allianz/ng-aquila/compare/v16.0.0...v16.1.0) (2023-06-06)
+
+### Button with icons
+A new API was added to position icons inside buttons correctly with the proper spacing. That way you do not have to add spacing between icons and text manually anymore. See the
+[with icons example](https://allianz.github.io/ng-aquila/documentation/button/overview#with-icons) how to use it.
+
+### Bug Fixes
+
+* **mult-select:** remove focus outline ([89c8e2b](https://github.com/allianz/ng-aquila/commit/89c8e2bed2e82f144438503bc610b5b0a968f0a9))
+* **multiselect:** open with alt plus arrow ([58b0749](https://github.com/allianz/ng-aquila/commit/58b0749992912e315bc2b81d112d57948fd49fe3))
+* **popover:** prevent page scroll and close abruptly ([0c9c813](https://github.com/allianz/ng-aquila/commit/0c9c813ece4c470c4a48d15566a1f51dcdc98b1b))
+* **radio:** respect errorstatematcher ([b83ee84](https://github.com/allianz/ng-aquila/commit/b83ee84caf4ebfbb645776a6f911e08d24b0330e))
+* **tabs:** prevent navigation button flashing ([c1e8421](https://github.com/allianz/ng-aquila/commit/c1e84210a52f1591a2ffa1df7d43787e98caa3be))
+
+
+### Features
+
+* **button:** add icon position attributes ([d50c923](https://github.com/allianz/ng-aquila/commit/d50c923a0b3798c700c42c0cb57b8d8d64eebca5))
+* **plain-button:** add variant and size for one allianz ([eb4f5c3](https://github.com/allianz/ng-aquila/commit/eb4f5c30c2389ffc38ab481c0de74a42a81b7e68))
+
+
+
+# [16.0.0](https://github.com/allianz/ng-aquila/compare/v15.3.0...v16.0.0) (2023-05-23)
+
+Aquila v16.0.0 is based on Angular 16. For updating please see our update guide: https://allianz.github.io/ng-aquila/guides/releases
+
+### Removal of `nx` prefixes for Inputs and Outputs
+We cleaned up some inconsistencies in our input and output namings and removed `nx` prefixes, e.g. `nxDisabled` on the dropdown is now `disabled`. These changes will be migrated automatically for you and applied in your application when you run `ng update`.
+In the `Breaking Changes` section of [the Changelog](./guides/CHANGELOG) you can find commits with affected components. If after the migrations you get errors please check the API pages of the respective components. The angular compiler should also guide you pretty well and often suggest the correct names.
+
+### Formfield visual change
+The formfield formerly reserved space at the bottom for a possible hint. This space also served as the spacing between formfields and the hint would render in this reserved space. This leads to situations where you don't have sufficient space between the hint and the next row.
+From now on if a hint is present there will be additional space after the hint.
+
+If this somehow affects your application in a negative way you can temporarily use a compatibility CSS file which provides the previous styles. For that import the file `@aposin/ng-aquila/css/compatibility/formfield-padding.css` in the angular.json
+
+### `nxMask` validation prevented optional controls
+The `nxMask` internal validator always validated empty strings, resulting in a `nxMaskLengthError`. This makes it impossible to have a control as optional. We fixed this bug which is technically a breaking change. If you relied on getting the `nxMaskLengthError` for empty strings as a replacement for a required validator please add the `required` validator now.
+
+
+### BREAKING CHANGES
+
+* **accordion:** remove nx prefixes for inputs ([449178e](https://github.com/allianz/ng-aquila/commit/449178e70312e7e0502cb75aa93099c50a53feea))
+* **autocomplete:** remove nx prefixes from inputs ([c00cda0](https://github.com/allianz/ng-aquila/commit/c00cda0c31826a2c91a8404a4025eab088b63245))
+* **code-input:** remove nx prefix from inputs ([b539cda](https://github.com/allianz/ng-aquila/commit/b539cdac9d98783c32e1dd5b05c98b7226104a9c))
+* **col:** remove nx prefix from input ([a79ea4d](https://github.com/allianz/ng-aquila/commit/a79ea4d41ea5220a2ed8a5d17799881c7ec494cf))
+* **col:** remove nx prefix from input ([50e1baf](https://github.com/allianz/ng-aquila/commit/50e1baf2f91234b84b3e61c3630c4db437faf1ae))
+* **dropdown:** remove nx prefixes from inputs and outputs ([a416425](https://github.com/allianz/ng-aquila/commit/a416425173108e45d039fbd316d692f1dd3718b4))
+* **dynamic-table:** remove nx prefix from input and output ([d249203](https://github.com/allianz/ng-aquila/commit/d249203b17b60bf86668cd42f32415b12475d3f1))
+* **formfield:** change tokens for bottom padding ([79dc92f](https://github.com/allianz/ng-aquila/commit/79dc92fe134fea4c457413a306828c9d2aa73d3c))
+* **formfield:** remove nx prefixes from inputs ([2192dcf](https://github.com/allianz/ng-aquila/commit/2192dcffa8b4f8061a40da2535f246697ad270b9))
+* **formfield:** rename input name nxStyle to negative ([0b2667f](https://github.com/allianz/ng-aquila/commit/0b2667f424242e754c0523a036de8bfbb2e06894))
+* **spinner, switcher, taglist:** remove nx prefixes ([f900cb0](https://github.com/allianz/ng-aquila/commit/f900cb0a1841a8eb12e11834546e8758815b6ae2))
+* **number-stepper, page-search, pagination, radio-button:** remove nx prefixes ([c6088bc](https://github.com/allianz/ng-aquila/commit/c6088bc999d74033d1a0c616a392cfd1b8ab2862))
+* **menu-button, message, modal, natural-language-form, word:** remove nx prefixes ([65f6b63](https://github.com/allianz/ng-aquila/commit/65f6b6383a3fb2c23d2016b9ff34cdaf6558ed12))
+* **row:** remove nx prefix from input ([4be7205](https://github.com/allianz/ng-aquila/commit/4be7205fc01f395b4ce3c3b5ed0a86899330522c))
+* **row:** remove nx prefix from inputs ([7cd01b7](https://github.com/allianz/ng-aquila/commit/7cd01b72f7b8e3dc4ac009425414fd4d074657a0))
+* **video:** remove nx prefix input ([a5dedc1](https://github.com/allianz/ng-aquila/commit/a5dedc11cb4e9c0e334ccd7562a15bb0cfe8ee18))
+* **mask:** not mark empty value as invalid ([b35473d](https://github.com/allianz/ng-aquila/commit/b35473dc9648e961b403e188b062cd9d41388c57))
+
+
+
+
+# [15.3.0](https://github.com/allianz/ng-aquila/compare/v15.2.1...v15.3.0) (2023-05-22)
+
+
+### Bug Fixes
+
+* **auto-complete:** open panel in shadow dom ([d55e0f9](https://github.com/allianz/ng-aquila/commit/d55e0f9baf5ba1decf8d8e9a2e59b1138cac9918))
+* **circle-toggle:** add aria-required ([fed3efe](https://github.com/allianz/ng-aquila/commit/fed3efe7bf5aacf5db4632e46d62654d4697120c))
+* **dropdown:** close tooltip on dropdown click ([e2ac39d](https://github.com/allianz/ng-aquila/commit/e2ac39de8ddb3d055c019cdd7e4010267deecfd1))
+* **multi-select:** screenreader for option selection ([54dcf0a](https://github.com/allianz/ng-aquila/commit/54dcf0adf2a4056d0fa8ae016af4cf9e199a8810))
+* **multi-step:** add aria-controls ([7213fd1](https://github.com/allianz/ng-aquila/commit/7213fd112dabe6eafb7164680ded80e6616a8dac))
+* **number-stepper:** prevent null id ([1e71035](https://github.com/allianz/ng-aquila/commit/1e7103522e06f482362ad86121ad8d55a606e4fe))
+* **phone-input, dropdown:** add aria-invalid ([da08695](https://github.com/allianz/ng-aquila/commit/da086951ec00c3d17c08a8ea1314acb3a0305d8e))
+* **popover:** add extended example ([dcb8cf5](https://github.com/allianz/ng-aquila/commit/dcb8cf5aec1b2c4c366cabae99e8bd1bc79f2da8))
+* **popover:** close on tab ([cab9391](https://github.com/allianz/ng-aquila/commit/cab9391c7171ff127046f93b581a95f2a987172a))
+* **radiobutton:** give radiobuttons a random ID suffix ([0bae42a](https://github.com/allianz/ng-aquila/commit/0bae42ab9d24ad125b63ede15bc5af591014fcea))
+* **table:** remove empty aria label of sort-header ([c901b8a](https://github.com/allianz/ng-aquila/commit/c901b8a459ae79631d4daaf74f8ec83d1d02b11e))
+
+
+### Features
+
+* **allianz-one:** add allianz one module ([463ec5d](https://github.com/allianz/ng-aquila/commit/463ec5d25c28681f7458cb176c9e8f050835a091))
+* **datefield:** introduce strict date parsing token ([74caa17](https://github.com/allianz/ng-aquila/commit/74caa176ee1c1d48f76c52adedd6a365ecb56e02))
+* **number-stepper:** add api to disable input field direct interaction ([39aabd0](https://github.com/allianz/ng-aquila/commit/39aabd081cfd4b5111644a8f2987d9bc3db11a50))
+* **toolbar:** add divider component ([5dd0b95](https://github.com/allianz/ng-aquila/commit/5dd0b9576acd3dc3eec95e6ef6812b5208fad940))
+
+
+
+## [15.2.1](https://github.com/allianz/ng-aquila/compare/v15.2.0...v15.2.1) (2023-04-21)
+
+
+### Bug Fixes
+
+* **comparison-table:** avoid circular dependency ([3743236](https://github.com/allianz/ng-aquila/commit/37432362be84f79139e82106fa3313857f1b05bf))
+* **data-display:** add missing module in stackblitz ([edb9bfa](https://github.com/allianz/ng-aquila/commit/edb9bfa7850b4294fffcb572fba23c2114443076))
+* **datepicker:** add focus to close button ([0e2ac29](https://github.com/allianz/ng-aquila/commit/0e2ac296f44dcdee1ee56a7d399377fc1f190443))
+* **dropdown:** add aria-controls ([70368f2](https://github.com/allianz/ng-aquila/commit/70368f23c1858921b01a572c634efc99793e848c))
+
+
+
+# [15.2.0](https://github.com/allianz/ng-aquila/compare/v15.1.0...v15.2.0) (2023-04-18)
+
+
+### Bug Fixes
+
+* **file-uploader:** file name overflow ([d474a5e](https://github.com/allianz/ng-aquila/commit/d474a5e91bc25ae087b0393768db556c5e0fb06f))
+* **file-uploader:** prevent undefined id and label ([af02631](https://github.com/allianz/ng-aquila/commit/af026313ee21498214e985f35aa05608ca27660a))
+* **forms:** migration to typed forms ([b41d419](https://github.com/allianz/ng-aquila/commit/b41d41928b666390b48badd1afff4a8c06e3702a))
+* **input:** set aria-required when form control is required ([762ec06](https://github.com/allianz/ng-aquila/commit/762ec066a41e39e90064635b2b90f75b7652bf44))
+* **modal:** button styling ([1267d16](https://github.com/allianz/ng-aquila/commit/1267d1662a23184e9540c06794ebbd135a134f8e))
+* **modal:** update vertical spacings ([18bd4e4](https://github.com/allianz/ng-aquila/commit/18bd4e4d60bdca265b1a578600a7c0f3d8d0e14c))
+* **multi-select:** sort by selected before filter ([686f678](https://github.com/allianz/ng-aquila/commit/686f67844a49bcbe13a5099d255d426afbeb9f26))
+* **multi-select/dropdown:** comply with updateOn formcontrol ([ff97c82](https://github.com/allianz/ng-aquila/commit/ff97c8256ae518a2165da80eda7bb8b9c066a34c))
+* **multi-select:** correct divider style ([acf6c93](https://github.com/allianz/ng-aquila/commit/acf6c93b05df74005111e2fe852a42641abe8a10))
+* **multi-select:** keep selected value when option changes ([0f44af1](https://github.com/allianz/ng-aquila/commit/0f44af14dc6b0112a4a41eb94d6600307e1d87c0))
+* **multi-select:** update tooltip on value change ([d6edef6](https://github.com/allianz/ng-aquila/commit/d6edef6eae43fa155a109016b669a66ae026958a))
+* **table:** column resize error in firefox/safari ([946d96d](https://github.com/allianz/ng-aquila/commit/946d96d2f82626c8b0112c521589cf9061ec5272))
+
+
+### Features
+
+* **card:** add highlight header ([b5f37cc](https://github.com/allianz/ng-aquila/commit/b5f37ccb15e326d6bab524abd685b856f00e7bbc))
+* **comparison-table:** add error state ([521bf44](https://github.com/allianz/ng-aquila/commit/521bf44edbd1f22c327432f279a6989ccc38f61e))
+* **error:** allow setting empty appearance and fallback to message type ([bd7c684](https://github.com/allianz/ng-aquila/commit/bd7c684222dd98ee894d7e99fa3ee6cab61faf90))
+* **multi-select:** add opened/closed event ([4e44786](https://github.com/allianz/ng-aquila/commit/4e447861c4c7a7afe77f8ddabb7f1b819a0a962b))
+
+### Styles
+
+* **multi-select:** change select all button style, remove clear all button ([bf01401](https://github.com/allianz/ng-aquila/commit/bf01401af44164457118ea19ca8ea88089878a69))
+
+### BREAKING CHANGES
+
+-   We have moved DayJS and Decimal.js to peerDepencencies ([fa5eef59f](https://github.com/allianz/ng-aquila/commit/fa5eef59ff9d18af16d5868c4fc715a26eb97586)). In case you experience problems, make sure you install these libraries.
+
+
+# [15.1.0](https://github.com/allianz/ng-aquila/compare/v15.0.0...v15.1.0) (2023-02-20)
+
+
+### Bug Fixes
+
+* **build:** export css path ([747b314](https://github.com/allianz/ng-aquila/commit/747b314e5ee1f34a1711029b2f1e9005e0b76e41))
+* **datepicker:** fix contrast style ([86f6dd1](https://github.com/allianz/ng-aquila/commit/86f6dd13bae9341201e527cd189dd29cff2b5da0))
+* **docs:** stackblitz example template ([e28454e](https://github.com/allianz/ng-aquila/commit/e28454e49bb7cfa56ca84423e912d86169af219a))
+* **dropdown:** a11y screenreader repeat value ([0b4e176](https://github.com/allianz/ng-aquila/commit/0b4e17679e4cdf9d841c6a2ccb56a27be80452fd))
+* **dropdown:** update group styling ([4039bd5](https://github.com/allianz/ng-aquila/commit/4039bd5e2cddca9914ccfab71bbf6c52abb50e34))
+* **images:** use ngoptimizedimage  ([bf36cd9](https://github.com/allianz/ng-aquila/commit/bf36cd904badb459571b8596bd98c1eac5e7820c))
+* **modal:** changed one and two button styling ([73de432](https://github.com/allianz/ng-aquila/commit/73de43278399ec91f992ee23bc8ad9553c92eb9a))
+* **phone-input:** add support for blur and focus ([cb9b9cf](https://github.com/allianz/ng-aquila/commit/cb9b9cfce5a9e5d457c443185c93eb2d14fc1b9b))
+* **popover:** popover content should not be focusable ([84e448b](https://github.com/allianz/ng-aquila/commit/84e448bdc0413d05496d0d264dc8f8a75855a179))
+
+
+### Features
+
+* **dropdown:** provide focus out event ([eccc424](https://github.com/allianz/ng-aquila/commit/eccc4248720125d05e132d65d77e06b340988700))
+* **table:** add column reorder example and resize header directive ([35382fc](https://github.com/allianz/ng-aquila/commit/35382fc409fd778bfb196f7880796bb0f022778e))
+
+
+
 # [15.0.0](https://github.com/allianz/ng-aquila/compare/v14.2.0...v15.0.0) (2022-12-14)
 
 Aquila v15.0.0 is based on Angular 15. For updating please see our update guide: https://allianz.github.io/ng-aquila/guides/releases
@@ -46,9 +1095,9 @@ Aquila v14.0.0 is based on Angular 14. For updating please see our update guide:
 * **progress-stepper:** always show selected step ([72d6b65](https://github.com/allianz/ng-aquila/commit/72d6b653a4ce6cacfe64946478f58298e1f37817))
 * **rating:** add selected hover and active styling ([cdcbadf](https://github.com/allianz/ng-aquila/commit/cdcbadfd09c909bde3098da3c0e7d4a2e4e28587))
 * **toggle-button:** make view align with state ([1ca164d](https://github.com/allianz/ng-aquila/commit/1ca164d17cef5de1526dfb61927d593408cec759))
-* **autocomplete:** disabled option styling ([#757](https://github.com/allianz/ng-aquila/commit/479e8f3401aad30ccc5ef5c86bb0b7d9afd0f6c4)) 
-* **dropdown:** prevent selecting disabled option by keyboard ([#755](https://github.com/allianz/ng-aquila/commit/f17389e1dbdf360c380a138c96198e71ea5542cc)) 
-* **modal:** remove extra scrollbar ([#760](https://github.com/allianz/ng-aquila/commit/e1c186375387130f4c0b12e679668dc08873ee0c)) 
+* **autocomplete:** disabled option styling ([#757](https://github.com/allianz/ng-aquila/commit/479e8f3401aad30ccc5ef5c86bb0b7d9afd0f6c4))
+* **dropdown:** prevent selecting disabled option by keyboard ([#755](https://github.com/allianz/ng-aquila/commit/f17389e1dbdf360c380a138c96198e71ea5542cc))
+* **modal:** remove extra scrollbar ([#760](https://github.com/allianz/ng-aquila/commit/e1c186375387130f4c0b12e679668dc08873ee0c))
 
 
 ### Features
@@ -414,7 +1463,7 @@ To install this version, run `npm install @aposin/ng-aquila@next`.
 
 ### Bug Fixes
 
--   **accordion:** unify content padding ([#306](https://github.com/aposin/ng-aquila/issues/306)) ([65e46cc](https://github.com/aposin/ng-aquila/commit/65e46ccef971adc04e4e7d7efba3b6608b3e210e))
+-   **accordion:** unify content padding ([65e46cc](https://github.com/aposin/ng-aquila/commit/65e46ccef971adc04e4e7d7efba3b6608b3e210e))
 -   **progress-stepper:** cdk typings change ([c82d7f2](https://github.com/aposin/ng-aquila/commit/c82d7f20b47d833d6ea85935eeca0efb2e1c04cd))
 
 ## [11.7.3](https://github.com/aposin/ng-aquila/compare/v11.7.2...v11.7.3) (2021-07-27)
@@ -799,7 +1848,7 @@ As a documentation change there was added a link to stack-blitz for the examples
 ### Features
 
 -   **overlay-service:** add new overlay service ([9755de6](https://github.com/aposin/ng-aquila/commit/9755de6))
--   typescript 4 support ([#66](https://github.com/aposin/ng-aquila/issues/66)) ([c1330ad](https://github.com/aposin/ng-aquila/commit/c1330ad))
+-   typescript 4 support ([c1330ad](https://github.com/aposin/ng-aquila/commit/c1330ad))
 -   **accordion:** add extra light option ([38b9652](https://github.com/aposin/ng-aquila/commit/38b9652))
 
 <a name="10.1.0"></a>

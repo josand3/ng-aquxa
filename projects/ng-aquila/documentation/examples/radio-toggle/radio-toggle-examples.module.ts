@@ -8,9 +8,11 @@ import { RadioToggleCustomExampleComponent } from './radio-toggle-custom/radio-t
 import { RadioToggleFormExampleComponent } from './radio-toggle-form/radio-toggle-form-example';
 import { RadioToggleNegativeExampleComponent } from './radio-toggle-negative/radio-toggle-negative-example';
 import { RadioToggleReactiveExampleComponent } from './radio-toggle-reactive/radio-toggle-reactive-example';
+import { RadioToggleReadonlyExampleComponent } from './radio-toggle-readonly/radio-toggle-readonly-example';
 import { RadioToggleValidationExampleComponent } from './radio-toggle-validation/radio-toggle-validation-example';
 
 const EXAMPLES = [
+    RadioToggleReadonlyExampleComponent,
     RadioToggleExampleComponent,
     RadioToggleCustomExampleComponent,
     RadioToggleFormExampleComponent,
@@ -20,13 +22,18 @@ const EXAMPLES = [
 ];
 
 @NgModule({
-    imports: [NxRadioToggleModule, NxIconModule, ExamplesSharedModule],
-    declarations: [EXAMPLES],
+    imports: [
+        NxRadioToggleModule,
+        NxIconModule,
+        ExamplesSharedModule,
+        EXAMPLES,
+    ],
     exports: [EXAMPLES],
 })
 export class RadioToggleExamplesModule {
     static components() {
         return {
+            'radio-toggle-readonly': RadioToggleReadonlyExampleComponent,
             'radio-toggle': RadioToggleExampleComponent,
             'radio-toggle-custom': RadioToggleCustomExampleComponent,
             'radio-toggle-form': RadioToggleFormExampleComponent,

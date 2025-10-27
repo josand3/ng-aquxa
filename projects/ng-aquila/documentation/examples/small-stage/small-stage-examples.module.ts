@@ -1,3 +1,4 @@
+import { NgOptimizedImage } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { NxBreadcrumbModule } from '@aposin/ng-aquila/breadcrumb';
 import { NxIconModule } from '@aposin/ng-aquila/icon';
@@ -26,8 +27,9 @@ const EXAMPLES = [
         ExamplesSharedModule,
         NxLinkModule,
         NxIconModule,
+        NgOptimizedImage,
+        EXAMPLES,
     ],
-    declarations: [EXAMPLES],
     exports: [EXAMPLES],
 })
 export class SmallExamplesModule {

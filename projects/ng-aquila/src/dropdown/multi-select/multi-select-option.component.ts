@@ -1,6 +1,7 @@
-import { Highlightable } from '@angular/cdk/a11y';
+import { Highlightable, ListKeyManagerOption, LiveAnnouncer } from '@angular/cdk/a11y';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, Input, Output } from '@angular/core';
 import { AppearanceType } from '@aposin/ng-aquila/formfield';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
 
 let optionId = 0;
 
@@ -21,8 +22,10 @@ let optionId = 0;
         '[class.is-outline]': 'appearance === "outline"',
     },
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxIconModule],
 })
-export class NxMultiSelectOptionComponent<T> implements Highlightable {
+export class NxMultiSelectOptionComponent<T> implements Highlightable, ListKeyManagerOption {
     private _active = false;
 
     id = `nx-multi-select-option-${optionId++}`;
@@ -66,7 +69,7 @@ export class NxMultiSelectOptionComponent<T> implements Highlightable {
         return this._active;
     }
 
-    constructor(private readonly _cdr: ChangeDetectorRef, readonly elementRef: ElementRef) {}
+    constructor(private readonly _cdr: ChangeDetectorRef, readonly elementRef: ElementRef, private liveAnnouncer: LiveAnnouncer) {}
 
     setActiveStyles(): void {
         this.active = true;
@@ -81,6 +84,7 @@ export class NxMultiSelectOptionComponent<T> implements Highlightable {
         if (!this.disabled) {
             this.selected = !this.selected;
             this.selectedChange.emit(this.selected);
+            this.liveAnnouncer.announce(`${this.label} ${this.selected ? 'selected' : 'unselected'}`);
         }
     }
 
@@ -90,5 +94,9 @@ export class NxMultiSelectOptionComponent<T> implements Highlightable {
     selectViaInteraction() {
         this._onClick();
         this._cdr.markForCheck();
+    }
+
+    getLabel() {
+        return this.label;
     }
 }

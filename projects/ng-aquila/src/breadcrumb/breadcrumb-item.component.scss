@@ -7,6 +7,9 @@
     cursor: auto;
     color: v(breadcrumb-color);
     @include type-style(breadcrumb);
+    outline: none;
+    background: none;
+    border: 0;
 }
 
 .nx-breadcrumb-item__chevron {
@@ -17,6 +20,10 @@
         margin-right: nx-spacer(3xs);
         transform: rotateZ(180deg);
     }
+}
+
+:host:not([href]):not(button) .nx-breadcrumb-item__text {
+    cursor: auto;
 }
 
 .nx-breadcrumb-item__text {

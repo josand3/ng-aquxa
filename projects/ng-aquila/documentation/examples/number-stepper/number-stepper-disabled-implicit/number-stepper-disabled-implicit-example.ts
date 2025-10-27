@@ -1,5 +1,15 @@
 import { Component } from '@angular/core';
-import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
+import {
+    FormControl,
+    FormGroup,
+    FormsModule,
+    ReactiveFormsModule,
+} from '@angular/forms';
+import {
+    NxNumberStepperComponent,
+    NxNumberStepperPrefixDirective,
+    NxNumberStepperSuffixDirective,
+} from '@aposin/ng-aquila/number-stepper';
 
 /**
  * @title Disabled as part of disabled form example
@@ -8,9 +18,17 @@ import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
     selector: 'number-stepper-disabled-implicit-example',
     templateUrl: './number-stepper-disabled-implicit-example.html',
     styleUrls: ['./number-stepper-disabled-implicit-example.css'],
+    standalone: true,
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        NxNumberStepperComponent,
+        NxNumberStepperSuffixDirective,
+        NxNumberStepperPrefixDirective,
+    ],
 })
 export class NumberStepperDisabledImplicitExampleComponent {
-    fb = new UntypedFormGroup({
-        amount: new UntypedFormControl({ value: '', disabled: true }),
+    fb = new FormGroup({
+        amount: new FormControl({ value: '', disabled: true }),
     });
 }

@@ -1,5 +1,24 @@
+import 'moment/locale/de';
+import 'moment/locale/ja';
+import 'moment/locale/ar';
+
 import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { NX_DATE_LOCALE, NxDateAdapter } from '@aposin/ng-aquila/datefield';
+import { FormsModule } from '@angular/forms';
+import { NxErrorComponent } from '@aposin/ng-aquila/base';
+import {
+    NX_DATE_LOCALE,
+    NxDateAdapter,
+    NxDatefieldDirective,
+    NxDatepickerComponent,
+    NxDatepickerToggleComponent,
+} from '@aposin/ng-aquila/datefield';
+import {
+    NxFormfieldComponent,
+    NxFormfieldErrorDirective,
+    NxFormfieldSuffixDirective,
+} from '@aposin/ng-aquila/formfield';
+import { NxInputDirective } from '@aposin/ng-aquila/input';
+import { NxMessageComponent } from '@aposin/ng-aquila/message';
 import { Moment } from 'moment';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -11,6 +30,19 @@ import { takeUntil } from 'rxjs/operators';
     selector: 'datefield-localize-date-example',
     templateUrl: './datefield-localize-date-example.html',
     styleUrls: ['./datefield-localize-date-example.css'],
+    standalone: true,
+    imports: [
+        NxMessageComponent,
+        FormsModule,
+        NxFormfieldComponent,
+        NxDatefieldDirective,
+        NxInputDirective,
+        NxDatepickerToggleComponent,
+        NxFormfieldSuffixDirective,
+        NxDatepickerComponent,
+        NxErrorComponent,
+        NxFormfieldErrorDirective,
+    ],
 })
 export class DatefieldLocalizeDateExampleComponent
     implements OnInit, OnDestroy

@@ -1,4 +1,4 @@
-import { Directive, HostListener, Input } from '@angular/core';
+import { Directive, HostBinding, HostListener, Input } from '@angular/core';
 
 import { NxFileUploaderComponent } from './file-uploader.component';
 
@@ -6,6 +6,7 @@ import { NxFileUploaderComponent } from './file-uploader.component';
 @Directive({
     selector: '[nxFileUploadTriggerFor]',
     exportAs: 'nxFileUploadTrigger',
+    standalone: true,
 })
 export class NxFileUploaderTriggerDirective {
     /** References the file upload component instance that the trigger is associated with. */
@@ -22,5 +23,9 @@ export class NxFileUploaderTriggerDirective {
     @HostListener('click')
     _onClick() {
         this._fileUpload.uploadFiles();
+    }
+
+    @HostBinding('style.visibility') get visibility() {
+        return this._fileUpload.allFilesUploaded ? 'hidden' : 'unset';
     }
 }

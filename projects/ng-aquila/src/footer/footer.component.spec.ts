@@ -6,7 +6,7 @@ import { NxFooterModule } from './footer.module';
 
 const currentYear = new Date().getFullYear();
 
-@Directive()
+@Directive({ standalone: true })
 abstract class FooterTest {
     @ViewChild(NxFooterComponent) footerInstance!: NxFooterComponent;
 }
@@ -27,8 +27,7 @@ describe(NxFooterComponent.name, () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [BasicFooter, DefaultCopyrightFooter],
-            imports: [NxFooterModule],
+            imports: [NxFooterModule, BasicFooter, DefaultCopyrightFooter],
         });
     }));
 
@@ -70,7 +69,7 @@ describe(NxFooterComponent.name, () => {
 
         it('should display default copyright text with custom input', () => {
             expect(footerNativeElement.querySelectorAll('nx-footer-copyright').length).toBe(1);
-            expect(footerNativeElement.querySelector('nx-footer-copyright')?.textContent).toEqual(`© Other company ${currentYear}`);
+            expect(footerNativeElement.querySelector('nx-footer-copyright')?.textContent).toEqual(`© ${currentYear} Other company`);
         });
     });
 
@@ -93,10 +92,14 @@ describe(NxFooterComponent.name, () => {
             </nx-footer-navigation>
         </nx-footer>
     `,
+    standalone: true,
+    imports: [NxFooterModule],
 })
 class BasicFooter extends FooterTest {}
 
 @Component({
     template: `<nx-footer copyright="Other company"></nx-footer>`,
+    standalone: true,
+    imports: [NxFooterModule],
 })
 class DefaultCopyrightFooter extends FooterTest {}

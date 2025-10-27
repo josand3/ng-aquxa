@@ -13,6 +13,7 @@ import {
     Output,
     ViewChild,
 } from '@angular/core';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
 
 /** The contextual type of a message. */
 export type CONTEXT = 'regular' | 'info' | 'error' | 'success' | 'warning';
@@ -30,6 +31,8 @@ const ICONS: { [k: string]: string } = {
     styleUrls: ['./message.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     exportAs: 'nxMessage',
+    standalone: true,
+    imports: [NxIconModule],
 })
 export class NxMessageComponent implements AfterViewInit, OnDestroy {
     @HostBinding('class.context-info') get _isInfo() {
@@ -56,7 +59,7 @@ export class NxMessageComponent implements AfterViewInit, OnDestroy {
      * Sets the context of the message.
      * The message box will color accordingly. Default: 'regular'.
      */
-    @Input('nxContext') set context(value: CONTEXT) {
+    @Input() set context(value: CONTEXT) {
         this._updateContext(value);
     }
     get context(): CONTEXT {

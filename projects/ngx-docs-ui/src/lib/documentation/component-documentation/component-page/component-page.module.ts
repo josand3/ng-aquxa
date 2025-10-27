@@ -1,9 +1,10 @@
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { NxBadgeModule } from '@aposin/ng-aquila/badge';
+import { NxMessageModule } from '@aposin/ng-aquila/message';
 import { NxTabsModule } from '@aposin/ng-aquila/tabs';
 
 import { DocViewerModule } from '../../../doc-viewer/doc-viewer.module';
@@ -19,13 +20,21 @@ import { NxvComponentPage } from './component-page';
         CommonModule,
         DocViewerModule,
         RouterModule,
-        HttpClientModule,
         ExampleLoaderModule,
         NxvTableOfContentsModule,
         ScrollingModule,
         NxBadgeModule,
         NxTabsModule,
+        NxMessageModule,
+        NxvComponentPage,
+        ComponentOverview,
+        ComponentApi,
+        ComponentExamples,
+        NxvComponentPage,
+        ComponentOverview,
+        ComponentApi,
+        ComponentExamples,
     ],
-    declarations: [NxvComponentPage, ComponentOverview, ComponentApi, ComponentExamples],
+    providers: [provideHttpClient(withInterceptorsFromDi())],
 })
 export class ComponentPageModule {}

@@ -3,25 +3,34 @@ import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { UniqueSelectionDispatcher } from '@angular/cdk/collections';
 import {
     AfterViewInit,
+    booleanAttribute,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    computed,
+    contentChildren,
     DoCheck,
     ElementRef,
     EventEmitter,
     forwardRef,
     HostListener,
     Input,
+    input,
     OnDestroy,
-    OnInit,
     Optional,
     Output,
     Self,
+    Signal,
+    signal,
     ViewChild,
 } from '@angular/core';
-import { ControlValueAccessor, NgControl } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ControlValueAccessor, NgControl, Validators } from '@angular/forms';
+import { NxErrorComponent } from '@aposin/ng-aquila/base';
+import { NxAbstractControl } from '@aposin/ng-aquila/shared';
 
 import { NxCircleToggleGroupComponent } from '../circle-toggle-group/circle-toggle-group.component';
+import { NxIconToggleButtonComponent } from '../icon-toggle-button/icon-toggle-button.component';
 import { NxMobileToggleButtonComponent } from '../mobile-toggle-button/mobile-toggle-button.component';
 import { ToggleButton } from './toggle-button';
 
@@ -46,24 +55,47 @@ let nextId = 0;
             provide: ToggleButton,
             useExisting: forwardRef(() => NxCircleToggleComponent),
         },
+        {
+            provide: NxAbstractControl,
+            useExisting: forwardRef(() => NxCircleToggleComponent),
+        },
     ],
     host: {
         '[class.nx-toggle-circle]': 'true',
         '[class.in-group]': 'inGroup',
         '[class.is-disabled]': 'disabled',
         '[class.is-responsive]': 'responsive',
-        '[class.has-error]': 'errorState',
+        '(focus)': '_forwardFocusToInput()',
+        '[class.has-error]': 'hasError()',
+        '[class.is-readonly]': 'readonly',
     },
+    standalone: true,
+    imports: [NxIconToggleButtonComponent, NxMobileToggleButtonComponent],
 })
-export class NxCircleToggleComponent extends ToggleButton implements OnInit, OnDestroy, AfterViewInit, ControlValueAccessor, DoCheck {
+export class NxCircleToggleComponent extends ToggleButton implements OnDestroy, AfterViewInit, ControlValueAccessor, DoCheck, NxAbstractControl {
     private _id = `toggle-button-${nextId++}`;
 
     @ViewChild('input') _nativeInput!: ElementRef<HTMLElement>;
 
+    errorChildren = contentChildren(NxErrorComponent);
+
+    ariaDescribedBy = input<string | null>(null);
+
+    ariaDescribedByComputed: Signal<string | null> = computed(() => {
+        if (!this.errorState() && !this.toggleGroup?.errorState() && !this.ariaDescribedBy()) {
+            return null;
+        }
+
+        const errorMessageChildrenIds = this.errorChildren().map(errorMessage => errorMessage.id);
+        const toggleGroupDescribeBy = this.toggleGroup?.ariaDescribedBy();
+
+        return [this.ariaDescribedBy(), errorMessageChildrenIds, toggleGroupDescribeBy].join(' ');
+    });
+
     /** @docs-private */
     inGroup = false;
 
-    errorState = false;
+    errorState = signal(false);
 
     /**
      * Id of the circle toggle.
@@ -113,14 +145,14 @@ export class NxCircleToggleComponent extends ToggleButton implements OnInit, OnD
     _checked = false;
 
     /** The value that is used in the model. */
-    @Input() set value(newValue: string) {
+    @Input() set value(newValue: any) {
         this._value = newValue;
         this._cdr.markForCheck();
     }
-    get value(): string {
+    get value(): any {
         return this._value!;
     }
-    private _value: string | null = null;
+    private _value: any = null;
 
     /** Id of the icon that should be displayed. */
     @Input('icon') set iconName(name: string) {
@@ -185,43 +217,66 @@ export class NxCircleToggleComponent extends ToggleButton implements OnInit, OnD
     private _hint: string | null = null;
 
     /** Whether the circle toggle uses the negative set of styling. */
-    @Input() set negative(value: BooleanInput) {
-        const newValue = coerceBooleanProperty(value);
-        if (this.negative !== newValue) {
-            this._negative = newValue;
-            this._cdr.markForCheck();
-        }
+    @Input({ transform: booleanAttribute }) set negative(value) {
+        this._negative = value;
+        // this call should be removed. this is left from a time where we wanted to
+        // support the case where components are created dynamically and then you would set
+        // inputs directly on the component instances bypassing Angular features
+        // this has come a long way since then and setting inputs on dynamic components is now possible
+        // for not breaking anyone's code by accident we keep this for now
+        // @deletion-target 18.0.0
+        this._cdr.markForCheck();
     }
     get negative(): boolean {
-        return !!this._negative;
+        return this._negative || !!this.toggleGroup?.negative;
     }
-    private _negative?: boolean;
+    private _negative = false;
 
     /** Whether the circle toggle has a responsive behavior. */
-    @Input() set responsive(value: BooleanInput) {
-        const newValue = coerceBooleanProperty(value);
-        if (this.responsive !== newValue) {
-            this._responsive = newValue;
-            this._cdr.markForCheck();
-        }
+    @Input({ transform: booleanAttribute }) set responsive(value) {
+        this._responsive = value;
+        // this call should be removed. this is left from a time where we wanted to
+        // support the case where components are created dynamically and then you would set
+        // inputs directly on the component instances bypassing Angular features
+        // this has come a long way since then and setting inputs on dynamic components is now possible
+        // for not breaking anyone's code by accident we keep this for now
+        // @deletion-target 18.0.0
+        this._cdr.markForCheck();
     }
     get responsive(): boolean {
-        return !!this._responsive;
+        return this._responsive || !!this.toggleGroup?.responsive;
     }
-    private _responsive?: boolean;
+    private _responsive = false;
 
     /** Whether the circle toggle is disabled. */
-    @Input() set disabled(value: BooleanInput) {
-        const newValue = coerceBooleanProperty(value);
-        if (this.disabled !== newValue) {
-            this._disabled = newValue;
-            this._cdr.markForCheck();
-        }
+    @Input({ transform: booleanAttribute }) set disabled(value) {
+        this._disabled = value;
+        // this call should be removed. this is left from a time where we wanted to
+        // support the case where components are created dynamically and then you would set
+        // inputs directly on the component instances bypassing Angular features
+        // this has come a long way since then and setting inputs on dynamic components is now possible
+        // for not breaking anyone's code by accident we keep this for now
+        // @deletion-target 18.0.0
+        this._cdr.markForCheck();
     }
     get disabled(): boolean {
-        return !!this._disabled;
+        return this._disabled || !!this.toggleGroup?.disabled;
     }
-    private _disabled?: boolean;
+    private _disabled = false;
+
+    @Input({ transform: booleanAttribute }) set readonly(value) {
+        this._readonly = value;
+    }
+    get readonly() {
+        return this.toggleGroup?.readonly ?? this._readonly;
+    }
+    private _readonly = false;
+
+    get required() {
+        const selfRequired = this.ngControl?.control?.hasValidator(Validators.required) || this.ngControl?.control?.hasValidator(Validators.requiredTrue);
+        const parentRequired = this.toggleGroup?.ngControl?.control?.hasValidator(Validators.required);
+        return selfRequired ?? parentRequired ?? false;
+    }
 
     /** @docs-private */
     @ViewChild(NxMobileToggleButtonComponent, { static: true }) toggleButton!: NxMobileToggleButtonComponent;
@@ -265,41 +320,36 @@ export class NxCircleToggleComponent extends ToggleButton implements OnInit, OnD
         super();
 
         if (this.toggleGroup) {
+            this.inGroup = true;
             this.name = this.toggleGroup.name;
+            this.id = this.toggleGroup.id + `-button-${nextId++}`;
         }
         if (this.ngControl) {
             // Note: we provide the value accessor through here, instead of
             // the `providers` to avoid running into a circular import.
             this.ngControl.valueAccessor = this;
         }
-    }
 
-    ngOnInit(): void {
         if (this.toggleGroup) {
             this.attachListenerForGroup();
+            this.toggleGroup._stateChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+                this._cdr.markForCheck();
+            });
         }
     }
+
+    hasError = computed<boolean>(() => this.toggleGroup?.errorState() || this.errorState());
 
     ngDoCheck(): void {
         if (this.ngControl) {
             // We need to re-evaluate this on every change detection cycle, because there are some
             // error triggers that we can't subscribe to (e.g. parent form submissions). This means
             // that whatever logic is in here has to be super lean or we risk destroying the performance.
-            this.errorState = !this.ngControl.valid;
+            this.errorState.set(!this.ngControl.valid);
         }
     }
 
     ngAfterViewInit(): void {
-        Promise.resolve().then(() => {
-            if (this.toggleGroup) {
-                this.inGroup = true;
-                this.negative = this.toggleGroup.negative;
-                this.disabled = this.toggleGroup.disabled;
-                this.responsive = this.toggleGroup.responsive;
-                this.id = this.toggleGroup.id + `-button-${nextId++}`;
-            }
-        });
-
         this._focusMonitor.monitor(this._nativeInput);
     }
 
@@ -307,6 +357,11 @@ export class NxCircleToggleComponent extends ToggleButton implements OnInit, OnD
         // function returned by the listener
         this._removeUniqueSelectionListener();
         this._focusMonitor.stopMonitoring(this._nativeInput);
+    }
+
+    setReadonly(isReadonly: boolean) {
+        this.readonly = isReadonly;
+        this._cdr.markForCheck();
     }
 
     /** @docs-private */
@@ -339,20 +394,26 @@ export class NxCircleToggleComponent extends ToggleButton implements OnInit, OnD
         this._focusMonitor.focusVia(this._nativeInput, focusOrigin as FocusOrigin);
     }
 
+    /** Forward focus from host to hidden input field */
+    _forwardFocusToInput() {
+        this._nativeInput.nativeElement.focus();
+    }
+
     /** @docs-private */
     toggle(event: Event) {
         event.preventDefault();
         event.stopPropagation();
 
-        // TODO simplify if statement
-        if (!((this.toggleGroup && this.checked) || this.disabled)) {
-            this.checked = !this.checked;
-            this.onChangeCallback(this.checked);
-            this.checkedChange.emit(this.checked);
-            this.selectionChange.emit(new ToggleChangeEvent(this, this.value));
-            if (this.toggleGroup) {
-                this._checkedDispatcher.notify(this.toggleGroup.id, this.id);
-            }
+        if (this.disabled || this.readonly || (this.toggleGroup && this.checked)) {
+            return;
+        }
+
+        this.checked = !this.checked;
+        this.onChangeCallback(this.checked);
+        this.checkedChange.emit(this.checked);
+        this.selectionChange.emit(new ToggleChangeEvent(this, this.value));
+        if (this.toggleGroup) {
+            this._checkedDispatcher.notify(this.toggleGroup.id, this.id);
         }
     }
 
@@ -362,16 +423,14 @@ export class NxCircleToggleComponent extends ToggleButton implements OnInit, OnD
      *
      * @docs-private
      */
-    setGroupSelection() {
+    setGroupSelection(checked: boolean) {
         if (!this.toggleGroup) {
             return;
         }
         // propagate changes only if the value in the group is different than the button checked value
-        if (!this.checked) {
-            this.checked = !this.checked;
-            this.onChangeCallback(this.checked);
-            this._checkedDispatcher.notify(this.toggleGroup.id, this.id);
-        }
+        this.checked = checked;
+        this.onChangeCallback(this.checked);
+        this._checkedDispatcher.notify(this.toggleGroup.id, this.id);
     }
 
     /** @docs-private */
@@ -397,6 +456,14 @@ export class NxCircleToggleComponent extends ToggleButton implements OnInit, OnD
     handleEnterKey(event: Event) {
         if (!this.toggleGroup) {
             this.toggle(event);
+        }
+    }
+
+    touch() {
+        this.onTouchedCallback();
+
+        if (this.toggleGroup) {
+            this.toggleGroup.touch();
         }
     }
 }

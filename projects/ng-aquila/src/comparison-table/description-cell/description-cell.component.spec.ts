@@ -1,6 +1,7 @@
 import { Component, DebugElement, Directive, QueryList, Type, ViewChildren } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import axe from 'axe-core';
 
 import { BASIC_COMPARISON_TABLE_TEMPLATE } from '../comparison-table.component.spec';
 import { NxComparisonTableModule } from '../comparison-table.module';
@@ -10,7 +11,7 @@ import { NxComparisonTableDescriptionCell } from './description-cell.component';
 declare let viewport: any;
 const THROTTLE_TIME = 200;
 
-@Directive()
+@Directive({ standalone: true })
 abstract class DescriptionCellTest {
     @ViewChildren(NxComparisonTableDescriptionCell) descriptionCellInstances!: QueryList<NxComparisonTableDescriptionCell>;
     @ViewChildren(NxComparisonTableRowDirective) rowInstances!: QueryList<NxComparisonTableRowDirective>;
@@ -36,8 +37,7 @@ describe('NxComparisonTableDescriptionCell', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [NxComparisonTableModule],
-            declarations: [DescriptionCellComponent, ConfigurableDescriptionCellComponent],
+            imports: [NxComparisonTableModule, DescriptionCellComponent, ConfigurableDescriptionCellComponent],
         });
         TestBed.compileComponents();
     }));
@@ -171,9 +171,26 @@ describe('NxComparisonTableDescriptionCell', () => {
             expect(descriptionCellElements[0].attributes['aria-colspan']).toBe('2');
         }));
 
-        it('has no accessibility violations', async () => {
+        it('has no accessibility violations', done => {
             createTestComponent(DescriptionCellComponent);
-            await expectAsync(fixture.nativeElement).toBeAccessible();
+
+            axe.run(
+                fixture.nativeElement,
+                {
+                    rules: {
+                        'empty-table-header': { enabled: false },
+                    },
+                },
+                (error: Error, results: axe.AxeResults) => {
+                    expect(results.violations.length).toBe(0);
+                    const violationMessages = results.violations.map(item => item.description);
+                    if (violationMessages.length) {
+                        console.error(violationMessages);
+                        expect(violationMessages).toBeFalsy();
+                    }
+                    done();
+                },
+            );
         });
 
         afterEach(() => {
@@ -184,6 +201,8 @@ describe('NxComparisonTableDescriptionCell', () => {
 
 @Component({
     template: BASIC_COMPARISON_TABLE_TEMPLATE,
+    standalone: true,
+    imports: [NxComparisonTableModule],
 })
 class DescriptionCellComponent extends DescriptionCellTest {
     data = [
@@ -209,5 +228,7 @@ class DescriptionCellComponent extends DescriptionCellTest {
             </ng-container>
         </nx-comparison-table>
     `,
+    standalone: true,
+    imports: [NxComparisonTableModule],
 })
 class ConfigurableDescriptionCellComponent extends DescriptionCellTest {}

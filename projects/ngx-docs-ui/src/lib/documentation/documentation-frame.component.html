@@ -1,4 +1,17 @@
-<header nx-header *ngIf="!hideNavigation">
+@if (!hideNavigation) {
+<header nx-header>
+    @if (showAnnouncement) {
+    <nx-header-row>
+        <nx-error appearance="text">
+            {{ announcement.title }}
+            @if (announcement?.link) {
+            <nx-link
+                ><a href="{{ announcement.link?.url }}">{{ announcement.link?.title }}</a></nx-link
+            >
+            } .
+        </nx-error>
+    </nx-header-row>
+    }
     <nx-header-row>
         <nx-header-brand>
             <nx-link>
@@ -9,8 +22,7 @@
                 </a>
             </nx-link>
         </nx-header-brand>
-
-        <nx-header-navigation>
+        <nx-header-navigation aria-label="header navigation">
             <nx-header-navigation-item class="hidden-with-sidebar">
                 <a [routerLink]="'/welcome'" routerLinkActive="is-active" nxHeaderLink>Welcome</a>
             </nx-header-navigation-item>
@@ -20,14 +32,19 @@
             <nx-header-navigation-item class="hidden-with-sidebar">
                 <a [routerLink]="'/guides'" routerLinkActive="is-active" nxHeaderLink>Guides</a>
             </nx-header-navigation-item>
-
             <nxv-search></nxv-search>
         </nx-header-navigation>
-
         <nx-header-actions>
-            <nxv-theme-switch *ngIf="showThemingSwitcher" [themes]="themes" [selected]="selectedTheme" (selectedChange)="selectTheme($event)">
+            @if (showThemingSwitcher) {
+            <nxv-theme-switch
+                [themes]="_themeSwitcherService.themes()"
+                [selected]="_themeSwitcherService.selectedTheme()"
+                (selectedChange)="selectTheme($event)"
+            >
             </nxv-theme-switch>
+            }
             <nxv-version-select></nxv-version-select>
+            <ng-container *ngComponentOutlet="headerSlot"></ng-container>
             <nx-link>
                 <a [href]="githubLinkConfig.repoLink" target="_blank">
                     <svg
@@ -49,8 +66,8 @@
         </nx-header-actions>
     </nx-header-row>
     <nx-header-row class="nx-mobile-navigation">
+        @if (showMobileMenuButton) {
         <button
-            *ngIf="showMobileMenuButton"
             nxIconButton="tertiary small"
             class="nx-margin-bottom-0 nx-margin-right-s"
             aria-label="open side-navigation"
@@ -58,7 +75,8 @@
         >
             <nx-icon name="bars"></nx-icon>
         </button>
-        <nx-header-navigation>
+        }
+        <nx-header-navigation aria-label="mobile header navigation">
             <nx-header-navigation-item>
                 <a [routerLink]="'/welcome'" routerLinkActive="is-active" nxHeaderLink>Welcome</a>
             </nx-header-navigation-item>
@@ -71,16 +89,13 @@
         </nx-header-navigation>
     </nx-header-row>
 </header>
-
-<ng-container *ngIf="manifestService.available | async; else loading">
-    <router-outlet></router-outlet>
-</ng-container>
-
-<ng-template #loading>
-    Manifest Missing
-    <form (ngSubmit)="onSubmit()">
-        <label> Upload <input #files type="file" required name="manifestFile" (change)="onFileChange($event)" /> </label>
-        <button type="submit">submit</button>
-    </form>
-</ng-template>
-<nxv-css-var-sidebar *ngIf="showThemingSidebar"></nxv-css-var-sidebar>
+} @if (manifestService.available | async) {
+<router-outlet></router-outlet>
+} @else { Manifest Missing
+<form (ngSubmit)="onSubmit()">
+    <label> Upload <input #files type="file" required name="manifestFile" (change)="onFileChange($event)" /> </label>
+    <button type="submit">submit</button>
+</form>
+} @if (showThemingSidebar) {
+<nxv-css-var-sidebar></nxv-css-var-sidebar>
+}

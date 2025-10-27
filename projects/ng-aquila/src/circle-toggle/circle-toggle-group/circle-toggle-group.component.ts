@@ -1,12 +1,16 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import {
     AfterViewInit,
+    booleanAttribute,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    computed,
     ContentChildren,
+    contentChildren,
     DoCheck,
     EventEmitter,
+    forwardRef,
     HostBinding,
     Inject,
     InjectionToken,
@@ -16,8 +20,12 @@ import {
     Output,
     QueryList,
     Self,
+    Signal,
+    signal,
 } from '@angular/core';
-import { ControlValueAccessor, FormGroupDirective, NgControl, NgForm, UntypedFormControl } from '@angular/forms';
+import { ControlValueAccessor, FormControl, FormGroupDirective, NgControl, NgForm, Validators } from '@angular/forms';
+import { NxErrorComponent } from '@aposin/ng-aquila/base';
+import { NxAbstractControl } from '@aposin/ng-aquila/shared';
 import { ErrorStateMatcher } from '@aposin/ng-aquila/utils';
 import { merge, Subject } from 'rxjs';
 import { filter, startWith, takeUntil, tap } from 'rxjs/operators';
@@ -47,25 +55,28 @@ let nextId = 0;
 @Component({
     selector: 'nx-circle-toggle-group',
     template: `<ng-content></ng-content>
-        <ng-container *ngIf="errorState">
-            <ng-content select="nx-error"></ng-content>
-        </ng-container> `,
+        @if (errorState()) {
+        <ng-content select="nx-error"></ng-content>
+        }`,
     styleUrls: ['./circle-toggle-group.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [],
+    providers: [{ provide: NxAbstractControl, useExisting: forwardRef(() => NxCircleToggleGroupComponent) }],
     host: {
         '[class.is-responsive]': 'responsive',
         '[class.is-disabled]': 'disabled',
-        '[attr.aria-disabled]': 'disabled',
+        '[attr.aria-disabled]': 'disabled || readonly || false',
         '[attr.aria-labelledby]': 'name',
+        '[attr.aria-required]': 'required',
         '[class.has-error]': 'errorState',
         '[attr.name]': 'name',
         '[attr.id]': 'id',
         '[class.nx-circle-toggle-group]': 'true',
         role: 'radiogroup',
     },
+    standalone: true,
+    imports: [],
 })
-export class NxCircleToggleGroupComponent implements ControlValueAccessor, AfterViewInit, OnDestroy, DoCheck {
+export class NxCircleToggleGroupComponent implements ControlValueAccessor, AfterViewInit, OnDestroy, DoCheck, NxAbstractControl {
     /**
      * Id of the circle toggle group.
      *
@@ -79,6 +90,31 @@ export class NxCircleToggleGroupComponent implements ControlValueAccessor, After
         return this._id;
     }
     private _id = `nx-circle-toggle-group-${nextId++}`;
+
+    private errorChildren = contentChildren(NxErrorComponent);
+    ariaDescribedBy: Signal<string | null> = computed(() => {
+        if (this.errorState() && this.errorChildren().length > 0) {
+            return this.errorChildren()
+                .map(errorChild => errorChild.id)
+                .join(' ');
+        }
+        return null;
+    });
+
+    // emits when the internal state changes on properties which are relevant
+    // for the child components so that they can mark themself for check
+    readonly _stateChanges = new Subject<void>();
+
+    get required(): boolean {
+        return this.ngControl?.control?.hasValidator(Validators.required) ?? false;
+    }
+
+    /** @docs-private this is meant to be called by the radio buttons in this group. */
+    touch() {
+        if (this.onTouchedCallback) {
+            this.onTouchedCallback();
+        }
+    }
 
     /** Name that is used for accessibility. */
     @Input() set name(value: string) {
@@ -98,14 +134,14 @@ export class NxCircleToggleGroupComponent implements ControlValueAccessor, After
             this._disabled = newValue;
             this._cdr.markForCheck();
         }
-        if (this.buttons) {
-            this.buttons.forEach(button => (button.disabled = newValue));
-        }
+        this._stateChanges.next();
     }
     get disabled(): boolean {
         return this._disabled;
     }
     private _disabled = false;
+
+    @Input({ transform: booleanAttribute }) readonly = false;
 
     /** Whether the circle toggle group uses the negative styling. */
     @Input() set negative(value: BooleanInput) {
@@ -113,9 +149,7 @@ export class NxCircleToggleGroupComponent implements ControlValueAccessor, After
         if (this.negative !== newValue) {
             this._negative = newValue;
         }
-        if (this.buttons) {
-            this.buttons.forEach(button => (button.negative = newValue));
-        }
+        this._stateChanges.next();
     }
     get negative(): boolean {
         return this._negative;
@@ -123,10 +157,10 @@ export class NxCircleToggleGroupComponent implements ControlValueAccessor, After
     _negative = false;
 
     /** The value of the selected circle toggle in the circle toggle group. */
-    @Input() set value(value: string) {
+    @Input() set value(value: any) {
         this.writeValue(value);
     }
-    get value(): string {
+    get value(): any {
         return this._value;
     }
     private _value!: string;
@@ -138,6 +172,7 @@ export class NxCircleToggleGroupComponent implements ControlValueAccessor, After
             this._responsive = newValue;
             this._cdr.markForCheck();
         }
+        this._stateChanges.next();
     }
     get responsive(): boolean {
         if (this._isExpert) {
@@ -151,7 +186,7 @@ export class NxCircleToggleGroupComponent implements ControlValueAccessor, After
         return this.appearance === 'expert';
     }
 
-    errorState = false;
+    errorState = signal(false);
 
     /** @docs-private */
     get selectedButton(): ToggleButton | null {
@@ -206,12 +241,15 @@ export class NxCircleToggleGroupComponent implements ControlValueAccessor, After
     private onChangeCallback = (value: string) => {};
     private onTouchedCallback = () => {};
 
+    setReadonly(isReadonly: boolean): void {
+        this.readonly = isReadonly;
+        this._cdr.markForCheck();
+    }
+
     writeValue(value: any) {
         Promise.resolve().then(() => {
-            if (this.value !== value) {
-                this._value = value;
-                this.notifySelectedChild(value);
-            }
+            this._value = value;
+            this.notifySelectedChild(value);
         });
     }
 
@@ -222,7 +260,6 @@ export class NxCircleToggleGroupComponent implements ControlValueAccessor, After
 
     ngAfterViewInit(): void {
         this.subscribeToSelectionChanges();
-
         // react if a content child is deleted, added etc.
         this.buttons.changes
             .pipe(
@@ -245,6 +282,7 @@ export class NxCircleToggleGroupComponent implements ControlValueAccessor, After
         merge(...this.buttons.map(button => button.selectionChange))
             .pipe(takeUntil(this.buttons.changes), takeUntil(this._destroyed))
             .subscribe((change: any) => {
+                this.value = change.value;
                 this.onChangeCallback(change.value);
                 this.valueChange.emit(change.value);
             });
@@ -257,9 +295,16 @@ export class NxCircleToggleGroupComponent implements ControlValueAccessor, After
      */
     notifySelectedChild(newValue: string) {
         if (this.buttons) {
-            const selected = this.buttons.find(button => button.value === newValue);
-            if (selected) {
-                selected.setGroupSelection();
+            if (newValue === undefined || newValue === null) {
+                const selected = this.buttons.find(button => button.checked);
+                if (selected) {
+                    selected.setGroupSelection(false);
+                }
+                return;
+            }
+            const selecting = this.buttons.find(button => button.value === newValue);
+            if (selecting) {
+                selecting.setGroupSelection(true);
             }
         }
     }
@@ -292,14 +337,13 @@ export class NxCircleToggleGroupComponent implements ControlValueAccessor, After
     }
 
     _updateErrorState() {
-        const oldState = this.errorState;
+        const oldState = this.errorState();
         const parent = this._parentFormGroup || this._parentForm;
-        const control = this.ngControl ? (this.ngControl.control as UntypedFormControl) : null;
+        const control = this.ngControl ? (this.ngControl.control as FormControl) : null;
         const newState = this._errorStateMatcher.isErrorState(control, parent);
 
         if (newState !== oldState) {
-            this.errorState = newState;
-            this._cdr.markForCheck();
+            this.errorState.set(newState);
         }
     }
 }

@@ -1,17 +1,21 @@
-import { Component, Directive, Type, ViewChild } from '@angular/core';
+import { Component, Directive, inject, QueryList, Type, ViewChild, ViewChildren } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
-import { NxInputModule } from '@aposin/ng-aquila/input';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { NxInputDirective, NxInputModule } from '@aposin/ng-aquila/input';
 import { NxMomentDateModule } from '@aposin/ng-aquila/moment-date-adapter';
-import * as moment from 'moment';
-import { Moment } from 'moment';
+import moment, { Moment } from 'moment';
 
+import { NxFormfieldModule } from '../formfield';
 import { NxIsoDateModule } from '../iso-date-adapter';
+import { NxAbstractControl } from '../shared';
+import { NxDateAdapter } from './adapter';
 import { NX_DATE_LOCALE } from './adapter/date-token';
 import { NxDatefieldDirective } from './datefield.directive';
 import { NxDatefieldModule } from './datefield.module';
+import { NxDatepickerComponent } from './datepicker/datepicker.component';
+import { NxDatepickerToggleComponent } from './datepicker/datepicker-toggle';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class DatefieldTest {
     disabled = false;
     strict = true;
@@ -22,7 +26,7 @@ abstract class DatefieldTest {
     min!: Moment;
     max!: Moment;
 
-    form!: UntypedFormGroup;
+    form!: FormGroup;
 
     @ViewChild(NxDatefieldDirective) textInstance!: NxDatefieldDirective<Date>;
 }
@@ -43,8 +47,17 @@ describe('NxDatefieldDirective with Moment', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [BasicDatefield, AdvancedDatefield, MinMaxDatefield, ReactiveDatefield],
-            imports: [NxDatefieldModule, NxMomentDateModule, NxInputModule, FormsModule, ReactiveFormsModule],
+            imports: [
+                NxDatefieldModule,
+                NxMomentDateModule,
+                NxInputModule,
+                FormsModule,
+                ReactiveFormsModule,
+                BasicDatefield,
+                AdvancedDatefield,
+                MinMaxDatefield,
+                ReactiveDatefield,
+            ],
             providers: [{ provide: NX_DATE_LOCALE, useValue: 'ja' }],
         }).compileComponents();
     }));
@@ -254,34 +267,153 @@ describe('NxDatefieldDirective with Moment', () => {
             expect(datefieldInstance.value).toBeNull();
         });
     });
+
+    describe('readonly state ', () => {
+        it('should set state on all directives and components', fakeAsync(() => {
+            createTestComponent(ReadonlyDatefield);
+            fixture.detectChanges();
+
+            const test = fixture.componentRef.instance as ReadonlyDatefield;
+
+            expect(test.datefieldDirective.readonly).toBeTruthy();
+            expect(test.inputDirective.readonly).toBeTruthy();
+            expect(test.datepickerComponent.disabled).toBeTruthy();
+            expect(test.datepickerToggleComponent.disabled).toBeTruthy();
+        }));
+
+        it('should consist of exactly one NxAbstractControl', fakeAsync(() => {
+            createTestComponent(ReadonlyDatefield);
+            fixture.detectChanges();
+
+            const test = fixture.componentRef.instance as ReadonlyDatefield;
+
+            expect(test.abstractControlList.length).toEqual(1);
+        }));
+
+        it('should set state on binding attribute change', fakeAsync(() => {
+            createTestComponent(ReadonlyDatefield);
+            fixture.detectChanges();
+
+            const test = fixture.componentRef.instance as ReadonlyDatefield;
+            test.isReadonly = false;
+
+            fixture.detectChanges();
+
+            expect(test.datefieldDirective.readonly).toBeFalsy();
+            expect(test.inputDirective.readonly).toBeFalsy();
+            expect(test.datepickerComponent.disabled).toBeFalsy();
+            expect(test.datepickerToggleComponent.disabled).toBeFalsy();
+        }));
+
+        it('should set state on programmatically change', fakeAsync(() => {
+            createTestComponent(ReadonlyDatefield);
+            fixture.detectChanges();
+
+            const test = fixture.componentRef.instance as ReadonlyDatefield;
+
+            // make the component be in non readonly state
+            test.isReadonly = false;
+            fixture.detectChanges();
+
+            // test if setReadonly(true) on nxInput directive is working
+            test.inputDirective.setReadonly(true);
+            fixture.detectChanges();
+            expect(test.datefieldDirective.readonly).toBeTruthy();
+            expect(test.inputDirective.readonly).toBeTruthy();
+            expect(test.datepickerComponent.disabled).toBeTruthy();
+            expect(test.datepickerToggleComponent.disabled).toBeTruthy();
+
+            // test if setReadonly(false) on nxInput directive is working
+            test.inputDirective.setReadonly(false);
+            fixture.detectChanges();
+            expect(test.datefieldDirective.readonly).toBeFalsy();
+            expect(test.inputDirective.readonly).toBeFalsy();
+            expect(test.datepickerComponent.disabled).toBeFalsy();
+            expect(test.datepickerToggleComponent.disabled).toBeFalsy();
+
+            // test if setReadonly(false) on NxAbstractControl is working
+            test.abstractControl.setReadonly(true);
+            fixture.detectChanges();
+            expect(test.datefieldDirective.readonly).toBeTruthy();
+            expect(test.inputDirective.readonly).toBeTruthy();
+            expect(test.datepickerComponent.disabled).toBeTruthy();
+            expect(test.datepickerToggleComponent.disabled).toBeTruthy();
+        }));
+    });
 });
 
 @Component({
     template: `
-        <nx-formfield nxLabel="Given Label">
+        <nx-formfield label="Given Label">
             <input nxInput nxDatefield [disabled]="disabled" />
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [NxDatefieldModule, NxMomentDateModule, NxInputModule, FormsModule, ReactiveFormsModule],
 })
 class BasicDatefield extends DatefieldTest {}
 
 @Component({
-    template: `<input nxInput nxDatefield [(ngModel)]="value" [nxParseFormat]="parseFormat" [nxDisplayFormat]="displayFormat" [nxStrict]="strict" />`,
+    standalone: true,
+    imports: [NxDatefieldModule, NxMomentDateModule, NxInputModule, FormsModule, ReactiveFormsModule, NxFormfieldModule],
+    template: `
+        <nx-formfield label="Birthday">
+            <input nxDatefield nxInput [readonly]="isReadonly" [datepicker]="myDatepicker" [(ngModel)]="currentDate" />
+            <span nxFormfieldHint>MM/DD/YYYY</span>
+
+            <nx-datepicker-toggle [for]="myDatepicker" nxFormfieldSuffix></nx-datepicker-toggle>
+            <nx-datepicker #myDatepicker></nx-datepicker>
+        </nx-formfield>
+    `,
+})
+class ReadonlyDatefield extends DatefieldTest {
+    adapter = inject(NxDateAdapter);
+    currentDate = this.adapter.today();
+
+    isReadonly = true;
+
+    @ViewChild(NxInputDirective)
+    inputDirective!: NxInputDirective;
+
+    @ViewChild(NxAbstractControl)
+    abstractControl!: NxAbstractControl;
+
+    @ViewChildren(NxAbstractControl)
+    abstractControlList!: QueryList<NxAbstractControl>;
+
+    @ViewChild(NxDatefieldDirective)
+    datefieldDirective!: NxDatefieldDirective<any>;
+
+    @ViewChild(NxDatepickerComponent)
+    datepickerComponent!: NxDatepickerComponent<any>;
+    @ViewChild(NxDatepickerToggleComponent)
+    datepickerToggleComponent!: NxDatepickerToggleComponent<any>;
+}
+
+@Component({
+    template: `<input nxInput nxDatefield [(ngModel)]="value" [parseFormat]="parseFormat" [displayFormat]="displayFormat" [strict]="strict" />`,
+    standalone: true,
+    imports: [NxDatefieldModule, NxMomentDateModule, NxInputModule, FormsModule, ReactiveFormsModule],
 })
 class AdvancedDatefield extends DatefieldTest {}
+
 @Component({
-    template: `<input nxInput nxDatefield [(ngModel)]="value" [nxMin]="min" [nxMax]="max" />`,
+    template: `<input nxInput nxDatefield [(ngModel)]="value" [min]="min" [max]="max" />`,
+    standalone: true,
+    imports: [NxDatefieldModule, NxMomentDateModule, NxInputModule, FormsModule, ReactiveFormsModule],
 })
 class MinMaxDatefield extends DatefieldTest {}
 
 @Component({
     template: `
         <form [formGroup]="form">
-            <nx-formfield nxLabel="Given Label">
-                <input nxInput nxDatefield [nxStrict]="strict" [nxParseFormat]="parseFormat" [nxDisplayFormat]="displayFormat" formControlName="datefield" />
+            <nx-formfield label="Given Label">
+                <input nxInput nxDatefield [strict]="strict" [parseFormat]="parseFormat" [displayFormat]="displayFormat" formControlName="datefield" />
             </nx-formfield>
         </form>
     `,
+    standalone: true,
+    imports: [NxDatefieldModule, NxMomentDateModule, NxInputModule, FormsModule, ReactiveFormsModule],
 })
 class ReactiveDatefield extends DatefieldTest {
     fb;
@@ -289,7 +421,7 @@ class ReactiveDatefield extends DatefieldTest {
     constructor() {
         super();
 
-        this.fb = new UntypedFormBuilder();
+        this.fb = new FormBuilder();
 
         this.form = this.fb.group({
             datefield: { disabled: false, value: moment([2018, 0, 1]) },
@@ -297,9 +429,9 @@ class ReactiveDatefield extends DatefieldTest {
     }
 }
 
-@Directive()
+@Directive({ standalone: true })
 abstract class DatefieldIsoTest {
-    form!: UntypedFormGroup;
+    form!: FormGroup;
     @ViewChild(NxDatefieldDirective) datefieldInstance!: NxDatefieldDirective<Date>;
 }
 
@@ -319,8 +451,7 @@ describe('NxDatefieldDirective with IsoAdapter', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [ReactiveIsoDatefield],
-            imports: [NxDatefieldModule, NxIsoDateModule, NxInputModule, FormsModule, ReactiveFormsModule],
+            imports: [NxDatefieldModule, NxIsoDateModule, NxInputModule, FormsModule, ReactiveFormsModule, ReactiveIsoDatefield],
             providers: [{ provide: NX_DATE_LOCALE, useValue: 'en' }],
         }).compileComponents();
     }));
@@ -347,23 +478,39 @@ describe('NxDatefieldDirective with IsoAdapter', () => {
         fixture.detectChanges();
         expect(testInstance.form.get('datefield')!.valid).toBeTrue();
     });
+
+    it('should reflect readonly state when setReadonly changed', () => {
+        createTestComponent(ReactiveIsoDatefield);
+        const nativeElement = fixture.nativeElement.querySelector('input');
+
+        datefieldInstance.setReadonly(true);
+        fixture.detectChanges();
+
+        expect(nativeElement.readOnly).toBeTruthy();
+
+        datefieldInstance.setReadonly(false);
+        fixture.detectChanges();
+        expect(nativeElement.readOnly).toBeFalse();
+    });
 });
 
 @Component({
     template: `
         <form [formGroup]="form">
-            <nx-formfield nxLabel="Given Label">
+            <nx-formfield label="Given Label">
                 <input nxInput nxDatefield formControlName="datefield" />
             </nx-formfield>
         </form>
     `,
+    standalone: true,
+    imports: [NxDatefieldModule, NxIsoDateModule, NxInputModule, FormsModule, ReactiveFormsModule],
 })
 class ReactiveIsoDatefield extends DatefieldIsoTest {
     fb;
 
     constructor() {
         super();
-        this.fb = new UntypedFormBuilder();
+        this.fb = new FormBuilder();
         this.form = this.fb.group({
             datefield: '01.01.2021',
         });

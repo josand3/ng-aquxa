@@ -18,10 +18,6 @@ $option-margin-checked: nx-spacer(m);
     padding-top: nx-spacer(s);
 }
 
-:host:last-child .nx-dropdown-results__option {
-    padding-bottom: nx-spacer(m);
-}
-
 nx-checkbox {
     margin-bottom: 0;
 }
@@ -68,7 +64,15 @@ nx-checkbox {
 
     nx-icon {
         line-height: v(dropdown-item-line-height);
-        font-size: nx-font-size(3xs);
+        font-size: nx-font-size(xs);
+
+        ::ng-deep .nx-dropdown__panel--in-outline-field & {
+            font-size: nx-font-size(3xs) !important;
+        }
+
+        &:has(svg) {
+            height: v(dropdown-item-line-height);
+        }
     }
 
     :host-context([dir='rtl']) & {
@@ -79,12 +83,14 @@ nx-checkbox {
 
 // focus style
 /* clean-css ignore:start */
-:host(.nx-dropdown-item--active) {
+
+:host-context(.keyboard-focused) :host(.nx-dropdown-item--active) {
     .nx-dropdown-results__option .nx-dropdown-results__option-label {
         border-radius: nx-border-radius(s);
         @include focus-style;
     }
 }
+
 /* clean-css ignore:end */
 
 // focus style - multiselect dropdown item
@@ -93,7 +99,7 @@ nx-checkbox {
     .nx-dropdown-results__option .nx-dropdown-results__option-label {
         box-shadow: none;
 
-        @media screen and (-ms-high-contrast: active) {
+        @media screen and (forced-colors: active) {
             box-shadow: none;
         }
     }
@@ -132,18 +138,19 @@ nx-checkbox {
     }
 }
 
-@media screen and (-ms-high-contrast: active) {
+@media screen and (forced-colors: active) {
     :host:hover:not(.nx-dropdown-item--disabled),
     :host(.nx-dropdown-item--active):not(.nx-multiselect) {
         .nx-dropdown-results__option-label {
             color: highlightText;
             background-color: highlight;
+            forced-color-adjust: none;
         }
     }
 
     :host(.nx-dropdown-item--active):not(.nx-multiselect) {
         .nx-dropdown-results__option-checkicon {
-            -ms-high-contrast-adjust: none;
+            forced-color-adjust: none;
             color: highlightText;
             background: highlight;
             z-index: 1;
@@ -155,11 +162,4 @@ nx-checkbox {
             color: GrayText;
         }
     }
-}
-
-.ellipsis {
-    max-width: 35ch;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
 }

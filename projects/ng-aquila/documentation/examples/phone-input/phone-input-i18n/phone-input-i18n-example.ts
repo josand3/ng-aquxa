@@ -1,5 +1,13 @@
 import { Component, Injectable } from '@angular/core';
-import { NxPhoneInputIntl } from '@aposin/ng-aquila/phone-input';
+import { FormsModule } from '@angular/forms';
+import {
+    NxFormfieldComponent,
+    NxFormfieldLabelDirective,
+} from '@aposin/ng-aquila/formfield';
+import {
+    NxPhoneInputComponent,
+    NxPhoneInputIntl,
+} from '@aposin/ng-aquila/phone-input';
 import countries from 'i18n-iso-countries';
 import de from 'i18n-iso-countries/langs/de.json';
 import fr from 'i18n-iso-countries/langs/fr.json';
@@ -12,6 +20,7 @@ countries.registerLocale(fr);
 export class MyPhoneInputIntl extends NxPhoneInputIntl {
     areaCodeLabel = 'Ländervorwahl';
     countryNames = countries.getNames('de', { select: 'official' });
+    lineNumberAriaLabel = 'Zeilennummer';
 }
 
 /** @title Phone Input Internationalization */
@@ -24,6 +33,13 @@ export class MyPhoneInputIntl extends NxPhoneInputIntl {
             provide: NxPhoneInputIntl,
             useClass: MyPhoneInputIntl,
         },
+    ],
+    standalone: true,
+    imports: [
+        NxFormfieldComponent,
+        NxFormfieldLabelDirective,
+        NxPhoneInputComponent,
+        FormsModule,
     ],
 })
 export class PhoneInputI18nExampleComponent {

@@ -8,7 +8,7 @@ import { NxComparisonTableViewType } from './comparison-table.models';
 import { NxComparisonTablePopularCell } from './popular-cell/popular-cell.component';
 
 /** @docs-private */
-@Directive()
+@Directive({ standalone: true })
 export abstract class NxComparisonTableBase implements OnDestroy {
     selectedIndexChange!: EventEmitter<number>;
 
@@ -23,6 +23,8 @@ export abstract class NxComparisonTableBase implements OnDestroy {
     private _viewType: NxComparisonTableViewType = 'desktop';
 
     protected readonly _destroyed = new Subject<void>();
+
+    abstract isError: boolean;
 
     /** Get all header cells of the table. */
     abstract _getHeaderCells(): NxComparisonTableCell[];

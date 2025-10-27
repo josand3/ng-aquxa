@@ -3,12 +3,14 @@ import { Direction, Directionality } from '@angular/cdk/bidi';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { ENTER, SPACE } from '@angular/cdk/keycodes';
 import { AfterViewInit, Component, ElementRef, EventEmitter, Inject, Input, OnDestroy, Optional, Output, ViewChild } from '@angular/core';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { COMPARISON_TABLE_DEFAULT_OPTIONS, ComparisonTableDefaultOptions } from '../comparison-table.models';
 import { NxComparisonTableBase } from '../comparison-table-base';
 import { NxComparisonTableRowGroupDirective } from '../comparison-table-row-group.directive';
+import { NxComparisonTableFlexRow } from '../flex-row/flex-row.component';
 
 /**
  * Component that is only used internally for displaying a `nxComparisonTableRowGroup` in desktop and tablet view.
@@ -19,6 +21,8 @@ import { NxComparisonTableRowGroupDirective } from '../comparison-table-row-grou
     selector: 'nx-comparison-table-desktop-group',
     templateUrl: './desktop-group.component.html',
     styleUrls: ['./desktop-group.component.scss'],
+    standalone: true,
+    imports: [NxComparisonTableFlexRow, NxIconModule],
 })
 export class NxComparisonTableDesktopGroup implements AfterViewInit, OnDestroy {
     @Input() group!: NxComparisonTableRowGroupDirective;

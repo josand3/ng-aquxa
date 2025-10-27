@@ -266,7 +266,7 @@ export abstract class NxDateAdapter<D> {
      * @param min The minimum value to allow. If null or omitted no min is enforced.
      * @param max The maximum value to allow. If null or omitted no max is enforced.
      * @returns `min` if `date` is less than `min`, `max` if date is greater than `max`,
-     *     otherwise `date`.
+     * otherwise `date`.
      */
     clampDate(date: D, min?: D | null, max?: D | null): D {
         if (min && this.compareDate(date, min) < 0) {

@@ -1,4 +1,4 @@
-import { FocusMonitor } from '@angular/cdk/a11y';
+import { CdkMonitorFocus, FocusMonitor } from '@angular/cdk/a11y';
 import { Directionality } from '@angular/cdk/bidi';
 import {
     AfterContentInit,
@@ -17,6 +17,8 @@ import {
     SimpleChanges,
     ViewChild,
 } from '@angular/core';
+import { NxButtonModule } from '@aposin/ng-aquila/button';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -51,6 +53,8 @@ const yearsPerPage = 20;
     },
     exportAs: 'nxCalendar',
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxIconModule, CdkMonitorFocus, NxMonthViewComponent, NxYearViewComponent, NxMultiYearViewComponent, NxButtonModule],
 })
 export class NxCalendarComponent<D> implements AfterContentInit, AfterViewInit, OnDestroy, OnChanges {
     /** A date representing the period (month or year) to start the calendar in. */

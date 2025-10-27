@@ -1,5 +1,10 @@
+import { AsyncPipe } from '@angular/common';
 import { Component, Inject, OnDestroy, Optional } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NxBadgeModule } from '@aposin/ng-aquila/badge';
+import { NxMessageModule } from '@aposin/ng-aquila/message';
+import { NxTabsModule } from '@aposin/ng-aquila/tabs';
+import { ThemeSwitcherService } from '@aposin/ngx-docs-ui';
 import { Subject } from 'rxjs';
 import { filter, map, takeUntil } from 'rxjs/operators';
 
@@ -19,6 +24,8 @@ export interface DocItem {
     selector: 'nxv-single-component',
     templateUrl: 'component-page.html',
     styleUrls: ['component-page.scss'],
+    standalone: true,
+    imports: [NxMessageModule, NxBadgeModule, NxTabsModule, RouterLinkActive, RouterLink, RouterOutlet, AsyncPipe],
 })
 export class NxvComponentPage implements OnDestroy {
     componentDescriptor!: ComponentDescriptor;
@@ -48,6 +55,7 @@ export class NxvComponentPage implements OnDestroy {
         private readonly router: Router,
         private readonly manifestService: ManifestService,
         readonly componentService: ComponentService,
+        readonly themeSwitcherService: ThemeSwitcherService,
         @Optional() @Inject(NXV_FEEDBACK_LINKS) readonly feedbackLinks: any | null,
     ) {
         // Listen to changes on the current route for the doc id (e.g. button/checkbox) and the

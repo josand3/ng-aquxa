@@ -1,4 +1,4 @@
-import { Directive } from '@angular/core';
+import { Directive, ElementRef } from '@angular/core';
 
 /**
  * This is a table header cell.
@@ -8,5 +8,8 @@ import { Directive } from '@angular/core';
     host: {
         '[class.nx-header-cell]': 'true',
     },
+    standalone: true,
 })
-export class NxHeaderCellDirective {}
+export class NxHeaderCellDirective {
+    constructor(readonly elementRef: ElementRef<HTMLElement>) {}
+}

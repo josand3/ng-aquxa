@@ -1,5 +1,19 @@
 import { Component } from '@angular/core';
-import { UntypedFormBuilder, Validators } from '@angular/forms';
+import {
+    FormBuilder,
+    FormsModule,
+    ReactiveFormsModule,
+    Validators,
+} from '@angular/forms';
+import { NxButtonComponent } from '@aposin/ng-aquila/button';
+import { NxFormfieldComponent } from '@aposin/ng-aquila/formfield';
+import { NxInputDirective } from '@aposin/ng-aquila/input';
+import {
+    NxMultiStepperComponent,
+    NxStepComponent,
+    NxStepperNextDirective,
+    NxStepperPreviousDirective,
+} from '@aposin/ng-aquila/progress-stepper';
 
 /**
  * @title Progress Indicator multi manual step completion example
@@ -8,6 +22,18 @@ import { UntypedFormBuilder, Validators } from '@angular/forms';
     selector: 'progress-stepper-form-example',
     templateUrl: './progress-stepper-form-example.html',
     styleUrls: ['./progress-stepper-form-example.css'],
+    standalone: true,
+    imports: [
+        NxMultiStepperComponent,
+        NxStepComponent,
+        FormsModule,
+        ReactiveFormsModule,
+        NxFormfieldComponent,
+        NxInputDirective,
+        NxButtonComponent,
+        NxStepperPreviousDirective,
+        NxStepperNextDirective,
+    ],
 })
 export class ProgressStepperFormExampleComponent {
     lastStepCompleted = false;
@@ -16,7 +42,7 @@ export class ProgressStepperFormExampleComponent {
         name: ['', Validators.required],
     });
 
-    constructor(private readonly fb: UntypedFormBuilder) {}
+    constructor(private readonly fb: FormBuilder) {}
 
     completeLastStep() {
         this.lastStepCompleted = true;

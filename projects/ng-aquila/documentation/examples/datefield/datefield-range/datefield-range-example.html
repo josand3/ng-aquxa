@@ -1,11 +1,11 @@
 <div nxLayout="grid">
     <div nxRow>
         <div nxCol="6">
-            <nx-formfield nxLabel="Start date">
+            <nx-formfield label="Start date">
                 <input
                     nxDatefield
                     nxInput
-                    [nxDatepicker]="startDatepicker"
+                    [datepicker]="startDatepicker"
                     [(ngModel)]="startDate"
                     (dateChange)="updateEndDatepicker()"
                 />
@@ -15,15 +15,19 @@
                     nxFormfieldSuffix
                 ></nx-datepicker-toggle>
                 <nx-datepicker #startDatepicker></nx-datepicker>
+                <nx-error nxFormfieldError>
+                    Please enter a valid date.
+                </nx-error>
             </nx-formfield>
         </div>
 
         <div nxCol="6">
-            <nx-formfield nxLabel="End date">
+            <nx-formfield label="End date">
                 <input
                     nxDatefield
                     nxInput
-                    [nxDatepicker]="endDatepicker"
+                    [datepicker]="endDatepicker"
+                    #endModel="ngModel"
                     [(ngModel)]="endDate"
                 />
                 <span nxFormfieldHint>MM/DD/YYYY</span>
@@ -32,6 +36,12 @@
                     nxFormfieldSuffix
                 ></nx-datepicker-toggle>
                 <nx-datepicker #endDatepicker></nx-datepicker>
+                @if (endModel.errors && endModel.errors.nxDatefieldParse) {
+                <nx-error nxFormfieldError>
+                    Please enter a valid date.
+                </nx-error>
+
+                }
             </nx-formfield>
         </div>
     </div>

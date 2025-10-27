@@ -1,9 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import {
-    UntypedFormControl,
-    UntypedFormGroup,
+    FormControl,
+    FormGroup,
+    FormsModule,
+    ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
+import { NxErrorComponent } from '@aposin/ng-aquila/base';
+import { NxButtonComponent } from '@aposin/ng-aquila/button';
+import { NxCodeInputComponent } from '@aposin/ng-aquila/code-input';
 
 /**
  * @title Four character code input example
@@ -12,14 +17,22 @@ import {
     selector: 'code-input-four-char-example',
     templateUrl: 'code-input-four-char-example.html',
     styleUrls: ['code-input-four-char-example.css'],
+    standalone: true,
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        NxCodeInputComponent,
+        NxErrorComponent,
+        NxButtonComponent,
+    ],
 })
 export class CodeInputFourCharExampleComponent implements OnInit {
     inputValue = '';
-    codeForm!: UntypedFormGroup;
+    codeForm!: FormGroup;
 
     ngOnInit() {
-        this.codeForm = new UntypedFormGroup({
-            keyCode: new UntypedFormControl(this.inputValue, {
+        this.codeForm = new FormGroup({
+            keyCode: new FormControl(this.inputValue, {
                 validators: [
                     Validators.required,
                     Validators.pattern('[A-Z]+'),

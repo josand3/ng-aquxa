@@ -1,6 +1,6 @@
 import { Overlay, OverlayConfig, OverlayContainer, OverlayRef, ScrollStrategy } from '@angular/cdk/overlay';
 import { ComponentPortal, ComponentType, TemplatePortal } from '@angular/cdk/portal';
-import { Inject, Injectable, InjectionToken, Injector, OnDestroy, Optional, SkipSelf, StaticProvider, TemplateRef } from '@angular/core';
+import { Inject, inject, Injectable, InjectionToken, Injector, OnDestroy, Optional, SkipSelf, StaticProvider, TemplateRef } from '@angular/core';
 import { defer, Observable, Subject } from 'rxjs';
 import { startWith, takeUntil } from 'rxjs/operators';
 
@@ -15,14 +15,24 @@ export const NX_MODAL_DATA = new InjectionToken<any>('NxModalData');
 export const NX_MODAL_DEFAULT_OPTIONS = new InjectionToken<NxModalConfig>('nx-modal-default-options');
 
 /** Injection token that determines the scroll handling while a modal is open. */
-export const NX_MODAL_SCROLL_STRATEGY = new InjectionToken<() => ScrollStrategy>('nx-modal-scroll-strategy');
+export const NX_MODAL_SCROLL_STRATEGY = new InjectionToken<() => ScrollStrategy>('nx-modal-scroll-strategy', {
+    providedIn: 'root',
+    factory: () => {
+        const overlay = inject(Overlay);
+        return () => overlay.scrollStrategies.block();
+    },
+});
 
-/** @docs-private */
+/**
+ * @docs-private
+ */
 export function NX_MODAL_SCROLL_STRATEGY_PROVIDER_FACTORY(overlay: Overlay): () => ScrollStrategy {
     return () => overlay.scrollStrategies.block();
 }
 
-/** @docs-private */
+/**
+ * @docs-private
+ */
 export const NX_MODAL_SCROLL_STRATEGY_PROVIDER = {
     provide: NX_MODAL_SCROLL_STRATEGY,
     useFactory: NX_MODAL_SCROLL_STRATEGY_PROVIDER_FACTORY,
@@ -32,7 +42,7 @@ export const NX_MODAL_SCROLL_STRATEGY_PROVIDER = {
 /**
  * Service to open Material Design modal modals.
  */
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class NxDialogService implements OnDestroy {
     private readonly _openModalsAtThisLevel: NxModalRef<any>[] = [];
     private readonly _afterAllClosedAtThisLevel = new Subject<void>();
@@ -100,7 +110,8 @@ export class NxDialogService implements OnDestroy {
         }
 
         this.openModals.push(modalRef);
-        modalRef.afterClosed().subscribe(() => this._removeOpenModal(modalRef));
+
+        modalRef.beforeClosed().subscribe(() => this._removeOpenModal(modalRef));
         this.afterOpened.next(modalRef);
 
         return modalRef;
@@ -168,6 +179,11 @@ export class NxDialogService implements OnDestroy {
             state.backdropClass = modalConfig.backdropClass;
         }
 
+        if (modalConfig.fullscreen) {
+            state.maxWidth = '';
+            state.maxHeight = '';
+        }
+
         return state;
     }
 
@@ -209,6 +225,14 @@ export class NxDialogService implements OnDestroy {
         // Create a reference to the modal we're creating in order to give the user a handle
         // to modify and close it.
         const modalRef = new NxModalRef<T, R>(overlayRef, modalContainer, config.id);
+
+        // If fullscreen is set to true, set the width and height to be the the fullscreen with and height
+        // Add a class for styling the fullscreen modal
+        if (config.fullscreen) {
+            config.width = '100%';
+            config.height = '100%';
+            overlayRef.addPanelClass('is-fullscreen');
+        }
 
         // When the modal backdrop is clicked, we want to close it.
         if (config.hasBackdrop) {
@@ -267,18 +291,19 @@ export class NxDialogService implements OnDestroy {
      */
     private _removeOpenModal(modalRef: NxModalRef<any>) {
         const index = this.openModals.indexOf(modalRef);
-
         if (index > -1) {
             this.openModals.splice(index, 1);
 
-            // If all the modals were closed, remove/restore the `aria-hidden`
+            // If all the modals were closed, remove/restore the `aria-hidden` and `inert`
             // to a the siblings and emit to the `afterAllClosed` stream.
             if (!this.openModals.length) {
                 this._ariaHiddenElements.forEach((previousValue, element) => {
                     if (previousValue) {
                         element.setAttribute('aria-hidden', previousValue);
+                        element.setAttribute('inert', previousValue);
                     } else {
                         element.removeAttribute('aria-hidden');
+                        element.removeAttribute('inert');
                     }
                 });
 
@@ -303,7 +328,9 @@ export class NxDialogService implements OnDestroy {
 
                 if (sibling !== overlayContainer && sibling.nodeName !== 'SCRIPT' && sibling.nodeName !== 'STYLE' && !sibling.hasAttribute('aria-live')) {
                     this._ariaHiddenElements.set(sibling, sibling.getAttribute('aria-hidden'));
+                    this._ariaHiddenElements.set(sibling, sibling.getAttribute('inert'));
                     sibling.setAttribute('aria-hidden', 'true');
+                    sibling.setAttribute('inert', 'true');
                 }
             }
         }

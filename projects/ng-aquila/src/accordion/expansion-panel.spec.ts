@@ -25,8 +25,9 @@ describe('NxExpansionPanelComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [NoopAnimationsModule, NxAccordionModule],
-            declarations: [
+            imports: [
+                NoopAnimationsModule,
+                NxAccordionModule,
                 PanelWithContent,
                 PanelWithContentInNgIf,
                 PanelWithCustomMargin,
@@ -297,6 +298,16 @@ describe('NxExpansionPanelComponent', () => {
             const secondPanel = fixture.debugElement.query(By.css('nx-expansion-panel:nth-child(2)')).nativeElement;
             expect(secondPanel).toHaveClass('nx-expansion-panel--regular');
         });
+
+        it('should override style of accordion if value is present', () => {
+            createTestComponent(FlushPanelWithAccordion);
+
+            const expansionPanelHeader = fixture.debugElement.query(By.css('.nx-expansion-panel__header-content'));
+            const panel = fixture.componentInstance.panel;
+
+            expect(panel.flushAlignment).toBeTruthy();
+            expect(expansionPanelHeader.classes['flush-aligned']).toBeTruthy();
+        });
     });
 
     describe('disabled state', () => {
@@ -345,7 +356,7 @@ describe('NxExpansionPanelComponent', () => {
     });
 });
 
-@Directive()
+@Directive({ standalone: true })
 abstract class PanelTest {
     expanded = false;
     disabled = false;
@@ -359,6 +370,8 @@ abstract class PanelTest {
         <p>Some content</p>
         <button id="test-button">I am a button</button>
     </nx-expansion-panel>`,
+    standalone: true,
+    imports: [NxAccordionModule],
 })
 class PanelWithContent extends PanelTest {
     openCallback = jasmine.createSpy('openCallback');
@@ -366,11 +379,15 @@ class PanelWithContent extends PanelTest {
 }
 
 @Component({
-    template: `<div *ngIf="expansionShown">
-        <nx-expansion-panel>
-            <nx-expansion-panel-header>Panel Title</nx-expansion-panel-header>
-        </nx-expansion-panel>
-    </div>`,
+    template: `@if (expansionShown) {
+        <div>
+            <nx-expansion-panel>
+                <nx-expansion-panel-header>Panel Title</nx-expansion-panel-header>
+            </nx-expansion-panel>
+        </div>
+        }`,
+    standalone: true,
+    imports: [NxAccordionModule],
 })
 class PanelWithContentInNgIf extends PanelTest {
     expansionShown = true;
@@ -388,6 +405,8 @@ class PanelWithContentInNgIf extends PanelTest {
         Lorem ipsum dolor sit amet, consectetur adipisicing elit. Dolores officia, aliquam dicta corrupti maxime voluptate accusamus impedit atque incidunt
         pariatur.
     </nx-expansion-panel>`,
+    standalone: true,
+    imports: [NxAccordionModule],
 })
 class PanelWithCustomMargin extends PanelTest {}
 
@@ -400,6 +419,8 @@ class PanelWithCustomMargin extends PanelTest {}
             <button>I am a button</button>
         </ng-template>
     </nx-expansion-panel>`,
+    standalone: true,
+    imports: [NxAccordionModule],
 })
 class LazyPanelWithContent extends PanelTest {}
 
@@ -411,6 +432,8 @@ class LazyPanelWithContent extends PanelTest {}
             <p>Some content</p>
         </ng-template>
     </nx-expansion-panel>`,
+    standalone: true,
+    imports: [NxAccordionModule],
 })
 class LazyPanelOpenOnLoad extends PanelTest {}
 
@@ -418,13 +441,17 @@ class LazyPanelOpenOnLoad extends PanelTest {}
     template: `<nx-expansion-panel [(expanded)]="expanded">
         <nx-expansion-panel-header>Panel Title</nx-expansion-panel-header>
     </nx-expansion-panel>`,
+    standalone: true,
+    imports: [NxAccordionModule],
 })
 class PanelWithTwoWayBinding extends PanelTest {}
 
 @Component({
-    template: `<nx-expansion-panel [negative]="negative" [nxStyle]="style">
+    template: `<nx-expansion-panel [negative]="negative" [variant]="style">
         <nx-expansion-panel-header>Panel Title</nx-expansion-panel-header>
     </nx-expansion-panel>`,
+    standalone: true,
+    imports: [NxAccordionModule],
 })
 class PanelWithDifferentAppearances extends PanelTest {
     style: any = null;
@@ -432,14 +459,29 @@ class PanelWithDifferentAppearances extends PanelTest {
 }
 
 @Component({
-    template: `<nx-accordion negative="true" nxStyle="light">
+    template: `<nx-accordion negative="true" variant="light">
         <nx-expansion-panel>
             <nx-expansion-panel-header>Panel Title</nx-expansion-panel-header>
         </nx-expansion-panel>
-        <nx-expansion-panel negative="false" nxStyle="regular">
+        <nx-expansion-panel negative="false" variant="regular">
             <nx-expansion-panel-header>Panel Title</nx-expansion-panel-header>
         </nx-expansion-panel>
         <nx-accordion></nx-accordion
     ></nx-accordion>`,
+    standalone: true,
+    imports: [NxAccordionModule],
 })
 class PanelWithAccordion extends PanelTest {}
+
+@Component({
+    template: ` <nx-accordion flushAlignment="false">
+        <nx-expansion-panel flushAlignment="true" #firstPanel>
+            <nx-expansion-panel-header><nx-expansion-panel-title> Panel Title </nx-expansion-panel-title></nx-expansion-panel-header>
+        </nx-expansion-panel>
+    </nx-accordion>`,
+    standalone: true,
+    imports: [NxAccordionModule],
+})
+class FlushPanelWithAccordion extends PanelTest {
+    @ViewChild('firstPanel', { static: true }) panel!: NxExpansionPanelComponent;
+}

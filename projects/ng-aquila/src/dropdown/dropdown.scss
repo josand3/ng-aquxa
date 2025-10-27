@@ -40,6 +40,11 @@ $dropdown-border-size: nx-border-size(xs);
 
 :host(.nx-dropdown--disabled) .nx-dropdown__container {
     cursor: not-allowed;
+    @media screen and (forced-colors: active) {
+        .nx-dropdown__icon {
+            color: GrayText !important;
+        }
+    }
 }
 
 .nx-dropdown__rendered {
@@ -64,6 +69,14 @@ $dropdown-border-size: nx-border-size(xs);
         outline: none;
     }
 
+    &.centered-checkmark {
+        ::ng-deep nx-dropdown-item {
+            .nx-dropdown-results__option {
+                align-items: center;
+            }
+        }
+    }
+
     &--in-outline-field {
         .nx-dropdown__panel-body {
             // (6 * line-height of item + padding of item) + 16px for top and bottom padding of first and last element
@@ -73,7 +86,7 @@ $dropdown-border-size: nx-border-size(xs);
         ::ng-deep .nx-dropdown-results__group-label {
             @include type-style(formfield-outline-label);
             font-style: normal;
-            font-weight: nx-font-weight(bold);
+            font-weight: nx-font-weight(light);
         }
 
         ::ng-deep nx-dropdown-item {
@@ -121,6 +134,8 @@ $dropdown-border-size: nx-border-size(xs);
     max-height: calc(6 * (#{v(dropdown-item-line-height)} + 16px) + 16px);
     overflow-y: auto;
     outline: none;
+    padding-top: nx-spacer(3xs);
+    padding-bottom: nx-spacer(s);
 }
 
 .nx-dropdown__filter {
@@ -159,7 +174,7 @@ $dropdown-border-size: nx-border-size(xs);
 }
 
 .nx-dropdown__panel.has-filter ::ng-deep nx-dropdown-item:first-of-type .nx-dropdown-results__option {
-    padding-top: nx-spacer(xs);
+    padding-top: nx-spacer(2xs);
 }
 
 .nx-dropdown__filter-icon {
@@ -179,44 +194,45 @@ $dropdown-border-size: nx-border-size(xs);
     font-size: nx-font-size(s);
 }
 
-.nx-dropdown__filter-input:focus {
-    border-color: v(dropdown-filter-input-active-border-color);
-}
-
-.nx-dropdown__filter-input.is-filled:focus {
+.nx-dropdown__filter-input {
     font-weight: nx-font-weight(semibold);
 
-    color: v(dropdown-filter-input-active-text-color);
-    border-color: v(dropdown-filter-input-active-border-color);
+    &:focus {
+        border-color: v(dropdown-filter-input-active-border-color);
+    }
 
-    & + .nx-dropdown__filter-icon {
+    &.is-filled:focus {
         color: v(dropdown-filter-input-active-text-color);
+
+        & + .nx-dropdown__filter-icon {
+            color: v(dropdown-filter-input-active-text-color);
+        }
     }
 }
 
 :host(.is-readonly) {
     .nx-dropdown__icon {
         color: v(formfield-disabled-text-color);
+        @media screen and (forced-colors: active) {
+            color: GrayText !important;
+        }
     }
     .nx-dropdown__container {
         cursor: not-allowed;
     }
 }
 
-@media screen and (-ms-high-contrast: active) {
+@media screen and (forced-colors: active) {
     .nx-dropdown__panel {
-        box-shadow: 0 0 0 nx-border-size(xs) windowText;
+        box-shadow: 0 0 0 nx-border-size(xs) CanvasText;
         border: 1px solid CanvasText; // Chromium Edge
     }
 
     .nx-dropdown__panel-header {
-        border-bottom: nx-border-size(xs) solid windowText;
+        border-bottom: nx-border-size(xs) solid CanvasText;
     }
 
     .nx-dropdown__filter-input {
         border-bottom-color: buttonText;
-    }
-    .nx-dropdown__icon {
-        color: GrayText !important;
     }
 }

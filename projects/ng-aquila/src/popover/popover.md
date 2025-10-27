@@ -4,9 +4,16 @@ category: components
 b2c: true
 expert: true
 stable: done
+a1: true
 ---
 
 Popover requires Angular CDK (incl. CSS). Learn [how to enable Angular CDK styles](./documentation/overlay/overview#angular-cdk).
+
+### Global settings
+
+If you want to use default settings for all popovers, you can use the `POPOVER_DEFAULT_OPTIONS` injection token. Here global settings for `popoverWidth` and `popoverMaxWidth` can be defined.
+
+If a certain popover should have another styling, you can overwrite the global default by explicitly defining the property in the template.
 
 ### UX guidelines
 
@@ -48,6 +55,28 @@ The popover can carry custom content.
 
 <!-- example(popover-custom) -->
 
+### Extended popover
+
+The popover can be extended with a header and a footer, consisting of a headline and buttons.
+
+<!-- example(popover-extended) -->
+
+The popover can be used for a guided tour
+
+<!-- example(popover-guided-tour) -->
+
+### Popover without arrow
+
+The popover arrow can be hidden using the `nxPopoverHideArrow`.
+
+<!-- example(popover-without-arrow) -->
+
+### Popover width and maxWidth
+
+The popover `width` and `max-width` can be set with the `popoverWidth` and `popoverMaxWidth` inputs. To set the `width` and `max-width` globally use the injection token `POPOVER_DEFAULT_OPTIONS`.
+
+<!-- example(popover-width) -->
+
 ### Custom lazyloaded content
 
 The popovers supports lazyloading when you provide a `ng-template` with the `nxPopoverContent` directive attached. The content of the template will only be instantiated once the popover gets opened. After closing the content will be destroyed again.
@@ -80,7 +109,7 @@ The following examples illustrates the usage of `cdkScrollable`. Make sure to im
 
 ### Hover triggered popover
 
-The popover triggered by hover will close immediately after the mouse exits the trigger.
+The popover triggered by hover will close immediately after the mouse exits the trigger. `nxPopoverCloseable` can't be used with trigger type hover.
 
 Please note that the popover with hover is only suitable for optional information. The information in the popover is not accessible for all use cases (e.g., touch devices) and is therefore to be used with care - if at all.
 

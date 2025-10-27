@@ -1,9 +1,19 @@
 import { Component } from '@angular/core';
 import {
     AbstractControl,
-    UntypedFormBuilder,
+    FormBuilder,
+    FormsModule,
+    ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
+import { NxErrorComponent } from '@aposin/ng-aquila/base';
+import { NxSelectableCardComponent } from '@aposin/ng-aquila/card';
+import { NxCopytextComponent } from '@aposin/ng-aquila/copytext';
+import {
+    NxColComponent,
+    NxLayoutComponent,
+    NxRowComponent,
+} from '@aposin/ng-aquila/grid';
 
 /**
  * @title Selectable cards states example
@@ -12,6 +22,17 @@ import {
     selector: 'selectable-card-states-example',
     templateUrl: './selectable-card-states-example.html',
     styleUrls: ['./selectable-card-states-example.css'],
+    standalone: true,
+    imports: [
+        FormsModule,
+        NxLayoutComponent,
+        ReactiveFormsModule,
+        NxRowComponent,
+        NxColComponent,
+        NxSelectableCardComponent,
+        NxCopytextComponent,
+        NxErrorComponent,
+    ],
 })
 export class SelectableCardStatesExampleComponent {
     readonly formGroup = this.fb.group({
@@ -19,7 +40,7 @@ export class SelectableCardStatesExampleComponent {
         errorCard2: [true, validateSecondCard],
     });
 
-    constructor(private readonly fb: UntypedFormBuilder) {
+    constructor(private readonly fb: FormBuilder) {
         this.formGroup.markAllAsTouched();
     }
 }

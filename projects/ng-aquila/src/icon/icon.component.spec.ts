@@ -1,4 +1,5 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, Directive, Type, ViewChild } from '@angular/core';
 import { ComponentFixture, fakeAsync, inject, TestBed, waitForAsync } from '@angular/core/testing';
 import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
@@ -7,7 +8,7 @@ import { NxIconComponent } from './icon.component';
 import { NxIconModule } from './icon.module';
 import { NxIconRegistry } from './icon-registry';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class IconTest {
     @ViewChild(NxIconComponent) buttonInstance!: NxIconComponent;
     name = '';
@@ -30,14 +31,19 @@ describe('NxIconComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [BasicIcon, SizeIcon, OutlineIcon, FillIcon, DynamicIcon, FontIcon],
-            imports: [NxIconModule, HttpClientTestingModule],
+            imports: [NxIconModule, BasicIcon, SizeIcon, OutlineIcon, FillIcon, DynamicIcon, FontIcon],
+            providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()],
         }).compileComponents();
     }));
 
     it('creates the button', waitForAsync(() => {
         createTestComponent(BasicIcon);
         expect(iconInstance).toBeTruthy();
+    }));
+
+    it('adds the name data attribute for an icon', waitForAsync(() => {
+        createTestComponent(BasicIcon);
+        expect(iconNativeElement.getAttribute('data-nx-icon-name')).toBe('heart');
     }));
 
     it('adds the class name for a icon', waitForAsync(() => {
@@ -255,26 +261,36 @@ describe('NxIconComponent', () => {
 
 @Component({
     template: `<nx-icon name="heart"></nx-icon>`,
+    standalone: true,
+    imports: [NxIconModule],
 })
 class BasicIcon extends IconTest {}
 
 @Component({
     template: `<nx-icon name="heart" size="m"></nx-icon>`,
+    standalone: true,
+    imports: [NxIconModule],
 })
 class SizeIcon extends IconTest {}
 
 @Component({
     template: `<nx-icon name="heart" outline="true"></nx-icon>`,
+    standalone: true,
+    imports: [NxIconModule],
 })
 class OutlineIcon extends IconTest {}
 
 @Component({
     template: `<nx-icon name="heart" fill="true"></nx-icon>`,
+    standalone: true,
+    imports: [NxIconModule],
 })
 class FillIcon extends IconTest {}
 
 @Component({
     template: `<nx-icon [name]="name" [size]="size" fill="true"></nx-icon>`,
+    standalone: true,
+    imports: [NxIconModule],
 })
 class DynamicIcon extends IconTest {
     name = 'heart';
@@ -283,6 +299,8 @@ class DynamicIcon extends IconTest {
 
 @Component({
     template: `<nx-icon [name]="name" [font]="font"></nx-icon>`,
+    standalone: true,
+    imports: [NxIconModule],
 })
 class FontIcon extends IconTest {
     font = 'custom-font';

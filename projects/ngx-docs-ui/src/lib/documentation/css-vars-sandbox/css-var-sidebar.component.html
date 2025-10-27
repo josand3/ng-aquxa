@@ -1,17 +1,15 @@
 <button nxIconButton="primary small" class="handle" (click)="toggle()" type="button">
-    <div *ngIf="shown; then shownPanelArrows; else hiddenPanelArrows" class="handle__icons-container"></div>
-    <ng-template #shownPanelArrows>
-        <div class="handle__icons-container">
-            <nx-icon name="chevron-right-small" aria-hidden="true"></nx-icon>
-            <nx-icon name="chevron-right-small" aria-hidden="true"></nx-icon>
-        </div>
-    </ng-template>
-    <ng-template #hiddenPanelArrows>
-        <div class="handle__icons-container">
-            <nx-icon name="chevron-left-small" aria-hidden="true"></nx-icon>
-            <nx-icon name="chevron-left-small" aria-hidden="true"></nx-icon>
-        </div>
-    </ng-template>
+    @if (shown) {
+    <div class="handle__icons-container">
+        <nx-icon name="chevron-right-small" aria-hidden="true"></nx-icon>
+        <nx-icon name="chevron-right-small" aria-hidden="true"></nx-icon>
+    </div>
+    } @else {
+    <div class="handle__icons-container">
+        <nx-icon name="chevron-left-small" aria-hidden="true"></nx-icon>
+        <nx-icon name="chevron-left-small" aria-hidden="true"></nx-icon>
+    </div>
+    }
 </button>
 
 <div class="options-container">
@@ -23,9 +21,11 @@
 </div>
 
 <div class="property-container">
-    <div *ngFor="let prop of displayedProperties; trackBy: trackProperties">
+    @for (prop of displayedProperties; track trackProperties($index, prop)) {
+    <div>
         <p class="property-title">{{ prop.name.replace('--', '') }}</p>
-        <div *ngIf="prop.type === 'color'" class="picker-container">
+        @if (prop.type === 'color') {
+        <div class="picker-container">
             <input
                 class="picker"
                 cpOutputFormat="rgba"
@@ -35,13 +35,9 @@
                 cpPosition="left"
             />
         </div>
-        <input
-            *ngIf="prop.type === 'text'"
-            class="text-input"
-            type="text"
-            [attr.data-css-var]="prop.name"
-            [(ngModel)]="prop.value"
-            (ngModelChange)="updateProperty($event, prop)"
-        />
+        } @if (prop.type === 'text') {
+        <input class="text-input" type="text" [attr.data-css-var]="prop.name" [(ngModel)]="prop.value" (ngModelChange)="updateProperty($event, prop)" />
+        }
     </div>
+    }
 </div>

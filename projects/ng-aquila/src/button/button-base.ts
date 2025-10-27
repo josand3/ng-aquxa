@@ -1,10 +1,10 @@
 import { FocusMonitor } from '@angular/cdk/a11y';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { ChangeDetectorRef, Directive, ElementRef, HostBinding, Input, OnDestroy } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Directive, ElementRef, HostBinding, Input, NgZone, OnDestroy } from '@angular/core';
 import { NxTriggerButton } from '@aposin/ng-aquila/overlay';
 
 /** Type of a button. */
-export type NxButtonType = 'primary' | 'secondary' | 'tertiary' | 'cta' | 'emphasis';
+export type NxButtonType = 'primary' | 'secondary' | 'tertiary' | 'cta' | 'emphasis' | 'attention';
 
 /** Size of a button. */
 export type NxButtonSize = 'small' | 'small-medium' | 'medium' | 'large';
@@ -13,8 +13,8 @@ const DEFAULT_SIZE = 'medium';
 const DEFAULT_TYPE = 'primary';
 
 /** @docs-private */
-@Directive()
-export class NxButtonBase implements NxTriggerButton, OnDestroy {
+@Directive({ standalone: true })
+export class NxButtonBase implements NxTriggerButton, OnDestroy, AfterViewInit {
     private _classNames = '';
 
     /** @docs-private */
@@ -36,6 +36,10 @@ export class NxButtonBase implements NxTriggerButton, OnDestroy {
     /** @docs-private */
     @HostBinding('class.nx-button--emphasis') get isEmphasis(): boolean {
         return this.type === 'emphasis';
+    }
+    /** @docs-private */
+    @HostBinding('class.nx-button--attention') get isAttention(): boolean {
+        return this.type === 'attention';
     }
 
     /** @docs-private */
@@ -103,7 +107,7 @@ export class NxButtonBase implements NxTriggerButton, OnDestroy {
         this._classNames = value;
 
         // TODO kick null safeguards after setter value is properly coerced
-        const [type = null] = this._classNames?.match(/primary|secondary|tertiary|cta|emphasis/) ?? [DEFAULT_TYPE];
+        const [type = null] = this._classNames?.match(/primary|secondary|tertiary|cta|emphasis|attention/) ?? [DEFAULT_TYPE];
         this.type = type as NxButtonType;
 
         const [size = null] = this._classNames?.match(/small-medium|small|medium|large/) ?? [DEFAULT_SIZE];
@@ -132,7 +136,9 @@ export class NxButtonBase implements NxTriggerButton, OnDestroy {
         return this._elementRef;
     }
 
-    constructor(private readonly _cdr: ChangeDetectorRef, private readonly _elementRef: ElementRef, private readonly _focusMonitor: FocusMonitor) {
+    constructor(private readonly _cdr: ChangeDetectorRef, private readonly _elementRef: ElementRef, private readonly _focusMonitor: FocusMonitor) {}
+
+    ngAfterViewInit(): void {
         this._focusMonitor.monitor(this._elementRef);
     }
 
@@ -149,4 +155,28 @@ export class NxButtonBase implements NxTriggerButton, OnDestroy {
         this.active = false;
         this._cdr.markForCheck();
     }
+}
+
+/** @docs-private **/
+@Directive({ standalone: true })
+export class NxAnchorButtonBase extends NxButtonBase implements OnDestroy {
+    constructor(private _ngZone: NgZone, _cdr: ChangeDetectorRef, elementRef: ElementRef, focusMonitor: FocusMonitor) {
+        super(_cdr, elementRef, focusMonitor);
+        this._ngZone.runOutsideAngular(() => {
+            (this.elementRef.nativeElement as HTMLAnchorElement).addEventListener('click', this._checkEventsDisabled);
+        });
+    }
+
+    override ngOnDestroy() {
+        super.ngOnDestroy();
+        (this.elementRef.nativeElement as HTMLAnchorElement).removeEventListener('click', this._checkEventsDisabled);
+    }
+
+    /** @docs-private */
+    private _checkEventsDisabled = (event: Event) => {
+        if (this.disabled) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    };
 }

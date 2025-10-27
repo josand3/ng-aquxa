@@ -6,7 +6,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { NxModalComponent } from './modal.component';
 import { NxModalModule } from './modal.module';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class ModalTest {
     open = false;
     @ViewChildren(NxModalComponent) modalInstances!: QueryList<NxModalComponent>;
@@ -16,8 +16,7 @@ abstract class ModalTest {
 describe('NxModalComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [NoopAnimationsModule, NxModalModule.forRoot()],
-            declarations: [BasicModal, FixedWidthModal, ManualModal, OnPushTest],
+            imports: [NoopAnimationsModule, NxModalModule.forRoot(), BasicModal, FixedWidthModal, ManualModal, OnPushTest],
         }).compileComponents();
     }));
 
@@ -183,8 +182,10 @@ describe('NxModalComponent', () => {
             <button id="button">BUTTON</button>
         </ng-template>
 
-        <nx-modal #basicModal id="basicModal" [nxBody]="basicModalBody" *nxOpenModalOnClick="basicModalButton"> </nx-modal>
+        <nx-modal #basicModal id="basicModal" [modalBody]="basicModalBody" *nxOpenModalOnClick="basicModalButton"> </nx-modal>
     `,
+    imports: [NxModalModule],
+    standalone: true,
 })
 class BasicModal extends ModalTest {}
 
@@ -195,8 +196,12 @@ class BasicModal extends ModalTest {}
             <button id="button">BUTTON</button>
         </ng-template>
 
-        <nx-modal #basicModal id="basicModal" [nxBody]="basicModalBody" *ngIf="open"> </nx-modal>
+        @if (open) {
+        <nx-modal #basicModal id="basicModal" [modalBody]="basicModalBody"> </nx-modal>
+        }
     `,
+    imports: [NxModalModule],
+    standalone: true,
 })
 class ManualModal extends ModalTest {}
 
@@ -207,8 +212,12 @@ class ManualModal extends ModalTest {}
             <button id="button">BUTTON</button>
         </ng-template>
 
-        <nx-modal #basicModal id="basicModal" [nxBody]="basicModalBody" nxSize="fixed" *ngIf="open"> </nx-modal>
+        @if (open) {
+        <nx-modal #basicModal id="basicModal" [modalBody]="basicModalBody" windowSize="fixed"> </nx-modal>
+        }
     `,
+    imports: [NxModalModule],
+    standalone: true,
 })
 class FixedWidthModal extends ModalTest {}
 
@@ -222,7 +231,9 @@ class FixedWidthModal extends ModalTest {}
             <button id="button">BUTTON</button>
         </ng-template>
 
-        <nx-modal #basicModal id="basicModal" [nxBody]="basicModalBody" *nxOpenModalOnClick="basicModalButton"> </nx-modal>
+        <nx-modal #basicModal id="basicModal" [modalBody]="basicModalBody" *nxOpenModalOnClick="basicModalButton"> </nx-modal>
     `,
+    imports: [NxModalModule],
+    standalone: true,
 })
 class OnPushTest extends ModalTest {}

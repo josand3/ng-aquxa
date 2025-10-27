@@ -61,6 +61,25 @@ $border-radius: nx-border-radius(s);
             cursor: not-allowed;
         }
     }
+
+    &.is-readonly + .nx-radio-toggle__label-container {
+        background-color: v(toggle-button-readonly-unselected-background-color);
+        border-color: v(toggle-button-readonly-unselected-border-color);
+        color: v(toggle-button-readonly-unselected-text-color);
+        .nx-radio-toggle__label:hover {
+            cursor: not-allowed;
+        }
+    }
+
+    &.is-readonly + .nx-radio-toggle__label-container:hover {
+        cursor: not-allowed;
+    }
+
+    &:checked.is-readonly + .nx-radio-toggle__label-container {
+        background-color: v(toggle-button-readonly-selected-background-color);
+        border-color: v(toggle-button-readonly-selected-border-color);
+        color: v(toggle-button-readonly-selected-text-color);
+    }
 }
 
 .nx-radio-toggle__input:checked + .nx-radio-toggle__label-container {
@@ -68,12 +87,6 @@ $border-radius: nx-border-radius(s);
     border-color: v(toggle-button-selected-border-color);
     color: v(toggle-button-selected-text-color);
     cursor: default;
-
-    .nx-toggle-button__mobile-check {
-        @include media-breakpoint-down('small') {
-            display: inline-block;
-        }
-    }
 
     .nx-radio-toggle__label {
         cursor: default;
@@ -99,11 +112,6 @@ $border-radius: nx-border-radius(s);
         min-height: nx-spacer(s);
         padding: button-padding(nx-spacer(2xs));
         text-transform: none;
-
-        @include media-breakpoint-down('small') {
-            @include type-style(toggle-button-large);
-            padding: nx-spacer(xs) - nx-border-size(xs) nx-spacer(2m) - nx-border-size(xs);
-        }
     }
 }
 
@@ -120,15 +128,53 @@ $border-rounded-on-the-bottom: 0 0 $border-radius $border-radius;
 $bordered-without-left: $border-width $border-width $border-width 0;
 $bordered-without-right: $border-width 0 $border-width $border-width;
 
+::ng-deep .nx-radio-toggle:not(.disable-mobile) {
+    .nx-radio-toggle__label-container {
+        @include media-breakpoint-down('small') {
+            border-width: nx-border-size(xs) nx-border-size(m);
+            padding: nx-spacer(xs) - nx-border-size(xs) nx-spacer(2m) - nx-border-size(xs);
+
+            &.nx-radio-toggle__label-container--first {
+                border-width: $border-width;
+                border-bottom-width: nx-border-size(xs);
+                border-radius: $border-rounded-on-the-top;
+            }
+
+            &.nx-radio-toggle__label-container--last {
+                border-width: $border-width;
+                border-top-width: nx-border-size(xs);
+                border-radius: $border-rounded-on-the-bottom;
+
+                // prevent style changes if there is only one toggle option
+                &.nx-radio-toggle__label-container--first {
+                    border-radius: $border-radius;
+                    border-width: $border-width;
+                }
+            }
+        }
+    }
+
+    .nx-radio-toggle__input:checked + .nx-radio-toggle__label-container {
+        .nx-toggle-button__mobile-check {
+            @include media-breakpoint-down('small') {
+                display: inline-block;
+            }
+        }
+    }
+
+    :host-context(.nx-radio-toggle--small) {
+        .nx-radio-toggle__label-container {
+            @include media-breakpoint-down('small') {
+                @include type-style(toggle-button-large);
+                padding: nx-spacer(xs) - nx-border-size(xs) nx-spacer(2m) - nx-border-size(xs);
+            }
+        }
+    }
+}
+
 .nx-radio-toggle__label-container.nx-radio-toggle__label-container--first {
     border-radius: $border-rounded-on-the-left;
     border-width: $border-width 0 $border-width $border-width;
-
-    @include media-breakpoint-down('small') {
-        border-width: $border-width;
-        border-bottom-width: nx-border-size(xs);
-        border-radius: $border-rounded-on-the-top;
-    }
 
     :host-context([dir='rtl']) & {
         border-radius: $border-rounded-on-the-right;
@@ -149,18 +195,6 @@ $bordered-without-right: $border-width 0 $border-width $border-width;
     :host-context([dir='rtl']) & {
         border-radius: $border-rounded-on-the-left;
         border-width: $border-width;
-    }
-
-    @include media-breakpoint-down('small') {
-        border-width: $border-width;
-        border-top-width: nx-border-size(xs);
-        border-radius: $border-rounded-on-the-bottom;
-
-        // prevent style changes if there is only one toggle option
-        &.nx-radio-toggle__label-container--first {
-            border-radius: $border-radius;
-            border-width: $border-width;
-        }
     }
 
     :host-context([dir='rtl']) & {
@@ -195,9 +229,7 @@ $bordered-without-right: $border-width 0 $border-width $border-width;
     min-height: nx-spacer(m);
 
     @include media-breakpoint-down('small') {
-        border-width: nx-border-size(xs) nx-border-size(m);
         justify-content: center;
-        padding: nx-spacer(xs) - nx-border-size(xs) nx-spacer(2m) - nx-border-size(xs);
     }
 
     :host-context([dir='rtl']) & {
@@ -273,7 +305,7 @@ $bordered-without-right: $border-width 0 $border-width $border-width;
     z-index: 1; // otherwise the right box shadown is not shown
 }
 
-@media screen and (-ms-high-contrast: active) {
+@media screen and (forced-colors: active) {
     :host {
         forced-color-adjust: none;
     }
@@ -284,7 +316,7 @@ $bordered-without-right: $border-width 0 $border-width $border-width;
         color: buttonText !important;
 
         .nx-radio-toggle__label {
-            -ms-high-contrast-adjust: none;
+            forced-colors-adjust: none;
         }
     }
 
@@ -298,7 +330,6 @@ $bordered-without-right: $border-width 0 $border-width $border-width;
         &:checked + .nx-radio-toggle__label-container {
             background-color: highlight !important;
             border-color: buttonText !important;
-            color: highlightText !important;
 
             .nx-radio-toggle__label {
                 color: highlightText !important;

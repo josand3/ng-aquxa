@@ -1,17 +1,19 @@
+@for (key of _keyCode; track _trackByKeyCode(i, key); let i = $index) {
 <input
     class="nx-code-input__field"
-    maxlength="1"
-    *ngFor="let key of _keyCode; index as i; trackBy: _trackByKeyCode"
-    [(ngModel)]="_keyCode[i]"
+    [ngModel]="_keyCode[i]"
     [ngClass]="_inputGap(i)"
     [attr.aria-label]="getAriaLabel(i)"
     [attr.type]="type"
-    (input)="_selectNextInput($event)"
-    (paste)="_pasteClipboard($event)"
+    (input)="_handleInput($event)"
     (blur)="_onBlur()"
     (focus)="_setFocusState()"
-    (click)="_selectText($event)"
+    (mousedown)="_selectText($event)"
     (keydown)="_keydownAction($event)"
     [attr.tabindex]="tabindex"
-    [attr.disabled]="disabled ? '' : null"
+    [disabled]="disabled ? true : false"
+    autocomplete="one-time-code"
 />
+} @if (errorState) {
+<ng-content select="nx-error"></ng-content>
+}

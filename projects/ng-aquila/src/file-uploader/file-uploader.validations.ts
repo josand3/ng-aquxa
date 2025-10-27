@@ -1,14 +1,14 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
-import { FileItem } from './file-uploader.model';
-
 /**
  * Verifies the file type against the accepted types.
  */
-export function isFileTypeValid(file: File, accept: string): boolean {
-    if (!accept || !file.type) {
+export function isFileTypeValid(file: File, accept: string, strict: boolean): boolean {
+    if (!accept || (!file.type && !strict)) {
         return true;
     }
+
+    const fileExtension = getFileExtension(file.name);
 
     return (
         accept
@@ -16,9 +16,31 @@ export function isFileTypeValid(file: File, accept: string): boolean {
             .split(',')
             .filter(acc => {
                 const testExp = new RegExp(acc);
-                return testExp.test(file.type) || testExp.test(file.name);
+                return testExp.test(file.type) || acc === fileExtension;
             }).length > 0
     );
+}
+
+/**
+ * Verifies the file size against the max file size allow.
+ */
+export function isMaxFileSizeValid(file: File, maxFileSize: number): boolean {
+    return !maxFileSize || file.size <= maxFileSize;
+}
+
+/** Returns the file extension including the dot or empty string if filename has no extension */
+export function getFileExtension(filename: string) {
+    const parts = filename.split('.');
+
+    if (parts.length === 1) {
+        return '';
+    }
+
+    return '.' + parts.pop();
+}
+
+export function isMaxFileNumberValid(numFile: number, max: number | undefined) {
+    return !numFile || !max || numFile <= max;
 }
 
 /**
@@ -40,9 +62,9 @@ export class NxFileUploaderValidators {
     }
 
     /** The form control validator for the accepted file type. */
-    static fileType<D>(file: File, accept: string | undefined): ValidatorFn {
+    static fileType<D>(file: File, accept: string | undefined, strict: boolean): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
-            if (isFileTypeValid(file, accept!)) {
+            if (isFileTypeValid(file, accept!, strict)) {
                 return null;
             }
             return { NxFileUploadFileTypeNotAccepted: { fileName: file.name } };
@@ -50,12 +72,42 @@ export class NxFileUploaderValidators {
     }
 
     /** The form control validator for the max file number that is accepted. */
-    static maxFileNumber<D>(files: FileItem[], max: number | undefined): ValidatorFn {
+    static maxFileNumber<D>(filesNum: number, max: number | undefined): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
-            if (!files || !files.length || !max || files.length <= max) {
+            if (isMaxFileNumberValid(filesNum, max)) {
                 return null;
             }
-            return { NxFileUploadMaxFileNumber: { max, actual: files.length } };
+            return {
+                NxFileUploadMaxFileNumber: { max, actual: filesNum },
+            };
         };
     }
+}
+
+export interface BaseFileUploadError {
+    filename: string;
+}
+export type FileUploadError = NxFileTypeError | NxFileSizeError | NxFileNumberError | NxFileUploadTypeError;
+
+export interface NxFileTypeError extends BaseFileUploadError {
+    type: 'fileType';
+    extension: string;
+    actual: string;
+}
+
+export interface NxFileSizeError extends BaseFileUploadError {
+    type: 'fileNumber';
+    max: number;
+    actual: number;
+}
+
+export interface NxFileNumberError extends BaseFileUploadError {
+    type: 'fileSize';
+    max: number;
+    actual: number;
+}
+
+export interface NxFileUploadTypeError extends BaseFileUploadError {
+    type: 'upload';
+    reason: string;
 }

@@ -1,6 +1,7 @@
 import { FocusMonitor } from '@angular/cdk/a11y';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Directive, ElementRef, Input, OnDestroy } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, Directive, ElementRef, Input, OnDestroy } from '@angular/core';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
 
 export type NxMenuButtonType = 'root' | 'nested';
 
@@ -20,8 +21,10 @@ export type NxMenuButtonType = 'root' | 'nested';
         class: 'nx-menu-button',
     },
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxIconModule],
 })
-export class NxMenuButtonComponent implements OnDestroy {
+export class NxMenuButtonComponent implements OnDestroy, AfterViewInit {
     /** Whether this menu button is expandable or not. Will add a caret icon. */
     @Input() set expandable(value: BooleanInput) {
         this._expandable = coerceBooleanProperty(value);
@@ -49,7 +52,7 @@ export class NxMenuButtonComponent implements OnDestroy {
      * The type of this menu button.
      * Can be `primary` or `secondary`, defaults to `primary`.
      */
-    @Input('nxType') set type(value: NxMenuButtonType) {
+    @Input('menuButtonType') set type(value: NxMenuButtonType) {
         if (value === 'root' || value === 'nested') {
             this._type = value;
             this._cdr.markForCheck();
@@ -60,7 +63,9 @@ export class NxMenuButtonComponent implements OnDestroy {
     }
     private _type: NxMenuButtonType = 'root';
 
-    constructor(private readonly _cdr: ChangeDetectorRef, private readonly _focusMonitor: FocusMonitor, private readonly _elementRef: ElementRef) {
+    constructor(private readonly _cdr: ChangeDetectorRef, private readonly _focusMonitor: FocusMonitor, private readonly _elementRef: ElementRef) {}
+
+    ngAfterViewInit(): void {
         this._focusMonitor.monitor(this._elementRef);
     }
 
@@ -77,5 +82,6 @@ export class NxMenuButtonComponent implements OnDestroy {
     host: {
         class: 'nx-menu-button__icon',
     },
+    standalone: true,
 })
 export class NxMenuButtonIconDirective {}

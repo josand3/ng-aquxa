@@ -4,6 +4,7 @@ category: components
 b2c: true
 expert: true
 stable: done
+a1: true
 ---
 
 ## Dependencies
@@ -52,11 +53,18 @@ Similar to validation the component doesn't provide formatting out of the box to
 
 ## Internationalization
 
-To set different translations of the countries and to change texts like the overlay label you can either override it via inputs in the template or set these via the `NxPhoneInputIntl` class provider.
+To set different translations of the countries and to change texts like the overlay label, line number and area code label you can either override it via inputs `lineNumberLabel`, `areaCodeLabel` in the template or set these via the `NxPhoneInputIntl` class provider.
 
 To get translations for the countries you can import a different locale from the `i18n-iso-countries` package. Please note: if you provide the `NxPhoneInputIntl` class and use the inputs of the component as well, the input values take precedence.
 
 <!-- example(phone-input-i18n) -->
+
+
+## Blur/focus events
+
+Use (focusOut) to access the blur event which fires when an element has lost focus. Use (focusIn) to access the focus event, which fires when the element has received focus.
+
+<!-- example(phone-input-focus-out) -->
 
 <div class="docs-expert-container">
 

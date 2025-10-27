@@ -1,4 +1,5 @@
 import { ENTER, SPACE } from '@angular/cdk/keycodes';
+import { NgClass, NgStyle, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -11,11 +12,13 @@ import {
     TemplateRef,
     ViewChild,
 } from '@angular/core';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { NxPopoverContentDirective } from './popover-content';
 import { NxPopoverIntl } from './popover-intl';
+import { PopoverTriggerType } from './popover-trigger.directive';
 
 @Component({
     selector: 'nx-popover',
@@ -23,6 +26,8 @@ import { NxPopoverIntl } from './popover-intl';
     changeDetection: ChangeDetectionStrategy.OnPush,
     styleUrls: ['./popover.component.scss'],
     exportAs: 'nxPopover',
+    standalone: true,
+    imports: [NgClass, NgStyle, NxIconModule, NgTemplateOutlet],
 })
 export class NxPopoverComponent implements OnDestroy, OnInit {
     /** @docs-private */
@@ -32,7 +37,7 @@ export class NxPopoverComponent implements OnDestroy, OnInit {
     @ContentChild(NxPopoverContentDirective) _lazyContent?: NxPopoverContentDirective;
 
     /** Event emitted when the popover is closed. */
-    @Output('nxClosed') readonly closed = new EventEmitter<void>();
+    @Output() readonly closed = new EventEmitter<void>();
 
     /** @docs-private */
     readonly closeButtonClick = new Subject<void>();
@@ -44,7 +49,33 @@ export class NxPopoverComponent implements OnDestroy, OnInit {
     direction!: string;
 
     /** @docs-private */
+    hidePopoverArrow = false;
+
+    /** @docs-private */
     showCloseButton = false;
+
+    /** @docs-private */
+    triggerType: PopoverTriggerType = 'click';
+
+    // necessary for direct usages of popover where the popover should not be traversable through tabs like in the natural language form
+    /** Sets the tabIndex for the popover. Will only be considered if triggerType is 'manual' */
+    set tabIndex(value: number | null) {
+        this._tabIndex = value;
+    }
+
+    /**
+     * gets the tabindex for the popover
+     * if triggerType='hover' -> null
+     * if triggerType='click' -> 0
+     * if triggerType='manual' -> whatever is set on tabIndex. Defaults to 0 on 'manual'
+     */
+    get tabIndex(): number | null {
+        if (this.triggerType === 'manual') {
+            return this._tabIndex;
+        }
+        return this.triggerType === 'hover' ? null : 0;
+    }
+    private _tabIndex: number | null = 0;
 
     /** @docs-private */
     arrowStyle = {};
@@ -80,6 +111,13 @@ export class NxPopoverComponent implements OnDestroy, OnInit {
             this.emitCloseButtonClick();
         }
         $event.preventDefault();
+    }
+
+    /** @docs-private */
+    _onCloseKeydown($event: KeyboardEvent) {
+        if ($event.keyCode === SPACE) {
+            $event.preventDefault();
+        }
     }
 
     /** @docs-private */

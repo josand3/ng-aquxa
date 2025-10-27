@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { booleanAttribute, ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
 
 /** @docs-private */
 @Component({
@@ -13,7 +14,10 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
         '[class.is-disabled]': 'disabled',
         '[class.is-negative]': 'negative',
         '[class.is-touched]': 'touched',
+        '[class.is-readonly]': 'readonly',
     },
+    standalone: true,
+    imports: [NxIconModule],
 })
 export class NxIconToggleButtonComponent {
     @Input() inGroup = true;
@@ -25,6 +29,7 @@ export class NxIconToggleButtonComponent {
     @Input() negative = false;
     @Input() touched = false;
     @Input() circleText = '';
+    @Input({ transform: booleanAttribute }) readonly = false;
 
     @Input('svg') svgUrl = '';
 }

@@ -12,10 +12,11 @@ import { NxInputModule } from '@aposin/ng-aquila/input';
 import { NxTooltipModule } from '@aposin/ng-aquila/tooltip';
 
 import { NxDropdownClosedLabelDirective } from './closed-label.directive';
-import { NX_DROPDOWN_SCROLL_STRATEGY_PROVIDER, NxDropdownComponent, NxDropdownIntl } from './dropdown';
+import { NxDropdownComponent } from './dropdown';
 import { NxDropdownGroupComponent } from './group/dropdown-group';
 import { NxDropdownItemComponent } from './item/dropdown-item';
 import { NxMultiSelectComponent } from './multi-select/multi-select.component';
+import { NxMultiSelectAllComponent } from './multi-select/multi-select-all.component';
 import { NxMultiSelectOptionComponent } from './multi-select/multi-select-option.component';
 
 @NgModule({
@@ -31,16 +32,15 @@ import { NxMultiSelectOptionComponent } from './multi-select/multi-select-option
         NxTooltipModule,
         NxButtonModule,
         NxInputModule,
-    ],
-    declarations: [
         NxDropdownComponent,
         NxDropdownItemComponent,
         NxDropdownGroupComponent,
         NxDropdownClosedLabelDirective,
         NxMultiSelectComponent,
         NxMultiSelectOptionComponent,
+        NxMultiSelectAllComponent,
     ],
-    providers: [NxDropdownIntl, NX_DROPDOWN_SCROLL_STRATEGY_PROVIDER],
+    providers: [],
     exports: [NxDropdownComponent, NxDropdownItemComponent, NxDropdownGroupComponent, NxDropdownClosedLabelDirective, NxMultiSelectComponent],
 })
 export class NxDropdownModule {}

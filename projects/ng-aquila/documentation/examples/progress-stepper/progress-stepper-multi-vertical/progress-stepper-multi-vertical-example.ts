@@ -1,20 +1,45 @@
+import { JsonPipe } from '@angular/common';
 import { Component, OnDestroy, ViewChild } from '@angular/core';
 import {
-    UntypedFormBuilder,
-    UntypedFormControl,
+    FormBuilder,
+    FormControl,
+    FormsModule,
+    ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
+import { NxErrorComponent } from '@aposin/ng-aquila/base';
+import { NxButtonComponent } from '@aposin/ng-aquila/button';
+import {
+    NxDropdownComponent,
+    NxDropdownItemComponent,
+} from '@aposin/ng-aquila/dropdown';
+import {
+    NxFormfieldComponent,
+    NxFormfieldErrorDirective,
+} from '@aposin/ng-aquila/formfield';
+import {
+    NxColComponent,
+    NxLayoutComponent,
+    NxRowComponent,
+} from '@aposin/ng-aquila/grid';
+import { NxInputDirective } from '@aposin/ng-aquila/input';
 import {
     NxMultiStepperComponent,
+    NxMultiStepperComponent as NxMultiStepperComponent_1,
     NxMultiStepperDirection,
     NxProgressStepperDirective,
+    NxStepComponent,
 } from '@aposin/ng-aquila/progress-stepper';
+import {
+    NxRadioToggleButtonComponent,
+    NxRadioToggleComponent,
+} from '@aposin/ng-aquila/radio-toggle';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 interface Animal {
-    type: 'dog' | 'cat';
-    name: string;
+    animalType: string;
+    name?: string;
     dogBreed?: string;
     catBreed?: string;
     age: number;
@@ -30,6 +55,26 @@ interface Animal {
     host: {
         '[class.is-vertical]': 'direction === "vertical"',
     },
+    standalone: true,
+    imports: [
+        NxMultiStepperComponent_1,
+        NxStepComponent,
+        NxLayoutComponent,
+        NxRowComponent,
+        NxColComponent,
+        FormsModule,
+        ReactiveFormsModule,
+        NxFormfieldComponent,
+        NxDropdownComponent,
+        NxDropdownItemComponent,
+        NxErrorComponent,
+        NxFormfieldErrorDirective,
+        NxButtonComponent,
+        NxInputDirective,
+        NxRadioToggleComponent,
+        NxRadioToggleButtonComponent,
+        JsonPipe,
+    ],
 })
 export class ProgressStepperMultiVerticalExampleComponent implements OnDestroy {
     @ViewChild(NxProgressStepperDirective, { static: true })
@@ -85,7 +130,7 @@ export class ProgressStepperMultiVerticalExampleComponent implements OnDestroy {
 
     private readonly _destroyed = new Subject<void>();
 
-    constructor(private readonly fb: UntypedFormBuilder) {
+    constructor(private readonly fb: FormBuilder) {
         this.animalTypeForm.form
             .get('animalType')
             ?.valueChanges.pipe(takeUntil(this._destroyed))
@@ -94,13 +139,13 @@ export class ProgressStepperMultiVerticalExampleComponent implements OnDestroy {
                     this.breedForm.form.removeControl('catBreed');
                     this.breedForm.form.addControl(
                         'dogBreed',
-                        new UntypedFormControl('', Validators.required),
+                        new FormControl('', Validators.required),
                     );
                 } else if (value === 'cat') {
                     this.breedForm.form.removeControl('dogBreed');
                     this.breedForm.form.addControl(
                         'catBreed',
-                        new UntypedFormControl('', Validators.required),
+                        new FormControl('', Validators.required),
                     );
                 }
 
@@ -115,10 +160,10 @@ export class ProgressStepperMultiVerticalExampleComponent implements OnDestroy {
 
     onSubmit() {
         this.value = {
-            ...this.animalTypeForm.form.value,
-            ...this.ageForm.form.value,
-            ...this.breedForm.form.value,
-            ...this.nameForm.form.value,
+            animalType: { ...this.animalTypeForm.form.value } as string,
+            age: { ...this.ageForm.form.value } as number,
+            dogBreed: { ...this.breedForm.form.value } as string,
+            catBreed: { ...this.nameForm.form.value } as string,
         };
 
         this.stepper.steps.last.interacted = true;

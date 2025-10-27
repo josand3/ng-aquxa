@@ -1,5 +1,8 @@
 import { NgModule } from '@angular/core';
+import { NxFormfieldModule } from '@aposin/ng-aquila/formfield';
 import { NxGridModule } from '@aposin/ng-aquila/grid';
+import { NxInputModule } from '@aposin/ng-aquila/input';
+import { NxSliderModule } from '@aposin/ng-aquila/slider';
 
 import { GridAlignContentExampleComponent } from './grid-align-content/grid-align-content-example';
 import { GridAlignItemsExampleComponent } from './grid-align-items/grid-align-items-example';
@@ -13,6 +16,7 @@ import { GridMultiInputs2ExampleComponent } from './grid-multi-inputs-2/grid-mul
 import { GridNogutterExampleComponent } from './grid-nogutter/grid-nogutter-example';
 import { GridOffsetExampleComponent } from './grid-offset/grid-offset-example';
 import { GridOneInputExampleComponent } from './grid-one-input/grid-one-input-example';
+import { GridQueryComparisonComponent } from './grid-query-comparison/grid-query-comparison-example';
 
 const EXAMPLES = [
     GridAlignContentExampleComponent,
@@ -27,11 +31,17 @@ const EXAMPLES = [
     GridOffsetExampleComponent,
     GridOneInputExampleComponent,
     GridInGridExampleComponent,
+    GridQueryComparisonComponent,
 ];
 
 @NgModule({
-    imports: [NxGridModule],
-    declarations: [EXAMPLES],
+    imports: [
+        NxGridModule,
+        NxSliderModule,
+        NxFormfieldModule,
+        NxInputModule,
+        EXAMPLES,
+    ],
     exports: [EXAMPLES],
 })
 export class GridExamplesModule {
@@ -49,6 +59,7 @@ export class GridExamplesModule {
             'grid-offset': GridOffsetExampleComponent,
             'grid-one-input': GridOneInputExampleComponent,
             'grid-in-grid': GridInGridExampleComponent,
+            'grid-query-comparison': GridQueryComparisonComponent,
         };
     }
 }

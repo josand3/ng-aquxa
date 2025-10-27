@@ -1,6 +1,18 @@
 import { FocusMonitor } from '@angular/cdk/a11y';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { ChangeDetectionStrategy, Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild, ViewContainerRef } from '@angular/core';
+import {
+    AfterViewInit,
+    ChangeDetectionStrategy,
+    Component,
+    ElementRef,
+    Input,
+    OnChanges,
+    OnDestroy,
+    OnInit,
+    SimpleChanges,
+    ViewChild,
+    ViewContainerRef,
+} from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -13,8 +25,9 @@ import { NxTabGroupBase } from './tab-group-base';
     templateUrl: 'tab-body.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     styleUrls: ['./tab-body.scss'],
+    standalone: true,
 })
-export class NxTabBodyComponent implements OnInit, OnDestroy, OnChanges {
+export class NxTabBodyComponent implements OnInit, OnDestroy, OnChanges, AfterViewInit {
     @ViewChild('outlet', { static: true, read: ViewContainerRef }) _outlet!: ViewContainerRef;
 
     @Input() tab!: NxTabComponent;
@@ -29,14 +42,16 @@ export class NxTabBodyComponent implements OnInit, OnDestroy, OnChanges {
 
     private readonly _destroyed = new Subject<void>();
 
-    constructor(private readonly _tabGroup: NxTabGroupBase, private readonly _focusMonitor: FocusMonitor, private readonly _elementRef: ElementRef) {
-        this._focusMonitor.monitor(this._elementRef);
-    }
+    constructor(private readonly _tabGroup: NxTabGroupBase, private readonly _focusMonitor: FocusMonitor, private readonly _elementRef: ElementRef) {}
 
     ngOnInit(): void {
         this._tabGroup._appearanceChange.pipe(takeUntil(this._destroyed)).subscribe(() => {
             this.detach();
         });
+    }
+
+    ngAfterViewInit(): void {
+        this._focusMonitor.monitor(this._elementRef);
     }
 
     ngOnChanges(changes: SimpleChanges): void {

@@ -31,9 +31,13 @@ speed-measure-plugin*.json
 !.vscode/extensions.json
 .history/*
 
+# IDE - IntelliJ
+*.iml
+
 # misc
 /.angular/cache
 /.sass-cache
+/.nx/cache
 /connect.lock
 /coverage
 /libpeerconnection.log
@@ -41,6 +45,7 @@ npm-debug.log
 yarn-error.log
 testem.log
 /typings
+.nx
 
 # System Files
 .DS_Store

@@ -5,6 +5,10 @@ import { ComponentFactoryResolver, ViewContainerRef } from '@angular/core';
 /** Valid ARIA roles for a modal element. */
 export type NxModalRole = 'dialog' | 'alertdialog';
 
+export type NxModalAppearance = 'expert' | 'default';
+
+export type AutoFocusTarget = 'dialog' | 'first-tabbable' | 'first-heading';
+
 /** Possible overrides for a modal's position. */
 export interface NxDialogPosition {
     /** Override for the modal's top position. */
@@ -38,6 +42,13 @@ export class NxModalConfig<D = any> {
     /** The ARIA role of the modal element. */
     role?: NxModalRole = 'dialog';
 
+    /**
+     * The appearance of the modal.
+     *
+     * Default: `'default'`.
+     */
+    appearance?: NxModalAppearance;
+
     /** Custom class for the overlay pane. */
     panelClass?: string | string[] = '';
 
@@ -49,6 +60,9 @@ export class NxModalConfig<D = any> {
 
     /** Whether the user can use escape or clicking on the backdrop to close the modal. */
     disableClose?: boolean = false;
+
+    /** Whether the modal is to be shown in fullscreen. When set to true, the width, height, maxWidth and maxHeight are overwritten */
+    fullscreen?: boolean = false;
 
     /** Width of the modal. */
     width?: string = '736px';
@@ -62,10 +76,10 @@ export class NxModalConfig<D = any> {
     /** Min-height of the modal. If a number is provided, assumes pixel units. */
     minHeight?: number | string;
 
-    /** Max-width of the modal. If a number is provided, assumes pixel units. Defaults to 100vw. */
+    /** Max-width of the modal. If a number is provided, assumes pixel units. Defaults to '736px'. */
     maxWidth?: number | string = '736px';
 
-    /** Max-height of the modal. If a number is provided, assumes pixel units. */
+    /** Max-height of the modal. If a number is provided, assumes pixel units. Defaults to '65vh'. */
     maxHeight?: number | string;
 
     /** Position overrides. */
@@ -84,7 +98,7 @@ export class NxModalConfig<D = any> {
     ariaLabel?: string | null = null;
 
     /** Whether the modal should focus the first focusable element on open. */
-    autoFocus?: boolean = true;
+    autoFocus?: boolean | AutoFocusTarget | string = true;
 
     /**
      * Whether the modal should restore focus to the
@@ -125,4 +139,7 @@ export class NxModalConfig<D = any> {
      * Default: `'ltr'`.
      */
     direction?: Direction = 'ltr';
+
+    /** Define custom function to determine whether a modal can be closed  */
+    shouldClose?: (modalResult?: any) => boolean = () => true;
 }

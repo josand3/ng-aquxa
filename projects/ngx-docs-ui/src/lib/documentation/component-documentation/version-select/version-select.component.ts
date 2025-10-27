@@ -1,13 +1,17 @@
 import { Component, Inject, Input, Optional, ViewChild } from '@angular/core';
-import { NxContextMenuTriggerDirective } from '@aposin/ng-aquila/context-menu';
+import { NxButtonModule } from '@aposin/ng-aquila/button';
+import { NxContextMenuModule, NxContextMenuTriggerDirective } from '@aposin/ng-aquila/context-menu';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
 
 import { NX_DOC_VERSIONS } from '../../../core/tokens';
-import { DocVersions } from './../../../core/types';
+import { DocVersionChannel, DocVersions } from './../../../core/types';
 
 @Component({
     selector: 'nxv-version-select',
     templateUrl: 'version-select.component.html',
     styleUrls: ['version-select.component.scss'],
+    standalone: true,
+    imports: [NxButtonModule, NxContextMenuModule, NxIconModule],
 })
 export class NxVersionSelectComponent {
     _selected = '';
@@ -54,11 +58,9 @@ export class NxVersionSelectComponent {
         return `${channel}`;
     }
 
-    changeVersion(event: Event) {
-        const url = this.versions.channels.find(channel => channel.name === (event.target as HTMLInputElement).value)?.url;
-
-        if (url && window.top) {
-            window.top.location.href = url;
+    changeVersion(channel: DocVersionChannel) {
+        if (channel?.url && window.top) {
+            window.top.location.href = channel?.url;
         }
     }
 }

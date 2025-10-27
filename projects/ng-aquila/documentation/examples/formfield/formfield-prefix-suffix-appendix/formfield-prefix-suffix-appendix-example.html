@@ -1,24 +1,28 @@
-<nx-formfield nxLabel="Phone number (Prefix)">
-    <input nxInput nxAriaLabel="Phone number with prefix +49" />
-    <span nxFormfieldPrefix> +49 </span>
-</nx-formfield>
-
-<nx-formfield nxLabel="Your share (Suffix)">
-    <input nxInput min="0" max="100" type="number" value="85" />
+<nx-formfield label="Your share (Suffix)">
+    <input
+        nxInput
+        nxAriaLabel="Enter percents"
+        min="0"
+        max="100"
+        type="number"
+        value="85"
+    />
     <span nxFormfieldSuffix>%</span>
 </nx-formfield>
 
-<nx-formfield nxLabel="Your name (Appendix)">
+<nx-formfield label="Your name (Appendix)">
     <input nxInput />
-    <span nxFormfieldAppendix>
-        <a
-            [nxPopoverTriggerFor]="popoverAppendixExample"
-            nxPopoverDirection="top"
-            nxPopoverTrigger="hover"
-        >
-            <nx-icon name="info-circle-o"></nx-icon>
-        </a>
-    </span>
+    <button
+        nxFormfieldAppendix
+        nxIconButton="tertiary small"
+        nxPopoverDirection="top"
+        [nxPopoverTriggerFor]="popoverAppendixExample"
+        nxPopoverTrigger="click"
+        type="button"
+        aria-label="More information"
+    >
+        <nx-icon name="info-circle-o" size="s" aria-hidden="true"> </nx-icon>
+    </button>
 </nx-formfield>
 
 <nx-popover #popoverAppendixExample>

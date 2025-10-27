@@ -8,8 +8,7 @@ import { NxAccordionDirective, NxAccordionModule, NxExpansionPanelComponent } fr
 describe('NxAccordion', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [BrowserAnimationsModule, NxAccordionModule],
-            declarations: [NestedPanel, SetOfItems],
+            imports: [BrowserAnimationsModule, NxAccordionModule, NestedPanel, SetOfItems],
         });
         TestBed.compileComponents();
     }));
@@ -87,6 +86,14 @@ describe('NxAccordion', () => {
 
         expect(innerPanel.accordion).not.toBe(outerPanel.accordion);
     });
+
+    it('should propagate flush alignment value to panel and header', () => {
+        const fixture = TestBed.createComponent(FlushAccordion);
+
+        const panel = fixture.componentInstance.panel;
+
+        expect(panel.flushAlignment).toBeTruthy();
+    });
 });
 
 @Component({
@@ -100,6 +107,8 @@ describe('NxAccordion', () => {
             <p>Content</p>
         </nx-expansion-panel>
     </nx-accordion>`,
+    standalone: true,
+    imports: [NxAccordionModule],
 })
 class SetOfItems {
     @ViewChild(NxAccordionDirective) accordion!: NxAccordionDirective;
@@ -120,8 +129,23 @@ class SetOfItems {
             </nx-expansion-panel>
         </nx-expansion-panel>
     </nx-accordion>`,
+    standalone: true,
+    imports: [NxAccordionModule],
 })
 class NestedPanel {
     @ViewChild('outerPanel', { static: true }) outerPanel!: NxExpansionPanelComponent;
     @ViewChild('innerPanel', { static: true }) innerPanel!: NxExpansionPanelComponent;
+}
+@Component({
+    template: `<nx-accordion flushAlignment="true">
+        <nx-expansion-panel #panel="NxExpansionPanelComponent">
+            <nx-expansion-panel-header>Outer Panel</nx-expansion-panel-header>
+            Some Content
+        </nx-expansion-panel>
+    </nx-accordion>`,
+    standalone: true,
+    imports: [NxAccordionModule],
+})
+class FlushAccordion {
+    @ViewChild('panel', { static: true }) panel!: NxExpansionPanelComponent;
 }

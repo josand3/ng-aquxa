@@ -1,3 +1,4 @@
+import { DragDropModule } from '@angular/cdk/drag-drop';
 import { NgModule } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { NxBadgeModule } from '@aposin/ng-aquila/badge';
@@ -17,7 +18,9 @@ import { NxTableModule } from '@aposin/ng-aquila/table';
 
 import { ExamplesSharedModule } from '../examples-shared.module';
 import { TableExampleComponent } from './table/table-example';
-import { TableCoumnHidingExampleComponent } from './table-column-hiding/table-column-hiding-example';
+import { TableColumnHidingExampleComponent } from './table-column-hiding/table-column-hiding-example';
+import { TableColumnReorderExampleComponent } from './table-column-reorder/table-column-reorder-example';
+import { TableColumnResizeExampleComponent } from './table-column-resize/table-column-resize-example';
 import { TableCondensedExampleComponent } from './table-condensed/table-condensed-example';
 import { TableExpandableExampleComponent } from './table-expandable/table-expandable-example';
 import { TableFilterSortPaginateExampleComponent } from './table-filter-sort-paginate/table-filter-sort-paginate-example';
@@ -25,10 +28,13 @@ import { TableFormElementsExampleComponent } from './table-form-elements/table-f
 import { TableSelectingExampleComponent } from './table-selecting/table-selecting-example';
 import { TableSingleSelectExampleComponent } from './table-single-select/table-single-select-example';
 import { TableSortingExampleComponent } from './table-sorting/table-sorting-example';
-import { TableStickyExampleComponent } from './table-sticky/table-sticky-example';
+import { TableStickyColumnExampleComponent } from './table-sticky-column/table-sticky-column-example';
+import { TableStickyHeaderExampleComponent } from './table-sticky-header/table-sticky-header-example';
 import { TableZebraExampleComponent } from './table-zebra/table-zebra-example';
 
 const EXAMPLES = [
+    TableColumnResizeExampleComponent,
+    TableColumnReorderExampleComponent,
     TableExampleComponent,
     TableCondensedExampleComponent,
     TableExpandableExampleComponent,
@@ -38,8 +44,9 @@ const EXAMPLES = [
     TableSortingExampleComponent,
     TableZebraExampleComponent,
     TableFormElementsExampleComponent,
-    TableStickyExampleComponent,
-    TableCoumnHidingExampleComponent,
+    TableStickyColumnExampleComponent,
+    TableStickyHeaderExampleComponent,
+    TableColumnHidingExampleComponent,
 ];
 
 @NgModule({
@@ -60,13 +67,16 @@ const EXAMPLES = [
         NxRadioToggleModule,
         ExamplesSharedModule,
         RouterModule,
+        DragDropModule,
+        EXAMPLES,
     ],
-    declarations: [EXAMPLES],
     exports: [EXAMPLES],
 })
 export class TableExamplesModule {
     static components() {
         return {
+            'table-column-resize': TableColumnResizeExampleComponent,
+            'table-column-reorder': TableColumnReorderExampleComponent,
             table: TableExampleComponent,
             'table-condensed': TableCondensedExampleComponent,
             'table-expandable': TableExpandableExampleComponent,
@@ -77,8 +87,9 @@ export class TableExamplesModule {
             'table-sorting': TableSortingExampleComponent,
             'table-zebra': TableZebraExampleComponent,
             'table-form-elements': TableFormElementsExampleComponent,
-            'table-sticky': TableStickyExampleComponent,
-            'table-column-hiding': TableCoumnHidingExampleComponent,
+            'table-sticky-column': TableStickyColumnExampleComponent,
+            'table-sticky-header': TableStickyHeaderExampleComponent,
+            'table-column-hiding': TableColumnHidingExampleComponent,
         };
     }
 }

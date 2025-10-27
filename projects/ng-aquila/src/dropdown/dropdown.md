@@ -5,11 +5,12 @@ b2c: true
 expert: true
 stable: done
 alias: select, multi select
+a1: true
 ---
 
 <div class="docs-deprecation-warning">
   <strong>Important: </strong>
-  Please note that the <strong>nxIsMultiselect</strong> option of the dropdown is deprecated. Use the new <strong>nx-multi-select</strong> component instead.
+  Please note that the <strong>isMultiselect</strong> option of the dropdown is deprecated. Use the new <strong>nx-multi-select</strong> component instead.
 </div>
 
 It is recommended to use the dropdown component in combination with NxFormField. Therefore, make sure to import this module as well:
@@ -32,11 +33,21 @@ It is possible to show a placeholder instead of the floating label. The placehol
 
 <!-- example(dropdown-placeholder) -->
 
+### PanelGrow and PanelMaxWidth
+
+With `panelGrow` set to `true` the overlay can grow larger than the trigger and grows with the longest label.
+With `panelGrow` set to `false` the overlay is the size of the trigger. With `panelMaxWidth` a max-width can be set, `panelMaxWidth` accepts a number for pixel values or a string for any css value.
+
+<!-- example(dropdown-panelgrow) -->
+
+
 ### Rendering of dropdown-items
 
-The items inside the dropdown can be rendered either by `[nxValueFormatter]` or by ng-content. If no ng-content is provided, the `[nxValue]` in combination with `[nxValueFormatter]` will be used to render the item content (left). This example also shows the usage of `[nxValueFormatter]`. It is possible to transform any `[nxValue]` into the rendered state (here: "uppercase").
+The items inside the dropdown can be rendered either by `[valueFormatter]` or by ng-content. If no ng-content is provided, the `[value]` in combination with `[valueFormatter]` will be used to render the item content (left). This example also shows the usage of `[valueFormatter]`. It is possible to transform any `[value]` into the rendered state (here: "uppercase").
 
-If there is ng-content projected by nx-dropdown-item, this content will be used by the dropdown to display the items (middle). The library implements a fallback if you do not provide `[nxValueFormatter]` and ng-content. In this case, `[nxValue]` will be used by .toString() as value for the item (right).
+If there is ng-content projected by nx-dropdown-item, this content will be used by the dropdown to display the items (middle). The library implements a fallback if you do not provide `[valueFormatter]` and ng-content. In this case, `[value]` will be used by .toString() as value for the item (right).
+
+For more advanced content see the first dropdown where `[verticalAlignCheckmark]` is used to center the checkmark vertically.
 
 <!-- example(dropdown-rendering-items) -->
 
@@ -57,6 +68,8 @@ See below for an example of a dropdown with negative styling wrapped by a formfi
 ### Group Dropdown
 
 It might be necessary for your use case to group the items inside of a dropdown. This is how it's done:
+
+⚠️ Every item should have a unique value, regardless of which group it belongs to.
 
 <!-- example(dropdown-group) -->
 
@@ -114,7 +127,7 @@ Please note that **this is an Expert styling option**. This means that the outli
 
 #### Multi Select Dropdown
 
-The multi select dropdown is a new component which is a replacement for the `<dropdown nxIsMultiselect ...>`. It offers a filter to quicky find items in long lists, improved accessibility and better performance.
+The multi select dropdown is a new component which is a replacement for the `<dropdown isMultiselect ...>`. It offers a filter to quicky find items in long lists, improved accessibility and better performance.
 
 <!-- example(multi-select) -->
 
@@ -140,6 +153,10 @@ The provider `NxDropdownIntl` contains various strings to provide labels for dis
 The provider includes a `changes` subject that you can use to notify dependent components about changes of the strings during runtime.
 
 <!-- example(multi-select-intl) -->
+
+### Focus out
+A focusout event is emitted when the selected dropdown has lost focus.
+<!-- example(dropdown-focus-out) -->
 
 ### Accessibility
 

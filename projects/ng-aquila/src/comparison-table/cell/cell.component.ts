@@ -1,4 +1,5 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, EventEmitter, Input, Optional, Output, TemplateRef, ViewChild } from '@angular/core';
 
 import { NxComparisonTableRowType } from '../comparison-table.models';
@@ -12,6 +13,8 @@ let nextId = 0;
     selector: 'nx-comparison-table-cell',
     styleUrls: ['./cell.component.scss'],
     templateUrl: './cell.component.html',
+    standalone: true,
+    imports: [NgTemplateOutlet],
 })
 export class NxComparisonTableCell {
     @ViewChild('content', { static: true }) _content!: TemplateRef<any>;
@@ -115,5 +118,13 @@ export class NxComparisonTableCell {
         }
 
         return headers;
+    }
+
+    _isFirst() {
+        return this.index === 0;
+    }
+
+    _isLast() {
+        return this.index + 1 === this._table._infoColumnCount();
     }
 }

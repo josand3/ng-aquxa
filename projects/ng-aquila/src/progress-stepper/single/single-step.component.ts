@@ -1,5 +1,7 @@
 import { Directionality } from '@angular/cdk/bidi';
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, Input, Optional } from '@angular/core';
+import { NxProgressbarModule } from '@aposin/ng-aquila/progressbar';
 
 import { NxProgressStepperDirective } from '../progress-stepper.component';
 
@@ -9,6 +11,8 @@ import { NxProgressStepperDirective } from '../progress-stepper.component';
     styleUrls: ['../progress-stepper.component.scss', './single-step.component.scss'],
     providers: [{ provide: NxProgressStepperDirective, useExisting: NxSingleStepperComponent }],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [NxProgressbarModule, NgTemplateOutlet],
 })
 export class NxSingleStepperComponent extends NxProgressStepperDirective {
     /** Sets the label on the right showing the next step. */
@@ -19,6 +23,12 @@ export class NxSingleStepperComponent extends NxProgressStepperDirective {
         return this._rightLabel;
     }
     private _rightLabel = 'Next step:';
+
+    /** Overrides the `aria-label` of the nx-progressbar. Defaults to "Progress" */
+    @Input() progressbarAriaLabel: string | undefined = 'Progress';
+
+    /** Sets the `aria-labelledby` of the nx-progressbar */
+    @Input('progressbarAriaLabeledBy') progressbarAriaLabeledBy: string | undefined;
 
     /** @docs-private */
     get progress() {

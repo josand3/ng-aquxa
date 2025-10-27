@@ -5,6 +5,7 @@ b2c: true
 expert: true
 stable: done
 alias: datepicker
+a1: true
 ---
 
 ### Module
@@ -106,6 +107,10 @@ To create a date range, you can open the datepicker for the end date automatical
 
 <!-- example(datefield-reactive) -->
 
+#### Readonly
+
+<!-- example(datefield-readonly) -->
+
 ### Parsing & Formatting
 
 Both parsing and formatting depend on the capabilities of the chosen DateAdapter. Every date adapter brings it's own defaults so you don't have to set anything by default. To do so anyway you inject the necessary patterns through the injection token `NX_DATE_FORMATS`:
@@ -167,6 +172,12 @@ If you want to **change the locale during runtime** you can use the `setLocale()
 
 **Please note** that the locale setting does not change all labels and texts in the datepicker, only the date related parts are translated. You need to provide your own translation for texts like the header. You can find an example in the next chapter [Localizing labels and messages](./documentation/datefield/overview#localizing-labels-and-messages).
 
+From Angular v.17 each locale needs to be imported separately with moment.js:
+```ts
+import 'moment/locale/de';
+import 'moment/locale/ja';
+import 'moment/locale/ar';
+```
 <!-- example(datefield-localize-date) -->
 
 #### Localizing labels and messages
@@ -213,7 +224,7 @@ In month view:
 | `ALT` + `PAGE_UP`   | Go to the same day in the previous year  |
 | `PAGE_DOWN`         | Go to the same day in the next month     |
 | `ALT` + `PAGE_DOWN` | Go to the same day in the next year      |
-| `ENTER`             | Select current date                      |
+| `ENTER`,`SPACE`     | Select current date                      |
 
 In year view:
 

@@ -67,6 +67,18 @@
     min-height: v(small-stage-header-height);
     padding: v(small-stage-header-padding);
     display: flex;
+
+    @include media-breakpoint-down(medium) {
+        min-height: v(small-stage-header-height-tablet);
+
+        &:empty {
+            padding: 0;
+        }
+    }
+
+    @include media-breakpoint-down(small) {
+        min-height: v(small-stage-header-height-mobile);
+    }
 }
 
 :host(:not(.is-expert)) {
@@ -218,6 +230,10 @@
 
         .header {
             padding: v(small-stage-expert-mobile-header-padding);
+
+            &:empty {
+                padding: 0;
+            }
         }
 
         .image-end {

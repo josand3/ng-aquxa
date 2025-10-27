@@ -32,19 +32,61 @@ Using attribute `sticky`, you can make first or last column (or both of them at 
 
 Please note that you are only allowed to make the first and/or last column sticky, to prohibit covering too much screen estate by fixed columns. For the same reason, this setting won't have effect on mobile screens.
 
-<!-- example(table-sticky) -->
+<!-- example(table-sticky-column) -->
 
-### Column hiding
+### Sticky header
 
-Application developers can implement custom column behavior, such as column hiding.
+For a simple "sticky" header you can use the attribute `mayStick` on the `nxTableRow` element.
+
+For more complex use-cases, please consider either coming up with a custom CSS/Typescript solution or using a third-party datatable library.
+
+<!-- example(table-sticky-header) -->
+
+### Column hiding and reorder columns
+
+Application developers can implement custom column behavior, such as column hiding and reorder columns.
 
 <!-- example(table-column-hiding) -->
+
+ ### Column reorder with drag & drop
+ To allow users to reorder columns by drag and drop, you can use [CDKdrag](https://material.angular.io/cdk/drag-drop) from the Angular Material CDK library. To get started, you need to import `DragDropModule` from `@angular/cdk/drag-drop` and add the cdkDrag directive. Here's a simple example:
+ <!-- example(table-column-reorder) -->
+
+ ### Column resize
+ To let users adjust the width of a column in your table, you can add a resize handler in column header by using `nxHeaderResize` directive into `nxHeaderCell` element.
+
+<div class="docs-deprecation-warning">
+  <strong><code>nxTableCellClip</code></strong> directive was deprecated since it was violating WCAG accessibility criteria. See the <a href="./documentation/table/overview#accessibility">Accessibility</a> section for more info.
+</div>
+
+ <!-- example(table-column-resize) -->
+
+### Localization
+For **localization** please use the provider `NxHeaderSortIntl` which contains some labels for screen reader users. By default the labels are in english.
+
+```ts
+@Injectable()
+export class MyIntl extends NxSortHeaderIntl {
+    sortAscendingAriaLabel = 'klick, um absteigend zu sortieren';
+    sortDescendingAriaLabel = 'klick, um absteigend zu sortieren';
+    sortedAscendingAriaLabel = 'aufsteigend sortiert nach';
+    sortedDescendingAriaLabel = 'absteigend sortiert nach';
+}
+
+@Component({
+    ...
+    providers: [
+        { 
+            provide: NxSortHeaderIntl, 
+            useClass: MyIntl 
+        }
+    ],
+})
+```
 
 ### Sorting header
 
 This example shows how you can implement a basic sorting functionality for a table with `nxSort` and `nxSortHeaderCell`. As we don't know how your data looks like, you can implement the actual sorting function by yourself and call the function every time an `(sortChange)` event is outputted.
-
-For **localization** please use the provider `NxHeaderSortIntl` which contains some labels for screen reader users. By default the labels are in english. This is also shown in the following example.
 
 <!-- example(table-sorting) -->
 
@@ -73,7 +115,11 @@ Note that you can separate the data selection logic from row highlighting, for e
 
 Please note that **this is an Expert styling option**. This means that the expandable feature is only intended for internal applications and not for applications that are client facing.
 
-Table rows can be expanded by adding `[nxExpandableTableRow]` and `[nxExpandableTableCell]` to the table. For convenience the `<nx-toggle-button>` component can be used to expand and close the rows. The rows can also be toggled directly by calling their `toggle`, `expand` or `close` methods. The table also supports expanding all rows at the same time. The `[nxExpandableTable]` directive handles the expandion of all rows by conbining it with the `<nx-toggle-button>` as in this example.
+Table rows can be expanded by adding `[nxExpandableTableRow]` and `[nxExpandableTableCell]` to the table. For convenience the `<nx-toggle-button>` component can be used to expand and close the rows. The rows can also be toggled directly by calling their `toggle`, `expand` or `close` methods. The table also supports expanding all rows at the same time. The `[nxExpandableTable]` and `ng-container[nxExpandableContainer]` directive handles the expandion of all rows by conbining it with the `<nx-toggle-button>` as in this example.
+
+**Due to accessibility concerns** we recommend only placing table content inside `nxExpandableTableRow`. If you need to insert complex content into an expandable row or have table-in-table treeview, consider using third-party Datatable solutions.
+
+**Note:** For accessibility, ensure that columns in the Table contain consistent content. Expandable rows should maintain the same content structure as defined by the column headers.
 
 However, zebra mode using the attribute `zebra` is not available for tables with expandable rows for stylistic reasons.
 
@@ -86,3 +132,6 @@ Form elements can also be added to the table:
 <!-- example(table-form-elements) -->
 
 </div>
+
+### Accessibility
+Content should not be clipped, find more info on the [WCAG criteria](https://www.w3.org/WAI/WCAG21/Understanding/reflow.html). If clipping/cropping is strictly required it can be done via custom css. In that case it's necessary to make the full content accessible through other means. Align with your accessibility expert if clipping of content is required.

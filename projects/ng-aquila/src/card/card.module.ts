@@ -7,11 +7,32 @@ import { NxIconModule } from '@aposin/ng-aquila/icon';
 import { NxCardComponent } from './card.component';
 import { NxCardFooterComponent } from './card-footer.component';
 import { NxCardHeaderComponent } from './card-header.component';
-import { NxSelectableCardComponent } from './selectable-card.component';
+import { NxCardMainLinkDirective, NxCardSecondaryInfoDirective } from './card-link.directive';
+import { NxSelectableCardComponent, NxSelectableCardGroupComponent } from './selectable-card.component';
 
 @NgModule({
-    declarations: [NxCardComponent, NxSelectableCardComponent, NxCardHeaderComponent, NxCardFooterComponent],
-    exports: [NxCardComponent, NxSelectableCardComponent, NxCardHeaderComponent, NxCardFooterComponent, NxErrorModule],
-    imports: [CommonModule, NxIconModule, NxErrorModule, NxCheckboxModule],
+    exports: [
+        NxCardComponent,
+        NxSelectableCardComponent,
+        NxCardHeaderComponent,
+        NxCardFooterComponent,
+        NxErrorModule,
+        NxSelectableCardGroupComponent,
+        NxCardMainLinkDirective,
+        NxCardSecondaryInfoDirective,
+    ],
+    imports: [
+        CommonModule,
+        NxIconModule,
+        NxErrorModule,
+        NxCheckboxModule,
+        NxCardMainLinkDirective,
+        NxCardSecondaryInfoDirective,
+        NxCardComponent,
+        NxSelectableCardComponent,
+        NxCardHeaderComponent,
+        NxCardFooterComponent,
+        NxSelectableCardGroupComponent,
+    ],
 })
 export class NxCardModule {}

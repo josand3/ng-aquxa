@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Inject, Injectable, OnDestroy, Optional } from '@angular/core';
+import { Inject, inject, Injectable, InjectionToken, OnDestroy, Optional } from '@angular/core';
 import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 
 import { DEFAULT_ICONS } from './default-icons';
@@ -14,10 +14,13 @@ export class NxIconFontDefinition {
     constructor(readonly hostClass: string, readonly prefix: string = '') {}
 }
 
+export const NX_ICON_INITIALIZER = new InjectionToken<((registry: NxIconRegistry) => void)[]>('NX_ICON_INITIALIZER');
+
 @Injectable({ providedIn: 'root' })
 export class NxIconRegistry implements OnDestroy {
     private readonly _icons = new Map<string, NxSvgIcon | NxFontIcon>();
     private readonly _fonts = new Map<string, NxIconFontDefinition>();
+    private initializers = inject(NX_ICON_INITIALIZER, { optional: true }) ?? [];
 
     private _defaultFont?: NxIconFontDefinition;
 
@@ -30,6 +33,8 @@ export class NxIconRegistry implements OnDestroy {
         Object.entries(DEFAULT_ICONS).forEach(([icon, literal]) => {
             this.addSvgIconLiteral(icon, _sanitizer.bypassSecurityTrustHtml(literal));
         });
+
+        this.initializers.forEach(initializer => initializer(this));
     }
 
     /**

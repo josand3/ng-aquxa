@@ -1,17 +1,17 @@
 import { NgModule } from '@angular/core';
-import { NxSpinnerModule } from '@aposin/ng-aquila/spinner';
 
+import { SpinnerAriaAnnouncementExampleComponent } from './spinner-aria-announcement/spinner-aria-announcement-example';
 import { SpinnerNegativeExampleComponent } from './spinner-negative/spinner-negative-example';
 import { SpinnerSizesExampleComponent } from './spinner-sizes/spinner-sizes-example';
 
 const EXAMPLES = [
     SpinnerNegativeExampleComponent,
     SpinnerSizesExampleComponent,
+    SpinnerAriaAnnouncementExampleComponent,
 ];
 
 @NgModule({
-    imports: [NxSpinnerModule],
-    declarations: [EXAMPLES],
+    imports: [EXAMPLES],
     exports: [EXAMPLES],
 })
 export class SpinnerExamplesModule {
@@ -19,6 +19,8 @@ export class SpinnerExamplesModule {
         return {
             'spinner-negative': SpinnerNegativeExampleComponent,
             'spinner-sizes': SpinnerSizesExampleComponent,
+            'spinner-aria-announcement':
+                SpinnerAriaAnnouncementExampleComponent,
         };
     }
 }

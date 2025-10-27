@@ -1,5 +1,6 @@
 import { FocusMonitor } from '@angular/cdk/a11y';
-import { Component, ElementRef, Input, OnDestroy } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { AfterViewInit, Component, ElementRef, Input, OnDestroy } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -8,8 +9,8 @@ import { NxComparisonTableRowDirective } from '../comparison-table-row.directive
 
 /**
  *
- * Component that is only used internally for displaying a `nxComparisonTableRow`
- * (header, content and footer rows) in desktop and tablet view.
+ *Component that is only used internally for displaying a `nxComparisonTableRow`
+ *(header, content and footer rows) in desktop and tablet view.
  *
  * @docs-private
  */
@@ -24,13 +25,17 @@ import { NxComparisonTableRowDirective } from '../comparison-table-row.directive
         '[class.is-content-row]': 'row.type === "content"',
         '[class.has-intersection]': 'row.intersectionCell',
     },
+    standalone: true,
+    imports: [NgTemplateOutlet],
 })
-export class NxComparisonTableFlexRow implements OnDestroy {
+export class NxComparisonTableFlexRow implements OnDestroy, AfterViewInit {
     @Input() row!: NxComparisonTableRowDirective;
 
     private readonly _destroyed = new Subject<void>();
 
-    constructor(readonly _table: NxComparisonTableBase, private readonly _elementRef: ElementRef, private readonly _focusMonitor: FocusMonitor) {
+    constructor(readonly _table: NxComparisonTableBase, private readonly _elementRef: ElementRef, private readonly _focusMonitor: FocusMonitor) {}
+
+    ngAfterViewInit(): void {
         this._focusMonitor
             .monitor(this._elementRef, true)
             .pipe(takeUntil(this._destroyed))

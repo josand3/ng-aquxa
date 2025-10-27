@@ -15,12 +15,12 @@ $sticky-shadow-size: nx-spacer(3xs);
     border-bottom: $border-bottom-width solid v(table-border-bottom-color);
     width: 100%;
 
-    @media screen and (-ms-high-contrast: active) {
+    @media screen and (forced-colors: active) {
         border-bottom-color: CanvasText;
     }
 }
 
-::ng-deep .nx-header-cell {
+:host ::ng-deep .nx-header-cell {
     @include type-style(table-header-cell);
     color: v(table-header-cell-color);
     background: v(table-header-cell-background-color);
@@ -32,6 +32,7 @@ $sticky-shadow-size: nx-spacer(3xs);
     text-align: left;
     white-space: nowrap;
     vertical-align: top;
+    position: relative;
 
     &:first-child {
         padding-left: $horizontal-padding-edges;
@@ -56,11 +57,11 @@ $sticky-shadow-size: nx-spacer(3xs);
     }
 }
 
-::ng-deep .nx-table-row {
+:host ::ng-deep .nx-table-row {
     background: v(table-row-background-color);
 }
 
-::ng-deep .nx-table-cell {
+:host ::ng-deep .nx-table-cell {
     @include type-style(table-cell);
     color: v(table-cell-color);
     padding-top: $vertical-padding;
@@ -89,27 +90,12 @@ $sticky-shadow-size: nx-spacer(3xs);
         }
     }
 
-    :host(.nx-table--condensed) & {
-        padding-bottom: $condensed-vertical-padding - $cell-border-width;
-        padding-top: $condensed-vertical-padding;
-    }
-
     :host(.nx-table--zebra) & {
         border-top: $cell-border-width solid v(zebra-table-cell-border-top-color);
     }
 
     :host(.nx-table--zebra) &--expandable {
         border-top: 0;
-    }
-
-    :host(.nx-table--condensed) &--expandable {
-        padding-bottom: 0;
-        padding-top: 0;
-
-        .nx-table-cell__wrapper {
-            padding-bottom: $condensed-vertical-padding - $cell-border-width;
-            padding-top: $condensed-vertical-padding;
-        }
     }
 }
 
@@ -118,9 +104,24 @@ $sticky-shadow-size: nx-spacer(3xs);
         padding-top: $condensed-vertical-padding;
         padding-bottom: $condensed-vertical-padding;
     }
+
+    ::ng-deep .nx-table-cell {
+        padding-bottom: $condensed-vertical-padding - $cell-border-width;
+        padding-top: $condensed-vertical-padding;
+    }
+
+    ::ng-deep .nx-expandable-table-cell {
+        padding-bottom: 0;
+        padding-top: 0;
+
+        .nx-expandable-table-cell__wrapper {
+            padding-bottom: $condensed-vertical-padding - $cell-border-width;
+            padding-top: $condensed-vertical-padding;
+        }
+    }
 }
 
-::ng-deep .nx-expandable-table-cell {
+:host ::ng-deep .nx-expandable-table-cell {
     @include type-style(table-cell);
     color: v(table-cell-color);
 
@@ -147,13 +148,6 @@ $sticky-shadow-size: nx-spacer(3xs);
         :host-context([dir='rtl']) & {
             padding-right: initial;
             padding-left: nx-spacer(2xs);
-        }
-    }
-
-    :host(.nx-table--condensed) & {
-        .nx-expandable-table-cell__wrapper {
-            padding-bottom: $condensed-vertical-padding - $cell-border-width;
-            padding-top: $condensed-vertical-padding;
         }
     }
 }
@@ -198,7 +192,7 @@ $sticky-shadow-size: nx-spacer(3xs);
     }
 }
 
-::ng-deep .nx-table-row {
+:host ::ng-deep .nx-table-row {
     &:first-child .nx-table-cell {
         border-top: 0;
     }
@@ -244,12 +238,27 @@ $sticky-shadow-size: nx-spacer(3xs);
             border-color: v(selectable-table-row-selected-border-color);
         }
     }
+
+    &.nx-table-row--sticky {
+        .nx-header-cell {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: v(ui-01); //since `table-header-cell-background-color` is currently transparent in all themes
+
+            :host(.nx-table--sticky-first) &:first-child,
+            :host(.nx-table--sticky-last) &:last-child {
+                // case sticky header row AND sticky first column
+                z-index: 3;
+            }
+        }
+    }
 }
 
 // remove margins from some components that are placed inside table cells
-::ng-deep .nx-header-cell,
-::ng-deep .nx-table-cell,
-::ng-deep .nx-exandable-table-cell {
+:host ::ng-deep .nx-header-cell,
+:host ::ng-deep .nx-table-cell,
+:host ::ng-deep .nx-exandable-table-cell {
     nx-checkbox {
         margin: 0;
 
@@ -322,5 +331,73 @@ $sticky-shadow-size: nx-spacer(3xs);
                 box-shadow: -$sticky-shadow-size 0 $sticky-shadow-offset (-$sticky-shadow-size) v(shadow-small-color) inset;
             }
         }
+
+        // add the zebra color to the sticky column
+        ::ng-deep .nx-table-row:nth-child(2n) & {
+            :host(.nx-table--sticky-first.nx-table--zebra) &:first-child,
+            :host(.nx-table--sticky-last.nx-table--zebra) &:last-child {
+                background: v(zebra-table-even-row-background-color);
+            }
+        }
+
+        // add the selected row color to the sticky column
+        ::ng-deep .nx-table-row--selectable.is-selected & {
+            :host(.nx-table--sticky-first) &:first-child,
+            :host(.nx-table--sticky-last) &:last-child {
+                background: v(zebra-table-row-selected-background-color);
+            }
+        }
+
+        // add hover to the sticky column of non selected rows
+        ::ng-deep .nx-table-row--selectable:not(.is-selected):hover & {
+            :host(.nx-table--sticky-first) &:first-child,
+            :host(.nx-table--sticky-last) &:last-child {
+                background: v(selectable-table-row-hover-background-color);
+            }
+        }
+
+        // add hover to the sticky column of non selected zebra rows
+        ::ng-deep .nx-table-row--selectable:not(.is-selected):hover & {
+            :host(.nx-table--sticky-first.nx-table--zebra) &:first-child,
+            :host(.nx-table--sticky-last.nx-table--zebra) &:last-child {
+                background: v(zebra-table-row-hover-background-color);
+            }
+        }
+
+        // add hover to the sticky column of selected rows
+        ::ng-deep .nx-table-row--selectable.is-selected:hover & {
+            :host(.nx-table--sticky-first) &:first-child,
+            :host(.nx-table--sticky-last) &:last-child {
+                background: v(zebra-table-even-row-background-color);
+            }
+        }
+
+        // add active to the sticky column of non selected rows
+        ::ng-deep .nx-table-row--selectable:not(.is-selected):active & {
+            :host(.nx-table--sticky-first.nx-table--zebra) &:first-child,
+            :host(.nx-table--sticky-last.nx-table--zebra) &:last-child {
+                background: v(zebra-table-row-active-background-color);
+            }
+        }
+    }
+}
+
+:host ::ng-deep .nx-table__resize-handle {
+    position: absolute;
+    right: 0;
+    border-right: 2px solid v(table-resize-handle-color);
+    cursor: col-resize;
+    height: 24px;
+    top: 50%;
+    width: 12px;
+    transform: translate(0, -50%);
+}
+
+:host([nxTableCellClip]) ::ng-deep {
+    td,
+    th {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }

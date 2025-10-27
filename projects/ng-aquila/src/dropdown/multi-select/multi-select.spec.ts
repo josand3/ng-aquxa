@@ -1,17 +1,24 @@
-import { DOWN_ARROW, ESCAPE, TAB, UP_ARROW } from '@angular/cdk/keycodes';
+import { DOWN_ARROW, END, ESCAPE, HOME, LEFT_ARROW, RIGHT_ARROW, TAB, UP_ARROW } from '@angular/cdk/keycodes';
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ComponentHarness, HarnessLoader, LocatorFactory, parallel, TestElement } from '@angular/cdk/testing';
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { CommonModule } from '@angular/common';
 import { Component, Directive, Type, ViewChild } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, TestBed } from '@angular/core/testing';
-import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { NxFormfieldComponent, NxFormfieldModule } from '@aposin/ng-aquila/formfield';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { By } from '@angular/platform-browser';
+import { NxErrorComponent } from '@aposin/ng-aquila/base';
+import { NxDropdownIntl } from '@aposin/ng-aquila/dropdown';
+import { NxFormfieldComponent, NxFormfieldErrorDirective, NxFormfieldModule } from '@aposin/ng-aquila/formfield';
 
 import { NxDropdownModule } from '../dropdown.module';
 import { NxMultiSelectComponent } from './multi-select.component';
 import { MultiSelectOptionHarness } from './multi-select-option.spec';
 
+class CustomIntl extends NxDropdownIntl {
+    selectAll = 'Test select all';
+    clearAll = 'Test clear all';
+}
 class MultiSelectHarness extends ComponentHarness {
     static hostSelector = 'nx-multi-select';
 
@@ -21,11 +28,13 @@ class MultiSelectHarness extends ComponentHarness {
 
     getPanel = this.documentRootLocator.locatorForOptional('.panel');
 
+    getOverlayPane = this.documentRootLocator.locatorForOptional('.cdk-overlay-pane');
+
     getBackdrop = this.documentRootLocator.locatorFor('.cdk-overlay-backdrop');
 
     getOptions = this.documentRootLocator.locatorForAll(MultiSelectOptionHarness);
 
-    getSelectAllButton = this.documentRootLocator.locatorForOptional('.actions input[type="checkbox"]');
+    getSelectAllButton = this.documentRootLocator.locatorForOptional('nx-multi-select-all');
 
     getClearAllButton = this.documentRootLocator.locatorForOptional('.actions button');
 
@@ -36,6 +45,10 @@ class MultiSelectHarness extends ComponentHarness {
     getClearFilterButton = this.documentRootLocator.locatorFor('.filter .clear');
 
     getDivider = this.documentRootLocator.locatorForOptional('.divider');
+
+    getCheckmark = this.documentRootLocator.locatorForOptional('nx-multi-select-all .is-selected');
+
+    getIndeterminate = this.documentRootLocator.locatorForOptional('nx-multi-select-all .nx-checkbox__indeterminate-indicator');
 
     async clickOptions(indexes: number[]) {
         const options = await this.getOptions();
@@ -72,7 +85,7 @@ class MultiSelectHarness extends ComponentHarness {
 
     async click() {
         const trigger = await this.getValue();
-        trigger.click();
+        await trigger.click();
     }
 
     async clickOption(index: number) {
@@ -95,14 +108,14 @@ class MultiSelectHarness extends ComponentHarness {
         await this.forceStabilize();
     }
 
-    async pressKey(key: string, keyCode?: number) {
+    async pressKey(key: string, keyCode?: number, altKey?: boolean) {
         const isOpen = await this.isOpen();
         if (isOpen) {
             const panel = await this.getPanel();
-            panel?.dispatchEvent('keydown', { key, keyCode });
+            panel?.dispatchEvent('keydown', { key, keyCode, altKey });
         } else {
             const value = await this.getValue();
-            value.dispatchEvent('keydown', { key, keyCode });
+            value.dispatchEvent('keydown', { key, keyCode, altKey });
         }
     }
 }
@@ -116,8 +129,20 @@ describe('NxMultiSelectComponent', () => {
 
     async function configureTestingModule() {
         return TestBed.configureTestingModule({
-            imports: [CommonModule, OverlayModule, NxDropdownModule, FormsModule, ReactiveFormsModule, NxFormfieldModule],
-            declarations: [BasicMultiSelectComponent, ComplexMultiSelectComponent, ReactiveMultiSelectComponent],
+            imports: [
+                CommonModule,
+                OverlayModule,
+                NxDropdownModule,
+                FormsModule,
+                ReactiveFormsModule,
+                NxFormfieldModule,
+                BasicMultiSelectComponent,
+                ComplexMultiSelectComponent,
+                ReactiveMultiSelectComponent,
+                IntlOverrideMultiSelect,
+                ErrorMultiSelectComponent,
+                MultiSelectWithFilterComponent,
+            ],
         }).compileComponents();
     }
 
@@ -179,18 +204,47 @@ describe('NxMultiSelectComponent', () => {
 
             describe('and clicking the backdrop', () => {
                 beforeEach(async () => {
+                    spyOn(multiSelectInstance.openedChange, 'emit');
                     await multiSelectHarness.clickBackdrop();
                 });
 
                 it('closes the panel', async () => {
                     expect(await multiSelectHarness.isOpen()).toBeFalse();
+                    expect(multiSelectInstance.openedChange.emit).toHaveBeenCalledOnceWith(false);
                 });
+            });
+        });
+
+        describe('providers', () => {
+            it('should overwrite intl class for i18n', async () => {
+                await createTestComponent(IntlOverrideMultiSelect);
+                await multiSelectHarness.click();
+
+                expect(await (await multiSelectHarness.getSelectAllButton())?.text()).toBe('Test select all');
+            });
+
+            it('should be possible to override Intl class from parent injector', async () => {
+                TestBed.resetTestingModule()
+                    .configureTestingModule({
+                        imports: [BasicMultiSelectComponent],
+                        providers: [{ provide: NxDropdownIntl, useClass: CustomIntl }],
+                    })
+                    .compileComponents();
+                await createTestComponent(BasicMultiSelectComponent);
+                await multiSelectHarness.click();
+
+                expect(await (await multiSelectHarness.getSelectAllButton())?.text()).toBe('Test select all');
             });
         });
 
         describe('when open', () => {
             beforeEach(async () => {
                 await multiSelectHarness.click();
+            });
+
+            it('should not add ng-touched class when dropdown is opened', async () => {
+                const hasNgTouchedClass = multiSelectInstance.elementRef.nativeElement.classList.contains('ng-touched');
+                expect(hasNgTouchedClass).toBe(false);
             });
 
             it('focuses the filter', fakeAsync(async () => {
@@ -205,15 +259,15 @@ describe('NxMultiSelectComponent', () => {
                     await panel?.focus();
                 });
 
-                it('focuses the filter', fakeAsync(async () => {
+                it('focuses the filter', async () => {
                     const filter = await multiSelectHarness.getFilter();
                     expect(await filter?.isFocused()).toBeTrue();
-                }));
+                });
             });
 
             it('shows all options', async () => {
                 const options = await multiSelectHarness.getOptions();
-                expect(options).toHaveSize(4);
+                expect(options).toHaveSize(5);
 
                 for (const [i, option] of testInstance.options.entries()) {
                     expect(await options[i].getLabelText()).toBe(option);
@@ -267,6 +321,7 @@ describe('NxMultiSelectComponent', () => {
         describe('when selecting options', () => {
             beforeEach(async () => {
                 await multiSelectHarness.click();
+
                 await multiSelectHarness.clickOptions([3, 0]);
             });
 
@@ -292,6 +347,23 @@ describe('NxMultiSelectComponent', () => {
                 expect(divider).not.toBeNull();
             });
 
+            it('should have ng-touched class when closed panel and blur', async () => {
+                await multiSelectHarness.closeWithEsc();
+                const value = await multiSelectHarness.getValue();
+                await value.blur();
+                const hasNgTouchedClass = multiSelectInstance.elementRef.nativeElement.classList.contains('ng-touched');
+
+                expect(hasNgTouchedClass).toBe(true);
+            });
+
+            it('should sort correctly when filter', async () => {
+                await multiSelectHarness.closeWithEsc();
+                await multiSelectHarness.click();
+                await multiSelectHarness.setFilter('m');
+                expect(multiSelectInstance.listItems).toEqual(['BMW', 'Mini', 'Mercedes']);
+                expect(multiSelectInstance._divider).toEqual(1);
+            });
+
             it('should go into error state when error state matcher is true', fakeAsync(() => {
                 createTestComponent(BasicMultiSelectComponent);
                 fixture.detectChanges();
@@ -309,9 +381,31 @@ describe('NxMultiSelectComponent', () => {
                 stateChangesSubscription.unsubscribe();
             }));
 
+            it('should add aria-describedby and aria-invalid', async () => {
+                createTestComponent(ErrorMultiSelectComponent);
+                const input = await multiSelectHarness.getValue();
+                const ariaInvalid = await input.getAttribute('aria-invalid');
+                const ariaDescribedBy = await input.getAttribute('aria-describedby');
+                expect(ariaInvalid).toBe('false');
+                expect(ariaDescribedBy).toBe(null);
+
+                await multiSelectHarness.click();
+                await multiSelectHarness.closeWithEsc();
+                const input2 = await multiSelectHarness.getValue();
+                const error = (testInstance as ErrorMultiSelectComponent).error;
+
+                await input2.blur();
+                fixture.detectChanges();
+                const ariaDescribedBy2 = await input2.getAttribute('aria-describedby');
+                const ariaInvalid2 = await input2.getAttribute('aria-invalid');
+
+                expect(ariaDescribedBy2).toBe(error.id);
+                expect(ariaInvalid2).toBe('true');
+            });
+
             describe('and using "clear" button', () => {
                 beforeEach(async () => {
-                    await multiSelectHarness.clickClearAll();
+                    await multiSelectInstance._clear();
                 });
 
                 it('has no selected options', async () => {
@@ -342,19 +436,40 @@ describe('NxMultiSelectComponent', () => {
                 });
 
                 it('selected only visible option when filter', async () => {
-                    await multiSelectHarness.clickClearAll();
+                    await multiSelectHarness.clickSelectAll(); // to clear
                     await multiSelectHarness.setFilter('i');
                     await multiSelectHarness.clickSelectAll();
 
                     expect(testInstance.model).toEqual(['Audi', 'Mini']);
                 });
 
+                it('unselect only visible option when filter', async () => {
+                    await multiSelectHarness.setFilter('Audi');
+                    await multiSelectHarness.clickSelectAll(); // to remove audi
+
+                    expect(testInstance.model).toEqual(['BMW', 'Volvo', 'Mini', 'Mercedes']);
+                });
+
+                it('show indeterminate when not all options selected', async () => {
+                    await multiSelectHarness.setFilter('Audi');
+                    await multiSelectHarness.clickSelectAll(); // to remove audi
+
+                    const indeterminate = await multiSelectHarness.getIndeterminate();
+
+                    expect(indeterminate).toBeTruthy();
+                });
+
+                it('show checkmark when all options selected', async () => {
+                    const checkmark = await multiSelectHarness.getCheckmark();
+                    expect(checkmark).toBeTruthy();
+                });
+
                 it('shows the value in the trigger', async () => {
-                    expect(await multiSelectHarness.getValueText()).toBe('BMW, Audi, Volvo, Mini(4)');
+                    expect(await multiSelectHarness.getValueText()).toBe('BMW, Audi, Volvo, Mini, Mercedes(5)');
                 });
 
                 it('updates the model', async () => {
-                    expect(testInstance.model).toEqual(['BMW', 'Audi', 'Volvo', 'Mini']);
+                    expect(testInstance.model).toEqual(['BMW', 'Audi', 'Volvo', 'Mini', 'Mercedes']);
                 });
 
                 describe('and deselecting all', () => {
@@ -391,6 +506,91 @@ describe('NxMultiSelectComponent', () => {
                 });
             });
 
+            describe('and opening using ARROW DOWN', () => {
+                beforeEach(async () => {
+                    await multiSelectHarness.pressKey('ArrowDown', DOWN_ARROW, true);
+                });
+
+                it('is open', async () => {
+                    expect(await multiSelectHarness.isOpen()).toBeTrue();
+                });
+            });
+
+            describe('and opening using ARROW UP', () => {
+                beforeEach(async () => {
+                    await multiSelectHarness.pressKey('ArrowUp', UP_ARROW, true);
+                });
+
+                it('is open', async () => {
+                    expect(await multiSelectHarness.isOpen()).toBeTrue();
+                });
+            });
+
+            describe('and opening using HOME key', () => {
+                beforeEach(async () => {
+                    await multiSelectHarness.pressKey('Home', HOME, true);
+                });
+
+                it('is open', async () => {
+                    expect(await multiSelectHarness.isOpen()).toBeTrue();
+                });
+            });
+
+            describe('and opening using END key', () => {
+                beforeEach(async () => {
+                    await multiSelectHarness.pressKey('End', END, true);
+                });
+
+                it('is open', async () => {
+                    expect(await multiSelectHarness.isOpen()).toBeTrue();
+                });
+
+                it('hilight last option', async () => {
+                    const options = await multiSelectHarness.getOptions();
+                    expect(await options[options.length - 1].isActive()).toBeTrue();
+                });
+            });
+
+            describe('and opening using ALT and ARROW DOWN', () => {
+                beforeEach(async () => {
+                    await multiSelectHarness.pressKey('ArrowDown', DOWN_ARROW, true);
+                });
+
+                it('is open', async () => {
+                    expect(await multiSelectHarness.isOpen()).toBeTrue();
+                });
+            });
+
+            describe('and opening using ALT and ARROW UP', () => {
+                beforeEach(async () => {
+                    await multiSelectHarness.pressKey('ArrowUp', UP_ARROW, true);
+                });
+
+                it('is open', async () => {
+                    expect(await multiSelectHarness.isOpen()).toBeTrue();
+                });
+            });
+
+            describe('and opening using ALT and ARROW LEFT', () => {
+                beforeEach(async () => {
+                    await multiSelectHarness.pressKey('ArrowLeft', LEFT_ARROW, true);
+                });
+
+                it('is open', async () => {
+                    expect(await multiSelectHarness.isOpen()).toBeTrue();
+                });
+            });
+
+            describe('and opening using ALT and ARROW RIGHT', () => {
+                beforeEach(async () => {
+                    await multiSelectHarness.pressKey('ArrowRight', RIGHT_ARROW, true);
+                });
+
+                it('is open', async () => {
+                    expect(await multiSelectHarness.isOpen()).toBeTrue();
+                });
+            });
+
             describe('and opening using ENTER', () => {
                 beforeEach(async () => {
                     await multiSelectHarness.pressKey(' ');
@@ -402,21 +602,25 @@ describe('NxMultiSelectComponent', () => {
 
                 describe('and closing using ESC', () => {
                     beforeEach(async () => {
+                        spyOn(multiSelectInstance.openedChange, 'emit');
                         await multiSelectHarness.closeWithEsc();
                     });
 
                     it('is closed', async () => {
                         expect(await multiSelectHarness.isOpen()).toBeFalse();
+                        expect(multiSelectInstance.openedChange.emit).toHaveBeenCalledOnceWith(false);
                     });
                 });
 
                 describe('and tabing out', () => {
                     beforeEach(async () => {
+                        spyOn(multiSelectInstance.openedChange, 'emit');
                         await multiSelectHarness.pressKey('Tab', TAB);
                     });
 
                     it('is closed', async () => {
                         expect(await multiSelectHarness.isOpen()).toBeFalse();
+                        expect(multiSelectInstance.openedChange.emit).toHaveBeenCalledOnceWith(false);
                     });
                 });
             });
@@ -430,18 +634,19 @@ describe('NxMultiSelectComponent', () => {
             describe('and navigate to next option', () => {
                 beforeEach(async () => {
                     await multiSelectHarness.pressKey('ArrowDown', DOWN_ARROW);
+                    await multiSelectHarness.pressKey('ArrowDown', DOWN_ARROW);
                 });
 
                 it('sets the first option active', async () => {
                     const options = await multiSelectHarness.getOptions();
-                    expect(await options[0].isActive()).toBeTrue();
+                    expect(await options[1].isActive()).toBeTrue();
                 });
 
                 it('sets the aria activedecenant', async () => {
                     const panel = (await multiSelectHarness.getPanel()) as TestElement;
                     const options = await multiSelectHarness.getOptions();
                     const ariaActivedescendant = await panel.getAttribute('aria-activedescendant');
-                    const expectedId = await options[0].getId();
+                    const expectedId = await options[1].getId();
 
                     expect(ariaActivedescendant).toBe(expectedId);
                 });
@@ -451,16 +656,16 @@ describe('NxMultiSelectComponent', () => {
                         await multiSelectHarness.pressKey('ArrowDown', DOWN_ARROW);
                     });
 
-                    it('sets the second option active', async () => {
+                    it('sets the third option active', async () => {
                         const options = await multiSelectHarness.getOptions();
-                        expect(await options[1].isActive()).toBeTrue();
+                        expect(await options[2].isActive()).toBeTrue();
                     });
 
                     it('sets the aria activedecenant', async () => {
                         const panel = (await multiSelectHarness.getPanel()) as TestElement;
                         const options = await multiSelectHarness.getOptions();
                         const ariaActivedescendant = await panel.getAttribute('aria-activedescendant');
-                        const expectedId = await options[1].getId();
+                        const expectedId = await options[2].getId();
 
                         expect(ariaActivedescendant).toBe(expectedId);
                     });
@@ -470,9 +675,9 @@ describe('NxMultiSelectComponent', () => {
                             await multiSelectHarness.pressKey('ArrowUp', UP_ARROW);
                         });
 
-                        it('sets the first option active', async () => {
+                        it('sets the second option active', async () => {
                             const options = await multiSelectHarness.getOptions();
-                            expect(await options[0].isActive()).toBeTrue();
+                            expect(await options[1].isActive()).toBeTrue();
                         });
                     });
                 });
@@ -519,6 +724,7 @@ describe('NxMultiSelectComponent', () => {
                         // set second option active
                         await multiSelectHarness.pressKey('ArrowDown', DOWN_ARROW);
                         await multiSelectHarness.pressKey('ArrowDown', DOWN_ARROW);
+                        await multiSelectHarness.pressKey('ArrowDown', DOWN_ARROW);
                         // filter it
                         await multiSelectHarness.setFilter('BMW');
                     });
@@ -536,15 +742,15 @@ describe('NxMultiSelectComponent', () => {
 
                     it('shows all options', async () => {
                         const options = await multiSelectHarness.getOptions();
-                        expect(options).toHaveSize(4);
+                        expect(options).toHaveSize(5);
                     });
                 });
 
                 it('shows options with no filter', async () => {
                     await multiSelectHarness.setFilter('');
-                    expect(await multiSelectHarness.getOptions()).toHaveSize(4);
+                    expect(await multiSelectHarness.getOptions()).toHaveSize(5);
                     await multiSelectHarness.setFilter(null!);
-                    expect(await multiSelectHarness.getOptions()).toHaveSize(4);
+                    expect(await multiSelectHarness.getOptions()).toHaveSize(5);
                     await multiSelectHarness.setFilter(undefined!);
                     expect(await multiSelectHarness.getOptions()).toHaveSize(0); // TODO why not 4?
                 });
@@ -553,7 +759,7 @@ describe('NxMultiSelectComponent', () => {
                     multiSelectInstance.filterFn = (query, label) => query === label;
 
                     await multiSelectHarness.setFilter('');
-                    expect(await multiSelectHarness.getOptions()).toHaveSize(4);
+                    expect(await multiSelectHarness.getOptions()).toHaveSize(5);
                     expect(await (await (await multiSelectHarness.getOptions()).at(1)?.getLabel())?.text()).toBe('Audi');
 
                     await multiSelectHarness.setFilter('Aud');
@@ -567,6 +773,24 @@ describe('NxMultiSelectComponent', () => {
                     await multiSelectHarness.setFilter('BMW');
                     expect(await multiSelectHarness.getOptions()).toHaveSize(1);
                     expect(await (await (await multiSelectHarness.getOptions()).at(0)?.getLabel())?.text()).toBe('BMW');
+                });
+
+                it('shows original options when filter/select then unfilter/unselect', async () => {
+                    await multiSelectHarness.setFilter('');
+
+                    testInstance.model = ['Volvo'];
+                    await multiSelectHarness.setFilter('Volvo');
+                    expect(await multiSelectHarness.getOptions()).toHaveSize(1);
+
+                    testInstance.model = [];
+                    await multiSelectHarness.setFilter('');
+                    expect(await multiSelectHarness.getOptions()).toHaveSize(5);
+
+                    const options = await multiSelectHarness.getOptions();
+
+                    ['BMW', 'Audi', 'Volvo', 'Mini', 'Mercedes'].forEach(async (label, i) => {
+                        expect(await options[i].getLabelText()).toBe(label);
+                    });
                 });
             });
 
@@ -582,9 +806,15 @@ describe('NxMultiSelectComponent', () => {
             });
 
             describe('with appearance auto', () => {
-                beforeEach(() => {
+                beforeEach(async () => {
                     testInstance.appearance = 'auto';
                     fixture.detectChanges();
+                    // we need to click again to simulate some form of user interaction to trigger CD
+                    // in the multiselect itself. there is currently no connection between the formfield and the control
+                    // that the control should run CD when the formfield changes, only from control to formfield.
+                    // in reality this is kind of an edge case, it's very unlikely that the formfield appearance gets changed
+                    // while the overlay is open
+                    await multiSelectHarness.click();
                 });
 
                 it('has no action buttons', async () => {
@@ -593,6 +823,7 @@ describe('NxMultiSelectComponent', () => {
 
                 it('has a header in the panel', async () => {
                     const panelHeader = await multiSelectHarness.getPanelHeader();
+
                     expect(panelHeader).not.toBeNull();
                     expect(await panelHeader?.text()).toBe('Car brand');
                 });
@@ -631,6 +862,27 @@ describe('NxMultiSelectComponent', () => {
                     { label: 'Apple', id: 1, otherLabel: 'A' },
                     { label: 'Cherry', id: 3, otherLabel: 'C' },
                 ]);
+            });
+
+            it('should displayed value in the label, If the selected value still exists after the options have been changed', async () => {
+                multiSelectInstance.selectValue = 'label';
+                testInstance.model = ['Potato'];
+                testInstance.options = [
+                    {
+                        label: 'Apple',
+                        otherLabel: 'A',
+                        id: 1,
+                    },
+                    {
+                        label: 'Potato',
+                        otherLabel: 'O',
+                        id: 2,
+                    },
+                ];
+                fixture.detectChanges();
+
+                expect(await multiSelectHarness.getValueText()).toBe('Potato(1)');
+                expect(testInstance.model).toEqual(['Potato']);
             });
         });
 
@@ -699,10 +951,128 @@ describe('NxMultiSelectComponent', () => {
             const nxFormField = fixture.elementRef.nativeElement.querySelector('nx-formfield');
             expect(nxFormField).toHaveClass('is-disabled');
         });
+
+        it('should emit openedChange when opened or closed', async () => {
+            spyOn(multiSelectInstance.openedChange, 'emit');
+            await multiSelectHarness.click();
+            expect(multiSelectInstance.openedChange.emit).toHaveBeenCalled();
+            multiSelectInstance._close();
+            expect(multiSelectInstance.openedChange.emit).toHaveBeenCalled();
+        });
+    });
+
+    describe('overlay width with long option label and panelGrow', () => {
+        beforeEach(async () => {
+            await createTestComponent(LongOptionLabelComponent);
+        });
+
+        it('should have the width of the trigger if panelGrow is set to false', async () => {
+            const multiselectElement = fixture.debugElement.query(By.css('nx-formfield'));
+            multiselectElement.nativeElement.style.width = '400px';
+            testInstance.panelGrow = false;
+            fixture.detectChanges();
+            await multiSelectHarness.click();
+            const panel = (await multiSelectHarness.getOverlayPane()) as TestElement;
+
+            expect((await panel.getDimensions()).width).toBe(398);
+        });
+
+        it('should not have a min width if panelgrow is set to false', async () => {
+            const multiselectElement = fixture.debugElement.query(By.css('nx-formfield'));
+            multiselectElement.nativeElement.style.width = '400px';
+            testInstance.panelGrow = false;
+            fixture.detectChanges();
+            await multiSelectHarness.click();
+            fixture.detectChanges();
+            const overlayPane = (await multiSelectHarness.getOverlayPane()) as TestElement;
+            expect(await overlayPane.getAttribute('style')).not.toContain('min-width');
+        });
+
+        it('should have a width if panelgrow is set to false', async () => {
+            const multiselectElement = fixture.debugElement.query(By.css('nx-formfield'));
+            multiselectElement.nativeElement.style.width = '400px';
+            testInstance.panelGrow = false;
+            fixture.detectChanges();
+            await multiSelectHarness.click();
+            fixture.detectChanges();
+
+            const overlayPane = (await multiSelectHarness.getOverlayPane()) as TestElement;
+            expect(await overlayPane.getAttribute('style')).toContain('width');
+        });
+
+        it('should have a min width if panelgrow is set to true', async () => {
+            const multiselectElement = fixture.debugElement.query(By.css('nx-formfield'));
+            multiselectElement.nativeElement.style.width = '400px';
+            testInstance.panelGrow = true;
+            fixture.detectChanges();
+            await multiSelectHarness.click();
+            fixture.detectChanges();
+            const overlayPane = (await multiSelectHarness.getOverlayPane()) as TestElement;
+            expect(await overlayPane.getAttribute('style')).toContain('min-width');
+        });
+
+        it('should have a width if panelgrow is set to true', async () => {
+            const multiselectElement = fixture.debugElement.query(By.css('nx-formfield'));
+            multiselectElement.nativeElement.style.width = '400px';
+            testInstance.panelGrow = true;
+            fixture.detectChanges();
+            await multiSelectHarness.click();
+            fixture.detectChanges();
+            const overlayPane = (await multiSelectHarness.getOverlayPane()) as TestElement;
+            expect(await overlayPane.getAttribute('style')).toContain('width');
+        });
+
+        it('should be larger than the trigger if panelGrow is set to true', async () => {
+            const multiselectElement = fixture.debugElement.query(By.css('nx-formfield'));
+            multiselectElement.nativeElement.style.width = '400px';
+            testInstance.panelGrow = true;
+            fixture.detectChanges();
+            await multiSelectHarness.click();
+            fixture.detectChanges();
+            const overlayPane = (await multiSelectHarness.getOverlayPane()) as TestElement;
+            expect(await overlayPane.getProperty('clientWidth')).toBeGreaterThan(400);
+        });
+
+        it('should be larger than the trigger if panelGrow is set to true', async () => {
+            const multiselectElement = fixture.debugElement.query(By.css('nx-formfield'));
+            multiselectElement.nativeElement.style.width = '300px';
+            testInstance.panelGrow = true;
+            testInstance.panelMaxWidth = '400px';
+            fixture.detectChanges();
+            await multiSelectHarness.click();
+            fixture.detectChanges();
+            const overlayPane = (await multiSelectHarness.getOverlayPane()) as TestElement;
+            expect(await overlayPane.getProperty('clientWidth')).toBe(400);
+        });
+    });
+
+    describe('when type in filter input', () => {
+        it('should emit filter value on filter changes', async () => {
+            await createTestComponent(MultiSelectWithFilterComponent);
+            await multiSelectHarness.click();
+            await multiSelectHarness.setFilter('Audi');
+            fixture.detectChanges();
+            expect((testInstance as MultiSelectWithFilterComponent).filterInput).toBe('Audi');
+
+            await multiSelectHarness.clickClearFilter();
+            fixture.detectChanges();
+            expect((testInstance as MultiSelectWithFilterComponent).filterInput).toBe('');
+        });
+    });
+
+    describe('a11y', () => {
+        it('should open and focus option when type character', async () => {
+            await createTestComponent(BasicMultiSelectComponent);
+            await multiSelectHarness.pressKey('A');
+
+            const options = await multiSelectHarness.getOptions();
+            expect(await options[0].isActive()).toBeTrue();
+            expect(await options[0].getLabelText()).toBe('Audi');
+        });
     });
 });
 
-@Directive()
+@Directive({ standalone: true })
 abstract class DropdownTest {
     @ViewChild(NxMultiSelectComponent) multiSelect!: NxMultiSelectComponent<string, string>;
     @ViewChild(NxFormfieldComponent) formField!: NxFormfieldComponent;
@@ -711,17 +1081,53 @@ abstract class DropdownTest {
     filter = true;
     model: any[] = [];
     appearance = 'outline';
+    panelGrow = false;
+    panelMaxWidth = '';
 }
 
 @Component({
-    template: `<nx-formfield nxLabel="Car brand" [appearance]="appearance">
+    template: `<nx-formfield label="Car brand" [appearance]="appearance">
         <nx-multi-select [(ngModel)]="model" [filter]="filter" [options]="options"></nx-multi-select>
     </nx-formfield>`,
+    standalone: true,
+    imports: [OverlayModule, NxDropdownModule, FormsModule, ReactiveFormsModule, NxFormfieldModule],
 })
 class BasicMultiSelectComponent extends DropdownTest {
-    options = ['BMW', 'Audi', 'Volvo', 'Mini'];
+    options = ['BMW', 'Audi', 'Volvo', 'Mini', 'Mercedes'];
 }
 
+@Component({
+    template: `<nx-formfield label="Car brand" [appearance]="appearance">
+        <nx-multi-select [(ngModel)]="model" [filter]="filter" [options]="options"></nx-multi-select>
+    </nx-formfield>`,
+    standalone: true,
+    imports: [OverlayModule, NxDropdownModule, FormsModule, ReactiveFormsModule, NxFormfieldModule],
+    providers: [{ provide: NxDropdownIntl, useClass: CustomIntl }],
+})
+class IntlOverrideMultiSelect extends DropdownTest {
+    options = ['BMW', 'Audi', 'Volvo', 'Mini', 'Mercedes'];
+
+    constructor(public intl: NxDropdownIntl) {
+        super();
+    }
+}
+
+@Component({
+    template: `<nx-formfield label="Car brand" [appearance]="appearance">
+        <nx-multi-select [(ngModel)]="model" [filter]="filter" [options]="options" [panelGrow]="panelGrow" [panelMaxWidth]="panelMaxWidth"></nx-multi-select>
+    </nx-formfield>`,
+    standalone: true,
+    imports: [NxDropdownModule, NxFormfieldModule],
+})
+class LongOptionLabelComponent extends DropdownTest {
+    options = [
+        'Lorem ipsum dolor sit amet, consectetur adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua, sed eiusmod tempor incidunt ut',
+        'Audi',
+        'Volvo',
+        'Mini',
+        'Mercedes',
+    ];
+}
 interface ComplexOption {
     label: string;
     otherLabel: string;
@@ -729,9 +1135,11 @@ interface ComplexOption {
 }
 
 @Component({
-    template: `<nx-formfield nxLabel="Car brand" [appearance]="appearance">
+    template: `<nx-formfield label="Car brand" [appearance]="appearance">
         <nx-multi-select [selectLabel]="selectLabel" [selectValue]="selectValue" [(ngModel)]="model" [filter]="filter" [options]="options"></nx-multi-select>
     </nx-formfield>`,
+    standalone: true,
+    imports: [OverlayModule, NxDropdownModule, FormsModule, ReactiveFormsModule, NxFormfieldModule],
 })
 class ComplexMultiSelectComponent extends DropdownTest {
     options: ComplexOption[] = [
@@ -760,6 +1168,8 @@ class ComplexMultiSelectComponent extends DropdownTest {
     template: `<form [formGroup]="testForm">
         <nx-formfield> <nx-multi-select formControlName="testControl" [options]="options"></nx-multi-select> </nx-formfield>
     </form>`,
+    standalone: true,
+    imports: [OverlayModule, NxDropdownModule, FormsModule, ReactiveFormsModule, NxFormfieldModule],
 })
 class ReactiveMultiSelectComponent extends DropdownTest {
     options = ['BMW', 'Audi', 'Volvo', 'Mini'];
@@ -767,4 +1177,40 @@ class ReactiveMultiSelectComponent extends DropdownTest {
     testForm = new FormBuilder().group({
         testControl: ['BMW'],
     });
+}
+
+@Component({
+    template: `<form [formGroup]="testForm">
+        <nx-formfield>
+            <nx-multi-select formControlName="testControl" [options]="options"></nx-multi-select>
+            <nx-error nxFormfieldError> this is error </nx-error>
+        </nx-formfield>
+    </form>`,
+    standalone: true,
+    imports: [OverlayModule, NxDropdownModule, FormsModule, ReactiveFormsModule, NxFormfieldModule, NxErrorComponent, NxFormfieldErrorDirective],
+})
+class ErrorMultiSelectComponent extends DropdownTest {
+    options = ['BMW', 'Audi', 'Volvo', 'Mini'];
+
+    testForm = new FormBuilder().group({
+        testControl: ['', Validators.required],
+    });
+
+    @ViewChild(NxFormfieldErrorDirective) error!: NxFormfieldErrorDirective;
+}
+
+@Component({
+    template: `<nx-formfield>
+        <nx-multi-select [options]="options" filter (filterInput)="test($event)"></nx-multi-select>
+    </nx-formfield>`,
+    standalone: true,
+    imports: [OverlayModule, NxDropdownModule, FormsModule, ReactiveFormsModule, NxFormfieldModule],
+})
+class MultiSelectWithFilterComponent extends DropdownTest {
+    options = ['BMW', 'Audi', 'Volvo', 'Mini'];
+    filterInput = '';
+
+    test(query: string) {
+        this.filterInput = query;
+    }
 }

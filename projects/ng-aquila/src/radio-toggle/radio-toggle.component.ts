@@ -1,18 +1,27 @@
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
+import { NgClass } from '@angular/common';
 import {
     AfterContentInit,
+    booleanAttribute,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    computed,
+    ContentChild,
     ContentChildren,
     DoCheck,
+    forwardRef,
     Input,
     OnDestroy,
     Optional,
     QueryList,
     Self,
+    Signal,
+    signal,
 } from '@angular/core';
-import { ControlValueAccessor, FormGroupDirective, NgControl, NgForm, UntypedFormControl } from '@angular/forms';
+import { ControlValueAccessor, FormControl, FormGroupDirective, NgControl, NgForm } from '@angular/forms';
+import { NxErrorComponent } from '@aposin/ng-aquila/base';
+import { NxAbstractControl } from '@aposin/ng-aquila/shared';
 import { ErrorStateMatcher, mapClassNames } from '@aposin/ng-aquila/utils';
 import { merge, Observable, Subject } from 'rxjs';
 import { startWith, switchMap, takeUntil } from 'rxjs/operators';
@@ -34,14 +43,26 @@ export const RESET_VALUES = [null, undefined, ''];
     templateUrl: 'radio-toggle.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     styleUrls: ['radio-toggle.component.scss'],
+    standalone: true,
+    imports: [NgClass],
+    providers: [
+        {
+            provide: NxAbstractControl,
+            useExisting: forwardRef(() => NxRadioToggleComponent),
+        },
+    ],
 })
 export class NxRadioToggleComponent implements ControlValueAccessor, OnDestroy, AfterContentInit, DoCheck {
     private readonly _toggleId: string = (nextId++).toString();
+    @ContentChild(NxErrorComponent) errorChild?: NxErrorComponent;
+
+    /** Whether the component should switch to vertical buttons on mobile viewports. */
+    @Input({ transform: booleanAttribute }) disableMobile = false;
 
     private _selection: any;
 
     /** @docs-private */
-    errorState = false;
+    errorState = signal(false);
     // emits to signal children to run change detection
     readonly _disableChange = new Subject<void>();
 
@@ -49,7 +70,7 @@ export class NxRadioToggleComponent implements ControlValueAccessor, OnDestroy, 
     additionalClasses = '';
 
     /** Sets the component to the disabled state.*/
-    @Input('nxDisabled') set disabled(value: BooleanInput) {
+    @Input() set disabled(value: BooleanInput) {
         const coerced = coerceBooleanProperty(value);
         if (this._disabled !== coerced) {
             this._disabled = coerced;
@@ -61,17 +82,59 @@ export class NxRadioToggleComponent implements ControlValueAccessor, OnDestroy, 
     }
     private _disabled = false;
 
-    /** Sets the name used for accessibility. */
-    @Input('nxName') set name(value: string) {
-        if (this._name !== value) {
-            this._name = value;
+    /** Sets the component to the readonly state.*/
+    @Input({ transform: booleanAttribute }) set readonly(value: boolean) {
+        const coerced = coerceBooleanProperty(value);
+        if (this._readonly !== coerced) {
+            this._readonly = coerced;
+            this._disableChange.next();
+        }
+    }
+    get readonly(): boolean {
+        return this._readonly;
+    }
+    private _readonly = false;
+
+    /**
+     * @deprecated use ariaLabel or ariaLabelledby instead
+     * Sets the name used for accessibility.
+     */
+    @Input() set name(value: string) {
+        if (this._ariaLabel !== value) {
+            this._ariaLabel = value;
             this._cdr.markForCheck();
         }
     }
     get name(): string {
-        return this._name;
+        return this._ariaLabel || '';
     }
-    private _name!: string;
+
+    @Input() set ariaLabel(value: string | null) {
+        this._ariaLabel = value;
+        this._cdr.markForCheck();
+    }
+
+    get ariaLabel(): string | null {
+        return this._ariaLabel;
+    }
+
+    private _ariaLabel: string | null = null;
+
+    @Input() set ariaLabelledBy(value: string | null) {
+        this._ariaLabelledBy = value;
+        this._cdr.markForCheck();
+    }
+
+    get ariaLabelledBy(): string | null {
+        return this._ariaLabelledBy;
+    }
+
+    private _ariaLabelledBy: string | null = null;
+
+    errorMessageId: Signal<string | null> = computed(() => {
+        const isErrorVisible = this.errorState() && this.errorChild;
+        return isErrorVisible ? this.errorChild!.id : null;
+    });
 
     /** @docs-private */
     @ContentChildren(NxRadioToggleButtonBaseComponent) toggleButtons = new QueryList<NxRadioToggleButtonBaseComponent>();
@@ -82,7 +145,7 @@ export class NxRadioToggleComponent implements ControlValueAccessor, OnDestroy, 
     }
 
     /** Sets the modifiers for the component. */
-    @Input('nxStyle') set style(value: string) {
+    @Input('variant') set style(value: string) {
         this.additionalClasses = mapClassNames(value, [], MAPPING);
     }
 
@@ -165,7 +228,7 @@ export class NxRadioToggleComponent implements ControlValueAccessor, OnDestroy, 
     }
 
     /** Preselects the respective options. */
-    @Input('nxSelection') writeValue(value: any): void {
+    @Input('selection') writeValue(value: any): void {
         this._selection = value;
         const correspondingButton = this.toggleButtons.find((button: NxRadioToggleButtonBaseComponent) => button.value === this._selection);
         if (correspondingButton) {
@@ -191,13 +254,15 @@ export class NxRadioToggleComponent implements ControlValueAccessor, OnDestroy, 
 
     /** @docs-private */
     updateErrorState() {
-        const oldState = this.errorState;
         const parent = this._parentFormGroup || this._parentForm;
-        const control = this.ngControl ? (this.ngControl.control as UntypedFormControl) : null;
+        const control = this.ngControl ? (this.ngControl.control as FormControl) : null;
         const newState = this._errorStateMatcher.isErrorState(control, parent);
 
-        if (newState !== oldState) {
-            this.errorState = newState;
-        }
+        this.errorState.set(newState);
+    }
+
+    setReadonly(value: boolean): void {
+        this.readonly = value;
+        this._cdr.markForCheck();
     }
 }

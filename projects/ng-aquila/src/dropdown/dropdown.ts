@@ -1,13 +1,22 @@
 import { ActiveDescendantKeyManager, LiveAnnouncer } from '@angular/cdk/a11y';
-import { Direction, Directionality } from '@angular/cdk/bidi';
+import { Dir, Direction, Directionality } from '@angular/cdk/bidi';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
 import { SelectionModel } from '@angular/cdk/collections';
 import { DOWN_ARROW, END, ENTER, HOME, LEFT_ARROW, RIGHT_ARROW, SHIFT, SPACE, TAB, UP_ARROW } from '@angular/cdk/keycodes';
-import { CdkConnectedOverlay, ConnectionPositionPair, FlexibleConnectedPositionStrategy, Overlay, ScrollStrategy } from '@angular/cdk/overlay';
+import {
+    CdkConnectedOverlay,
+    CdkOverlayOrigin,
+    ConnectionPositionPair,
+    FlexibleConnectedPositionStrategy,
+    Overlay,
+    ScrollStrategy,
+} from '@angular/cdk/overlay';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     AfterContentInit,
     AfterViewInit,
     Attribute,
+    booleanAttribute,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
@@ -17,6 +26,8 @@ import {
     ElementRef,
     EventEmitter,
     Inject,
+    inject,
+    Injectable,
     InjectionToken,
     Input,
     isDevMode,
@@ -27,12 +38,16 @@ import {
     Output,
     QueryList,
     Self,
+    signal,
     TemplateRef,
     ViewChild,
     ViewChildren,
 } from '@angular/core';
-import { ControlValueAccessor, FormGroupDirective, NgControl, NgForm, UntypedFormControl } from '@angular/forms';
+import { ControlValueAccessor, FormControl, FormGroupDirective, FormsModule, NgControl, NgForm } from '@angular/forms';
 import { NxFormfieldComponent, NxFormfieldControl } from '@aposin/ng-aquila/formfield';
+import { NxIconModule } from '@aposin/ng-aquila/icon';
+import { NxAbstractControl } from '@aposin/ng-aquila/shared';
+import { NxTooltipModule } from '@aposin/ng-aquila/tooltip';
 import { ErrorStateMatcher } from '@aposin/ng-aquila/utils';
 import { BehaviorSubject, merge, Observable, Subject } from 'rxjs';
 import { filter, map, startWith, take, takeUntil } from 'rxjs/operators';
@@ -56,7 +71,13 @@ export interface NxDropdownOption {
     label?: string;
 }
 
+export type NxDropdownPanelMinWidth = 'trigger' | 'none';
+
+/** Vertical alignment of dropdown checkmark */
+export type VerticalAlignCheckmark = 'top' | 'center';
+
 /** Dropdown data that requires internationalization. */
+@Injectable({ providedIn: 'root' })
 export class NxDropdownIntl {
     /**
      * Stream that emits whenever the labels here are changed. Use this to notify
@@ -65,7 +86,12 @@ export class NxDropdownIntl {
     readonly changes = new Subject<void>();
     /** A label for the multi-select component. */
     selectAll = 'Select all';
-    /** A label for the multi-select component. */
+    /**
+     * A label for the multi-select component.
+     *
+     * @deprecated No longer used.
+     * @deletion-target 18.0.0
+     */
     clearAll = 'Clear all';
 }
 
@@ -80,14 +106,28 @@ export class NxDropdownSelectChange<T = any> {
 }
 
 /** Injection token that determines the scroll handling while a dropdown is open. */
-export const NX_DROPDOWN_SCROLL_STRATEGY = new InjectionToken<() => ScrollStrategy>('nx-dropdown-scroll-strategy');
+export const NX_DROPDOWN_SCROLL_STRATEGY = new InjectionToken<() => ScrollStrategy>('nx-dropdown-scroll-strategy', {
+    providedIn: 'root',
+    factory: () => {
+        const overlay = inject(Overlay);
+        return () => overlay.scrollStrategies.reposition();
+    },
+});
 
-/** @docs-private */
+/**
+ * @docs-private
+ * @deprecated No longer used.
+ * @deletion-target 18.0.0
+ */
 export function NX_DROPDOWN_SCROLL_STRATEGY_PROVIDER_FACTORY(overlay: Overlay): () => ScrollStrategy {
     return () => overlay.scrollStrategies.reposition();
 }
 
-/** @docs-private */
+/**
+ * @docs-private
+ * @deprecated No longer used.
+ * @deletion-target 18.0.0
+ */
 export const NX_DROPDOWN_SCROLL_STRATEGY_PROVIDER = {
     provide: NX_DROPDOWN_SCROLL_STRATEGY,
     useFactory: NX_DROPDOWN_SCROLL_STRATEGY_PROVIDER_FACTORY,
@@ -116,6 +156,7 @@ const _defaultValueFormatterFn: NxDropdownValueFormatterFn = value => (value == 
     providers: [
         { provide: NxDropdownControl, useExisting: NxDropdownComponent },
         { provide: NxFormfieldControl, useExisting: NxDropdownComponent },
+        { provide: NxAbstractControl, useExisting: NxDropdownComponent },
     ],
     host: {
         role: 'combobox',
@@ -127,22 +168,28 @@ const _defaultValueFormatterFn: NxDropdownValueFormatterFn = value => (value == 
         '[class.nx-dropdown--disabled]': 'disabled',
         '[attr.aria-describedby]': 'ariaDescribedby || null',
         '[attr.aria-required]': 'required',
-        '[attr.aria-disabled]': 'disabled',
-        '[attr.aria-labelledby]': '_getAriaLabelledBy()',
+        '[attr.aria-labelledby]': '_getAriaLabelledBy() || null',
+        '[attr.aria-controls]': 'modalId',
+        '[attr.aria-invalid]': 'errorState',
         'aria-haspopup': 'listbox',
         '[attr.aria-expanded]': 'panelOpen',
         '[attr.readonly]': 'readonly || null',
         '[attr.disabled]': 'disabled || null',
+        '[attr.aria-disabled]': 'disabled || readonly',
         '[attr.tabindex]': 'tabIndex',
         '(keydown)': '_handleKeydown($event)',
         '(focus)': '_onFocus()',
         '(blur)': '_onBlur()',
-        '(click)': 'openPanel($event)',
+        '(click)': 'openedByKeyboard = false; openPanel($event)',
     },
+    standalone: true,
+    imports: [FormsModule, CdkOverlayOrigin, NgTemplateOutlet, NxIconModule, CdkConnectedOverlay, Dir, NxDropdownItemComponent, NxTooltipModule],
 })
-export class NxDropdownComponent implements NxDropdownControl, ControlValueAccessor, OnInit, AfterViewInit, AfterContentInit, OnDestroy, DoCheck {
+export class NxDropdownComponent
+    implements NxAbstractControl, NxDropdownControl, ControlValueAccessor, OnInit, AfterViewInit, AfterContentInit, OnDestroy, DoCheck
+{
     /** Whether the dropdown is readonly. */
-    @Input('nxReadonly') set readonly(value: BooleanInput) {
+    @Input() set readonly(value: BooleanInput) {
         this._readonly = coerceBooleanProperty(value);
         this.stateChanges.next();
     }
@@ -151,10 +198,20 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
     }
     private _readonly = false;
 
+    /** set readonly state */
+    setReadonly(value: boolean) {
+        this.readonly = value;
+    }
+
+    @Input() ariaLabelledBy: string | null = null;
+
+    @Input() verticalAlignCheckmark: VerticalAlignCheckmark = 'top';
+
     private _selectionModel!: SelectionModel<NxDropdownOption>;
 
     /** The ID of rendered dropdown html element. */
     readonly renderedValueId: string = `nx-dropdown-rendered-${nextUniqueId++}`;
+    readonly modalId: string = `nx-dropdown-modal-${nextUniqueId++}`;
 
     private _focused = false;
 
@@ -163,6 +220,14 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
 
     /** @docs-private */
     errorState = false;
+
+    _tooltipText = '';
+
+    /** Width of the overlay panel. */
+    _overlayWidth: string | number = '';
+
+    /** Min-width of the overlay panel. */
+    _overlayMinWidth: string | number = '';
 
     /**
      * Name of this control that is used inside the formfield component.
@@ -173,9 +238,6 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
 
     /** The minimal space between the viewport and the overlay */
     _overlayViewportMargin: number = this.dir === 'rtl' ? 0 : 16;
-
-    /** The last measured value for the trigger's client bounding rect. */
-    _triggerRect?: ClientRect;
 
     /** Holds the panelWidth after panel was attached. */
     _panelWidth?: number;
@@ -191,9 +253,6 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
 
     /** @docs-private */
     ariaDescribedby?: string;
-
-    /** @docs-private */
-    currentFilter = '';
 
     /**
      * Array of options for the dropdown.
@@ -223,12 +282,12 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
         this._tabIndex = value != null ? value : 0;
     }
     get tabIndex(): number {
-        return this.disabled || this.readonly ? -1 : this._tabIndex;
+        return this.disabled ? -1 : this._tabIndex;
     }
     private _tabIndex = 0;
 
     /** Selected value */
-    @Input('nxValue') set value(newValue: any) {
+    @Input() set value(newValue: any) {
         if (newValue !== this._value) {
             this.writeValue(newValue);
             this._value = newValue;
@@ -242,7 +301,7 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
     private _value: any;
 
     /** Whether the dropdown is disabled. */
-    @Input('nxDisabled') set disabled(value: BooleanInput) {
+    @Input() set disabled(value: BooleanInput) {
         this._disabled = coerceBooleanProperty(value);
     }
     get disabled(): boolean {
@@ -257,7 +316,7 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
      * @throws Error if true and the bound value is not an array.
      * @deprecated Please use the new `<nx-multi-select>` component instead.
      */
-    @Input('nxIsMultiselect') isMultiSelect = false;
+    @Input() isMultiSelect = false;
 
     /** The id of the input. */
     get id() {
@@ -265,14 +324,21 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
     }
 
     /** Whether the component is required. This adds an aria-required label to the component. */
-    @Input('nxRequired') required!: boolean;
+    @Input() set required(value: BooleanInput) {
+        this._required = coerceBooleanProperty(value);
+    }
+    get required(): boolean {
+        return this._required;
+    }
+
+    protected _required = false;
 
     private _style = '';
     /** Whether the dropdown should render in its negative style or not. */
     _negative = false;
 
     /** If set to 'negative', the component is displayed with the negative set of styles. */
-    @Input('nxStyle') set styles(value: string) {
+    @Input('variant') set styles(value: string) {
         if (this._style === value) {
             return;
         }
@@ -295,26 +361,41 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
      * Disable truncation of long item texts.
      * We recommend following UX guidelines and always truncating long items.
      * Please only disable truncation if it's impossible to use short descriptions.
+     *
+     * @deprecated
      */
-    @Input('nxIgnoreItemTrunctation') set ignoreItemTrunctation(value: BooleanInput) {
-        this._ignoreItemTrunctation = coerceBooleanProperty(value);
+    @Input() set ignoreItemTruncation(value: BooleanInput) {
+        this._ignoreItemTruncation = coerceBooleanProperty(value);
+
+        if (this._ignoreItemTruncation) {
+            this.ignoreItemTruncationWasSet = true;
+        }
     }
-    get ignoreItemTrunctation(): boolean {
-        return this._ignoreItemTrunctation;
+    get ignoreItemTruncation(): boolean {
+        return this._ignoreItemTruncation;
     }
-    private _ignoreItemTrunctation = false;
+    private _ignoreItemTruncation = false;
 
     /** Whether the dropdown should be shown with an additional filter input. */
-    @Input('nxShowFilter') showFilter = false;
+    @Input() showFilter = false;
 
     /** Text displayed as placeholder for the filter. */
-    @Input('nxFilterPlaceholder') filterPlaceholder = '';
+    @Input() filterPlaceholder = '';
 
     /** Text that is displayed at the top of the overlay. If not set the formfield label is used by default. */
-    @Input('nxOverlayLabel') overlayLabel = '';
+    @Input() overlayLabel = '';
+
+    /** Can be used as a fallback to the CdkOverlayOrigin */
+    @Input('overlayFallbackOrigin') overlayFallbackOrigin!: NxDropdownComponent;
+
+    /* panelMaxWidth accepts a number for pixel values or a string for any css value */
+    @Input() panelMaxWidth!: string | number;
 
     /** Event emitted when the select panel has been toggled. */
     @Output() readonly openedChange = new EventEmitter<boolean>();
+
+    /** Event emitted when the select panel has been focus out. */
+    @Output() readonly focusOut = new EventEmitter<boolean>();
 
     /** Event emitted when the dropdown items get filtered. Returns the currently visible dropdown items. */
     @Output('filterResult') readonly filterResultChange = new EventEmitter<NxDropdownItemComponent[]>();
@@ -340,7 +421,7 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
      *
      * @docs-private
      */
-    @Output('nxValueChange') readonly valueChange = new EventEmitter<any>();
+    @Output() readonly valueChange = new EventEmitter<any>();
 
     /** Event emitted when the selected value has been changed. */
     @Output() readonly selectionChange = new EventEmitter<NxDropdownSelectChange>();
@@ -359,7 +440,13 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
     @ViewChild('trigger', { static: true }) trigger!: ElementRef;
 
     /** @docs-private */
+    @ViewChild('fallbackOrigin') fallbackOrigin!: ElementRef | CdkOverlayOrigin;
+
+    /** @docs-private */
     @ViewChild('filterInput') filterInput?: ElementRef;
+
+    /** @docs-private */
+    filterValue = '';
 
     /**
      * Overlay pane containing the options.
@@ -393,6 +480,12 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
 
     private _keyManager!: ActiveDescendantKeyManager<NxDropdownItemComponent>;
 
+    private panelMinWidthWasSet = false;
+
+    private panelGrowWasSet = false;
+
+    private ignoreItemTruncationWasSet = false;
+
     set panelOpen(value: boolean) {
         this._panelOpen = value;
     }
@@ -417,12 +510,42 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
     }
 
     /**
+     * Sets how the panel min width will be determined.
+     * 'trigger' will set the panels min-width to the trigger width.
+     * 'none' will not set a min-width and will let the panel grow naturally with its content so it can be smaller than the trigger.
+     * This is mostly for special use cases like the country code dropdown in the phone input.
+     *
+     * @deprecated Use `panelGrow` instead.
+     */
+    @Input() set panelMinWidth(value: NxDropdownPanelMinWidth) {
+        this.panelMinWidthWasSet = true;
+        this._panelMinWidth = value;
+    }
+    get panelMinWidth(): NxDropdownPanelMinWidth {
+        return this._panelMinWidth;
+    }
+    _panelMinWidth: NxDropdownPanelMinWidth = 'trigger';
+
+    /**
+     * panelGrow: true means the overlay can grow larger than the trigger and grows with the longest label
+     * panelGrow: false means the overlay is the size of the trigger
+     */
+    @Input({ transform: booleanAttribute }) set panelGrow(value) {
+        this.panelGrowWasSet = true;
+        this._panelGrow = value;
+    }
+    get panelGrow(): boolean {
+        return this._panelGrow;
+    }
+    _panelGrow = false;
+
+    /**
      * Function that transforms the value into a string.
      * This function is used for displaying and filtering the content.
      *
      * Default: `(value: any) => value == null ? '' : value.toString()`.
      */
-    @Input('nxValueFormatter') set valueFormatter(value: NxDropdownValueFormatterFn | null | undefined) {
+    @Input() set valueFormatter(value: NxDropdownValueFormatterFn | null | undefined) {
         this.#valueFormatter = value;
     }
     get valueFormatter(): NxDropdownValueFormatterFn {
@@ -488,6 +611,8 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
     get dir(): Direction {
         return this._dir && this._dir.value === 'rtl' ? 'rtl' : 'ltr';
     }
+
+    activeId = signal<string | null>(null);
 
     constructor(
         private readonly _cdr: ChangeDetectorRef,
@@ -560,7 +685,7 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
     updateErrorState() {
         const oldState = this.errorState;
         const parent = this._parentFormGroup || this._parentForm;
-        const control = this.ngControl ? (this.ngControl.control as UntypedFormControl) : null;
+        const control = this.ngControl ? (this.ngControl.control as FormControl) : null;
         const newState = this._errorStateMatcher.isErrorState(control, parent);
 
         if (newState !== oldState) {
@@ -569,10 +694,25 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
         }
     }
 
+    private _updateTooltipText() {
+        if (!this.trigger) {
+            return;
+        }
+        const [label, icon] = this.trigger.nativeElement.children;
+        const { paddingLeft, paddingRight } = getComputedStyle(this.trigger.nativeElement);
+        const triggerContentWidth = this.trigger.nativeElement.clientWidth - parseInt(paddingLeft, 10) - parseInt(paddingRight, 10);
+
+        if (triggerContentWidth - icon.offsetWidth < label.scrollWidth) {
+            this._tooltipText = this.triggerValue;
+        } else {
+            this._tooltipText = '';
+        }
+    }
+
     /** Sets up a key manager to listen to keyboard events on the overlay panel. */
     private _initKeyManager() {
         this._keyManager = new ActiveDescendantKeyManager<NxDropdownItemComponent>(this.dropdownItems)
-            .withTypeAhead()
+            .withTypeAhead(500)
             .withHomeAndEnd()
             .withVerticalOrientation()
             .withHorizontalOrientation('ltr')
@@ -590,8 +730,11 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
             } else if (!this._panelOpen && !this.isMultiSelect && this._keyManager.activeItem) {
                 this._keyManager.activeItem._selectViaInteraction();
             }
+            this.activeId.set(this._keyManager.activeItem?.id || null);
         });
     }
+
+    openedByKeyboard = true;
 
     private _initActiveItem() {
         if (!this.isMultiSelect && this._selectionModel.selected[0]) {
@@ -621,7 +764,10 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
                 // defer it for the next cycle to not run in changed after checked errors
                 // the combination of dropdown-item notifying parent and when the parent
                 // tries to fetch the triggerValue from the child throws these errors
-                setTimeout(() => {
+                Promise.resolve().then(() => {
+                    if (this._panelOpen) {
+                        this._initActiveItem();
+                    }
                     this._cdr.markForCheck();
                     this.stateChanges.next();
                 });
@@ -657,6 +803,11 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
 
         if (wasSelected !== isSelected) {
             this._propagateChanges();
+
+            this._tooltipText = '';
+            setTimeout(() => {
+                this._updateTooltipText();
+            });
         }
 
         this.stateChanges.next();
@@ -765,6 +916,13 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
         this._elementRef.nativeElement.focus();
     }
 
+    get overlayOrigin() {
+        if (this.overlayFallbackOrigin) {
+            return this.overlayFallbackOrigin.elementRef;
+        }
+        return this.formFieldComponent ? this.formFieldComponent.getConnectedOverlayOrigin() : this.fallbackOrigin;
+    }
+
     /** Opens the panel of the dropdown. */
     openPanel($event: Event) {
         if (this.disabled || this.readonly || !(this.dropdownItems?.length || this.options?.length) || this._panelOpen) {
@@ -782,10 +940,33 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
                 }
             });
             this._initActiveItem();
+            this._cdr.markForCheck();
         });
 
-        this._triggerRect = this.trigger.nativeElement.getBoundingClientRect();
+        // If panelMinWidth or ignoreTruncation have been set, they will be mapped to panelGrow
+        // If panelGrow has been set, panelMinWidth and ignoreTruncation will be ignored
+        if ((this.panelMinWidthWasSet && !this.panelGrowWasSet) || (this.ignoreItemTruncationWasSet && !this.panelGrowWasSet)) {
+            this.panelGrow = true;
+        }
+
+        this.getOverlayWidth();
         this._cdr.markForCheck();
+    }
+
+    private getOverlayWidth() {
+        const origin = this.overlayOrigin;
+        const ref = origin instanceof CdkOverlayOrigin ? origin.elementRef : origin;
+        const triggerWidth = ref.nativeElement.getBoundingClientRect().width;
+
+        if (this.panelGrow) {
+            // If panelGrow is set to true, the overlay will receive a
+            // min-width the size of the trigger to be able to grow
+            this._overlayMinWidth = triggerWidth;
+        } else if (!this.panelGrow) {
+            // If panelGrow is set to false, the overlay will receive a
+            // fixed width the size of the trigger
+            this._overlayWidth = triggerWidth;
+        }
     }
 
     /** Closes the panel of the dropdown. */
@@ -831,21 +1012,7 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
         }
 
         const activeItem = this._keyManager.activeItem.containerElement.nativeElement;
-        this.liveAnnouncer.announce(activeItem.textContent); // force screen reader to speak active option
-        const panel = this.panelBody.nativeElement;
-        const panelOffset = panel.offsetTop; // how much the overlay is repositioned on the page
-        const panelTopScrollPosition = panel.scrollTop;
-        const panelHeight = panel.clientHeight;
-        const itemTop = activeItem.offsetTop - panelOffset;
-        const itemBottom = activeItem.offsetTop - panelOffset + activeItem.getBoundingClientRect().height;
-
-        // item half or less visible on top
-        if (itemTop < panelTopScrollPosition) {
-            this.panelBody.nativeElement.scrollTop = itemTop;
-            // item half or less visible on bottom
-        } else if (itemBottom > panelTopScrollPosition + panelHeight) {
-            this.panelBody.nativeElement.scrollTop = itemBottom - panelHeight;
-        }
+        activeItem.scrollIntoView({ block: 'nearest' });
     }
 
     private _getItemOffset(item: NxDropdownItemComponent | null): number {
@@ -884,12 +1051,14 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
      * @docs-private
      */
     _getAriaLabelledBy(): string {
-        const valueId = this.renderedValueId;
+        if (this.ariaLabelledBy !== null) {
+            return this.ariaLabelledBy;
+        }
         const labelId = this.formFieldComponent?.labelId;
         if (labelId) {
-            return `${valueId} ${labelId}`;
+            return labelId;
         }
-        return valueId;
+        return this.renderedValueId;
     }
 
     get _isInOutlineField(): boolean {
@@ -956,6 +1125,7 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
     /** End ControlValueAccessor */
 
     _handleKeydown(event: KeyboardEvent) {
+        this.openedByKeyboard = true;
         this.panelOpen ? this._handleOpenKeydown(event) : this._handleClosedKeydown(event);
     }
 
@@ -969,6 +1139,7 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
         for (curIndex++; curIndex < options.length; curIndex++) {
             if (this._isSelectable(options[curIndex] as NxDropdownItemComponent, this._isLazy)) {
                 this._selectionModel.select(options[curIndex]);
+                this.liveAnnouncer.announce(options[curIndex].label || '');
                 this._propagateChanges();
                 return;
             }
@@ -981,6 +1152,7 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
         for (curIndex--; curIndex >= 0; curIndex--) {
             if (this._isSelectable(options[curIndex] as NxDropdownItemComponent, this._isLazy)) {
                 this._selectionModel.select(options[curIndex]);
+                this.liveAnnouncer.announce(options[curIndex].label || '');
                 this._propagateChanges();
                 return;
             }
@@ -993,12 +1165,12 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
 
     private _handleClosedKeydown(event: KeyboardEvent) {
         if (this.disabled || this.readonly) {
-            event.preventDefault();
             return;
         }
 
         // TODO use event.code after removing IE11 support
         const keyCode = event.keyCode;
+        const isCharacterKey = event.key.length === 1;
         const isArrowKey = keyCode === DOWN_ARROW || keyCode === UP_ARROW || keyCode === LEFT_ARROW || keyCode === RIGHT_ARROW;
         const isOpenKey = keyCode === ENTER || keyCode === SPACE;
 
@@ -1009,15 +1181,40 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
         } else if (!this.isMultiSelect) {
             switch (keyCode) {
                 case DOWN_ARROW:
-                    this.setNextItemActive();
+                case UP_ARROW:
+                    this.openPanel(event);
+
                     event.preventDefault();
                     break;
-                case UP_ARROW:
-                    this.setPreviousItemActive();
+                case HOME:
+                    this.openPanel(event);
+                    setTimeout(() => {
+                        this._keyManager.setFirstItemActive();
+                        this._cdr.markForCheck();
+                    });
+                    event.preventDefault();
+                    break;
+                case END:
+                    this.openPanel(event);
+                    setTimeout(() => {
+                        this._keyManager.setLastItemActive();
+                        this._cdr.markForCheck();
+                    });
                     event.preventDefault();
                     break;
                 default:
-                    this._keyManager.onKeydown(event);
+                    if (isCharacterKey) {
+                        this.openPanel(event);
+
+                        setTimeout(() => {
+                            if (this.showFilter) {
+                                this.filterValue = event.key;
+                                this._onFilter(event.key);
+                            } else {
+                                this._keyManager.onKeydown(event);
+                            }
+                        });
+                    }
             }
         }
     }
@@ -1030,15 +1227,22 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
             return;
         }
 
-        const isArrowKey = keyCode === DOWN_ARROW || keyCode === UP_ARROW;
+        const isUpDown = keyCode === DOWN_ARROW || keyCode === UP_ARROW;
+        const isLeftRight = keyCode === LEFT_ARROW || keyCode === RIGHT_ARROW;
+        const isHomeEnd = keyCode === HOME || keyCode === END;
         const manager = this._keyManager;
 
         const allHidden = this.dropdownItems.map(option => option._hidden).every(option => Boolean(option));
 
-        if (keyCode === HOME || keyCode === END) {
+        // navigate filter input field
+        if ((isLeftRight || isHomeEnd) && this.showFilter) {
+            return;
+        }
+
+        if (isHomeEnd) {
             event.preventDefault();
             keyCode === HOME ? manager.setFirstItemActive() : manager.setLastItemActive();
-        } else if (isArrowKey && event.altKey) {
+        } else if (isUpDown && event.altKey) {
             // Close the select on ALT + arrow key to match the native <select>
             event.preventDefault();
             this.closePanel();
@@ -1059,7 +1263,7 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
             const previouslyFocusedIndex = manager.activeItemIndex;
             manager.onKeydown(event);
 
-            if (this.isMultiSelect && isArrowKey && event.shiftKey && manager.activeItem && manager.activeItemIndex !== previouslyFocusedIndex) {
+            if (this.isMultiSelect && isUpDown && event.shiftKey && manager.activeItem && manager.activeItemIndex !== previouslyFocusedIndex) {
                 manager.activeItem._selectViaInteraction();
             }
         }
@@ -1071,10 +1275,8 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
     }
 
     /** Called when the user types in the filter input */
-    _onFilter(event: Event) {
-        event.preventDefault();
-        this.currentFilter = (event.target as HTMLInputElement).value;
-        this.filterChanges.next((event.target as HTMLInputElement).value);
+    _onFilter(query: string) {
+        this.filterChanges.next(query);
         const allHidden = this.dropdownItems.toArray().every(option => option._hidden);
         if (allHidden) {
             // @ts-expect-error: not possible according to TS, but has been working already
@@ -1115,6 +1317,7 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
             const overlayRef = this.overlayDir.overlayRef;
             const positionStrategy = overlayRef.getConfig().positionStrategy as FlexibleConnectedPositionStrategy;
 
+            overlayRef.updateSize({ maxWidth: this.panelMaxWidth });
             this._updatePosition();
             positionStrategy.withPositions(this._positions);
             overlayRef.updatePosition();
@@ -1151,21 +1354,21 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
         if (!this.disabled && !this.panelOpen) {
             this._onTouched();
             this._cdr.markForCheck();
+            this.focusOut.emit(true);
             this.stateChanges.next();
         }
     }
 
     /** @docs-private */
     get isFilterEmpty() {
-        return this.currentFilter.length === 0;
+        return this.filterValue.length === 0;
     }
 
     _clearFilter() {
         if (!this.filterInput) {
             return;
         }
-        this.filterInput.nativeElement.value = '';
-        this.currentFilter = '';
+        this.filterValue = '';
         this.filterChanges.next('');
     }
 

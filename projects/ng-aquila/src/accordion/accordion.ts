@@ -1,6 +1,6 @@
 import { CdkAccordion } from '@angular/cdk/accordion';
 import { BooleanInput, coerceBooleanProperty } from '@angular/cdk/coercion';
-import { Directive, Input } from '@angular/core';
+import { booleanAttribute, Directive, Input, signal } from '@angular/core';
 
 import { AccordionStyle } from './expansion-panel';
 
@@ -12,6 +12,7 @@ const DEFAULT_TYPE: AccordionStyle = 'regular';
         '[class.nx-accordion]': 'true',
         role: 'presentation',
     },
+    standalone: true,
 })
 export class NxAccordionDirective extends CdkAccordion {
     /**
@@ -19,7 +20,7 @@ export class NxAccordionDirective extends CdkAccordion {
      *
      * Default: `'regular'`.
      */
-    @Input('nxStyle') set style(value: AccordionStyle) {
+    @Input('variant') set style(value: AccordionStyle) {
         value = value ? value : DEFAULT_TYPE;
 
         const [newValue] = value.match(/regular|light|extra-light/) || [DEFAULT_TYPE];
@@ -38,4 +39,12 @@ export class NxAccordionDirective extends CdkAccordion {
         return !!this._negative;
     }
     private _negative?: boolean;
+
+    @Input({ transform: booleanAttribute }) set flushAlignment(flushAligned: boolean) {
+        this.flushAlignmentSignal.set(flushAligned);
+    }
+    get flushAlignment(): boolean {
+        return this.flushAlignmentSignal();
+    }
+    readonly flushAlignmentSignal = signal(false);
 }

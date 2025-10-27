@@ -3,6 +3,7 @@ import { Directionality } from '@angular/cdk/bidi';
 import { END, ENTER, HOME, SPACE } from '@angular/cdk/keycodes';
 import {
     AfterContentInit,
+    AfterViewInit,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
@@ -15,7 +16,9 @@ import {
     QueryList,
     ViewChild,
 } from '@angular/core';
+import { NxViewportService } from '@aposin/ng-aquila/utils';
 
+import { NxTabScrollIndicator } from './scroll-indicator/scroll-indicator';
 import { NxScrollableTabBar } from './scrollable-tab-bar';
 import { NxTabGroupBase } from './tab-group-base';
 import { NxTabLabelWrapperDirective } from './tab-label-wrapper';
@@ -30,8 +33,10 @@ import { NxTabLabelWrapperDirective } from './tab-label-wrapper';
         '[class.at-start]': '_isScrolledToStart',
         '[class.scrollable]': 'scrollable',
     },
+    standalone: true,
+    imports: [NxTabScrollIndicator],
 })
-export class NxTabHeaderComponent extends NxScrollableTabBar implements AfterContentInit {
+export class NxTabHeaderComponent extends NxScrollableTabBar implements AfterContentInit, AfterViewInit {
     private _keyManager!: FocusKeyManager<NxTabLabelWrapperDirective>;
 
     @ViewChild('tabsList') scrollableTabsList!: ElementRef<HTMLElement>;
@@ -43,6 +48,7 @@ export class NxTabHeaderComponent extends NxScrollableTabBar implements AfterCon
         if (this._keyManager) {
             this._keyManager.updateActiveItem(value);
         }
+        this.scrollToButton(value);
     }
     get selectedIndex(): number {
         return this._selectedIndex;
@@ -72,22 +78,55 @@ export class NxTabHeaderComponent extends NxScrollableTabBar implements AfterCon
 
     @ContentChildren(NxTabLabelWrapperDirective) labels!: QueryList<NxTabLabelWrapperDirective>;
 
-    constructor(_cdr: ChangeDetectorRef, @Optional() _dir: Directionality | null, @Optional() readonly _tabGroup: NxTabGroupBase | null, _element: ElementRef) {
-        super(_cdr, _dir, _element);
+    constructor(
+        _cdr: ChangeDetectorRef,
+        @Optional() _dir: Directionality | null,
+        @Optional() readonly _tabGroup: NxTabGroupBase | null,
+        _element: ElementRef,
+        viewportService: NxViewportService,
+    ) {
+        super(_cdr, _dir, _element, viewportService);
     }
 
     ngAfterContentInit(): void {
         super.ngAfterContentInit();
         this._keyManager = new FocusKeyManager<NxTabLabelWrapperDirective>(this.labels).withHorizontalOrientation('ltr').withWrap();
         this._keyManager.updateActiveItem(0);
+
         this._cdr.markForCheck();
     }
+
+    ngAfterViewInit(): void {
+        this.scrollToButton(this.selectedIndex);
+    }
+
     private _isValidIndex(idx: number) {
         if (!this.labels) {
             return true;
         }
         const tab = this.labels.toArray()[idx] || null;
         return !!tab && !tab.disabled;
+    }
+
+    scrollToButton(index: number) {
+        if (!this._platform.isBrowser || !this.labels || !this.scrollableTabsList) {
+            return;
+        }
+        const container = this.scrollableTabsList.nativeElement;
+
+        const button = this.labels.get(index)?.elementRef.nativeElement;
+
+        if (container && button) {
+            const containerRect = container.getBoundingClientRect();
+            const buttonRect = button.getBoundingClientRect();
+            const scrollLeft = buttonRect.left - containerRect.left + container.scrollLeft;
+            const centerPosition = scrollLeft - (containerRect.width - buttonRect.width) / 2;
+
+            container.scrollTo({
+                left: centerPosition,
+                behavior: 'smooth',
+            });
+        }
     }
 
     /**

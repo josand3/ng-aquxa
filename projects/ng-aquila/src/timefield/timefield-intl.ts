@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class NxTimefieldIntl {
     /**
      * Stream that emits whenever the labels here are changed. Use this to notify
@@ -14,4 +14,7 @@ export class NxTimefieldIntl {
 
     /** Label that should replace the 'minutes' input field of the aria-label. */
     inputFieldMinutesAriaLabel = 'minutes';
+
+    /** Label for the time picker button. */
+    buttonOpenTimepickerAriaLabel = 'Open time picker';
 }

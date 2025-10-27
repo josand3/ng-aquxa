@@ -5,9 +5,9 @@
                 Autocomplete with appearance outline
             </h4>
             <nx-formfield
-                nxLabel="Animals"
+                label="Animals"
                 appearance="outline"
-                nxFloatLabel="always"
+                floatLabel="always"
             >
                 <input
                     nxInput
@@ -17,12 +17,11 @@
                     (input)="filter(animalInput.value)"
                 />
                 <nx-autocomplete #animal1="nxAutocomplete">
-                    <nx-autocomplete-option
-                        *ngFor="let option of filteredOptions"
-                        [value]="option"
-                    >
+                    @for (option of filteredOptions; track option) {
+                    <nx-autocomplete-option [value]="option">
                         {{ option }}
                     </nx-autocomplete-option>
+                    }
                 </nx-autocomplete>
             </nx-formfield>
         </div>

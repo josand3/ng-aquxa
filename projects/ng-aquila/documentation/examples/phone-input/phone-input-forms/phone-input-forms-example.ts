@@ -1,9 +1,17 @@
 import { Component } from '@angular/core';
 import {
-    UntypedFormControl,
-    UntypedFormGroup,
+    FormControl,
+    FormGroup,
+    FormsModule,
+    ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
+import {
+    NxFormfieldComponent,
+    NxFormfieldLabelDirective,
+} from '@aposin/ng-aquila/formfield';
+import { NxHeadlineComponent } from '@aposin/ng-aquila/headline';
+import { NxPhoneInputComponent } from '@aposin/ng-aquila/phone-input';
 
 /**
  * @title Phone input usage in forms
@@ -12,14 +20,23 @@ import {
     selector: 'phone-input-forms-example',
     templateUrl: 'phone-input-forms-example.html',
     styleUrls: ['./phone-input-forms-example.css'],
+    standalone: true,
+    imports: [
+        NxHeadlineComponent,
+        NxFormfieldComponent,
+        NxFormfieldLabelDirective,
+        NxPhoneInputComponent,
+        FormsModule,
+        ReactiveFormsModule,
+    ],
 })
 export class PhoneInputFormsExampleComponent {
     value = '';
-    formGroup: UntypedFormGroup;
+    formGroup: FormGroup;
 
     constructor() {
-        this.formGroup = new UntypedFormGroup({
-            phone: new UntypedFormControl('', Validators.required),
+        this.formGroup = new FormGroup({
+            phone: new FormControl('', Validators.required),
         });
     }
 }

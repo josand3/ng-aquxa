@@ -9,9 +9,11 @@ import { SwitcherLabelSmallExampleComponent } from './switcher-label-small/switc
 import { SwitcherLargeExampleComponent } from './switcher-large/switcher-large-example';
 import { SwitcherNegativeExampleComponent } from './switcher-negative/switcher-negative-example';
 import { SwitcherReactiveFormExampleComponent } from './switcher-reactive-form/switcher-reactive-form-example';
+import { SwitcherReadonlyExampleComponent } from './switcher-readonly/switcher-readonly-example';
 import { SwitcherTemplateDrivenExampleComponent } from './switcher-template-driven/switcher-template-driven-example';
 
 const EXAMPLES = [
+    SwitcherReadonlyExampleComponent,
     SwitcherDefaultExampleComponent,
     SwitcherDisabledExampleComponent,
     SwitcherLabelLeftExampleComponent,
@@ -23,13 +25,13 @@ const EXAMPLES = [
 ];
 
 @NgModule({
-    imports: [NxSwitcherModule, ExamplesSharedModule],
-    declarations: [EXAMPLES],
+    imports: [NxSwitcherModule, ExamplesSharedModule, EXAMPLES],
     exports: [EXAMPLES],
 })
 export class SwitcherExamplesModule {
     static components() {
         return {
+            'switcher-readonly': SwitcherReadonlyExampleComponent,
             'switcher-default': SwitcherDefaultExampleComponent,
             'switcher-disabled': SwitcherDisabledExampleComponent,
             'switcher-label-left': SwitcherLabelLeftExampleComponent,

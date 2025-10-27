@@ -2,10 +2,12 @@ import { Directionality } from '@angular/cdk/bidi';
 import { coerceNumberProperty, NumberInput } from '@angular/cdk/coercion';
 import { DOWN_ARROW, ENTER, ESCAPE, TAB, UP_ARROW } from '@angular/cdk/keycodes';
 import { FlexibleConnectedPositionStrategy, Overlay, OverlayConfig, OverlayRef, PositionStrategy, ScrollStrategy, ViewportRuler } from '@angular/cdk/overlay';
+import { _getEventTarget } from '@angular/cdk/platform';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { AutofillMonitor } from '@angular/cdk/text-field';
 import { DOCUMENT } from '@angular/common';
 import {
+    afterNextRender,
     AfterViewInit,
     ChangeDetectorRef,
     Directive,
@@ -13,7 +15,9 @@ import {
     forwardRef,
     Host,
     Inject,
+    inject,
     InjectionToken,
+    Injector,
     Input,
     NgZone,
     OnChanges,
@@ -26,11 +30,10 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { NxFormfieldComponent } from '@aposin/ng-aquila/formfield';
 import { NxWordComponent } from '@aposin/ng-aquila/natural-language-form';
 import { defer, fromEvent, merge, Observable, of, Subject, Subscription } from 'rxjs';
-import { debounceTime, delay, filter, first, switchMap, take, takeUntil, tap } from 'rxjs/operators';
+import { debounceTime, delay, filter, first, map, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
 import { NxAutocompleteComponent } from './autocomplete.component';
 import { NxAutocompleteOptionComponent, NxAutocompleteOptionSelected } from './autocomplete-option.component';
-
 /**
  * Provider that allows the autocomplete to register as a ControlValueAccessor.
  *
@@ -43,14 +46,28 @@ export const NX_AUTOCOMPLETE_VALUE_ACCESSOR: any = {
 };
 
 /** Injection token that determines the scroll handling while an autocomplete is open. */
-export const NX_AUTOCOMPLETE_SCROLL_STRATEGY = new InjectionToken<() => ScrollStrategy>('nx-autocomplete-scroll-strategy');
+export const NX_AUTOCOMPLETE_SCROLL_STRATEGY = new InjectionToken<() => ScrollStrategy>('nx-autocomplete-scroll-strategy', {
+    providedIn: 'root',
+    factory: () => {
+        const overlay = inject(Overlay);
+        return () => overlay.scrollStrategies.reposition();
+    },
+});
 
-/** @docs-private */
+/**
+ * @docs-private
+ * @deprecated No longer used.
+ * @deletion-target 18.0.0
+ */
 export function NX_AUTOCOMPLETE_SCROLL_STRATEGY_PROVIDER_FACTORY(overlay: Overlay): () => ScrollStrategy {
     return () => overlay.scrollStrategies.reposition();
 }
 
-/** @docs-private */
+/**
+ * @docs-private
+ * @deprecated No longer used.
+ * @deletion-target 18.0.0
+ */
 export const NX_AUTOCOMPLETE_SCROLL_STRATEGY_PROVIDER = {
     provide: NX_AUTOCOMPLETE_SCROLL_STRATEGY,
     useFactory: NX_AUTOCOMPLETE_SCROLL_STRATEGY_PROVIDER_FACTORY,
@@ -76,7 +93,7 @@ export function getNxAutocompleteMissingPanelError(): Error {
         'aria-autocomplete': 'list',
         '[attr.aria-activedescendant]': 'activeOption?.id',
         '[attr.aria-expanded]': 'panelOpen.toString()',
-        '[attr.aria-owns]': 'autocomplete?.id',
+        '[attr.aria-owns]': 'this.panelOpen ? autocomplete?.id : null',
         // Note: we use `focusin`, as opposed to `focus`, in order to open the panel
         // a little earlier. This avoids issues where IE delays the focusing of the input.
         '(focusin)': '_handleFocus()',
@@ -86,6 +103,7 @@ export function getNxAutocompleteMissingPanelError(): Error {
     },
     exportAs: 'nxAutocompleteTrigger',
     providers: [NX_AUTOCOMPLETE_VALUE_ACCESSOR],
+    standalone: true,
 })
 export class NxAutocompleteTriggerDirective implements ControlValueAccessor, OnDestroy, OnChanges, AfterViewInit, OnInit {
     private _overlayRef!: OverlayRef | null;
@@ -121,11 +139,15 @@ export class NxAutocompleteTriggerDirective implements ControlValueAccessor, OnD
      */
     private _canOpenOnNextFocus = true;
 
+    private _injector = inject(Injector);
+
     /** Stream of keyboard events that can close the panel. */
     private readonly _closeKeyEventStream = new Subject<void>();
 
     /** Value changes */
     private readonly _valueChanges = new Subject<any>();
+
+    private _initialized = new Subject();
 
     /** Strategy factory that will be used to handle scrolling while the autocomplete panel is open. */
     private readonly _scrollStrategyFactory = this._defaultScrollStrategyFactory;
@@ -176,10 +198,7 @@ export class NxAutocompleteTriggerDirective implements ControlValueAccessor, OnD
 
         // If there are any subscribers before `ngAfterViewInit`, the `autocomplete` will be undefined.
         // Return a stream that we'll replace with the real one once everything is in place.
-        return this._zone.onStable.asObservable().pipe(
-            take(1),
-            switchMap(() => this.optionSelections),
-        );
+        return this._initialized.pipe(switchMap(() => this.optionSelections));
     });
 
     /** The currently active option, coerced to NxAutocompleteOptionComponent type. */
@@ -198,13 +217,14 @@ export class NxAutocompleteTriggerDirective implements ControlValueAccessor, OnD
         }
 
         return merge(fromEvent<MouseEvent | TouchEvent>(this._document, 'mouseup'), fromEvent<MouseEvent | TouchEvent>(this._document, 'touchend')).pipe(
-            filter((event: MouseEvent | TouchEvent) => {
-                const clickTarget = event.target as HTMLElement;
+            map(event => _getEventTarget(event)),
+            filter((target: EventTarget | null) => {
+                const clickTarget = target as HTMLElement;
                 const formField = this._formField ? this._formField.elementRef.nativeElement : null;
 
                 return (
                     this._overlayAttached &&
-                    clickTarget !== this._element.nativeElement &&
+                    !this._element.nativeElement.contains(target as Node | null) &&
                     (!formField || !formField.contains(clickTarget)) &&
                     !!this._overlayRef &&
                     !this._overlayRef.overlayElement.contains(clickTarget)
@@ -296,6 +316,8 @@ export class NxAutocompleteTriggerDirective implements ControlValueAccessor, OnD
     }
 
     ngAfterViewInit(): void {
+        this._initialized.next();
+        this._initialized.complete();
         this._bindAutocompleteItems();
     }
 
@@ -548,7 +570,15 @@ export class NxAutocompleteTriggerDirective implements ControlValueAccessor, OnD
      * stream every time the option list changes.
      */
     private _subscribeToClosingActions(): Subscription {
-        const firstStable = this._zone.onStable.asObservable().pipe(take(1));
+        const initialRender = new Observable(subscriber => {
+            afterNextRender(
+                () => {
+                    subscriber.next();
+                },
+                { injector: this._injector },
+            );
+        });
+
         const optionChanges = this.autocomplete.options.changes.pipe(
             tap(() => this._positionStrategy.reapplyLastPosition()),
             // Defer emitting to the stream until the next tick, because changing
@@ -558,7 +588,7 @@ export class NxAutocompleteTriggerDirective implements ControlValueAccessor, OnD
 
         // When the zone is stable initially, and when the option list changes...
         return (
-            merge(firstStable, optionChanges)
+            merge(initialRender, optionChanges)
                 .pipe(
                     // create a new stream of panelClosingActions, replacing any previous streams
                     // that were created, and flatten it so our stream only emits closing events...

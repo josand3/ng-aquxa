@@ -1,10 +1,22 @@
+import { JsonPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import {
-    UntypedFormBuilder,
-    UntypedFormControl,
-    UntypedFormGroup,
+    FormBuilder,
+    FormControl,
+    FormGroup,
+    FormsModule,
+    ReactiveFormsModule,
     Validators,
 } from '@angular/forms';
+import { NxButtonComponent } from '@aposin/ng-aquila/button';
+import { NxFormfieldComponent } from '@aposin/ng-aquila/formfield';
+import { NxInputDirective } from '@aposin/ng-aquila/input';
+import {
+    NxProgressStepperComponent,
+    NxStepComponent,
+    NxStepperNextDirective,
+    NxStepperPreviousDirective,
+} from '@aposin/ng-aquila/progress-stepper';
 
 /**
  * @title Progress Indicator linear progress example
@@ -13,26 +25,39 @@ import {
     selector: 'progress-stepper-progress-example',
     templateUrl: './progress-stepper-progress-example.html',
     styleUrls: ['./progress-stepper-progress-example.css'],
+    standalone: true,
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        NxProgressStepperComponent,
+        NxStepComponent,
+        NxFormfieldComponent,
+        NxInputDirective,
+        NxButtonComponent,
+        NxStepperPreviousDirective,
+        NxStepperNextDirective,
+        JsonPipe,
+    ],
 })
 export class ProgressStepperProgressExampleComponent {
     readonly formLinear = this.fb.group({
-        personalDetails: new UntypedFormGroup({
-            name: new UntypedFormControl('', {
+        personalDetails: new FormGroup({
+            name: new FormControl('', {
                 validators: Validators.required,
             }),
-            age: new UntypedFormControl('', {
+            age: new FormControl('', {
                 validators: Validators.required,
             }),
         }),
-        address: new UntypedFormGroup({
-            street: new UntypedFormControl('', {
+        address: new FormGroup({
+            street: new FormControl('', {
                 validators: Validators.required,
             }),
-            postalCode: new UntypedFormControl('', {
+            postalCode: new FormControl('', {
                 validators: Validators.required,
             }),
         }),
     });
 
-    constructor(private readonly fb: UntypedFormBuilder) {}
+    constructor(private readonly fb: FormBuilder) {}
 }

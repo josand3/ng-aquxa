@@ -1,5 +1,5 @@
 import { FocusMonitor } from '@angular/cdk/a11y';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Directive, ElementRef, Input, OnDestroy } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, Directive, ElementRef, Input, OnDestroy } from '@angular/core';
 
 /** Size of an avatar. */
 export type NxAvatarSize = 'xsmall' | 'small' | 'small-medium' | 'medium' | 'large' | 'xlarge';
@@ -19,6 +19,7 @@ export type NxAvatarSize = 'xsmall' | 'small' | 'small-medium' | 'medium' | 'lar
         '[class.nx-avatar--large]': 'size === "large"',
         '[class.nx-avatar--xlarge]': 'size === "xlarge"',
     },
+    standalone: true,
 })
 export class NxAvatarComponent {
     /** Sets the size of the avatar. Default: 'medium'. */
@@ -41,9 +42,12 @@ export class NxAvatarComponent {
     host: {
         '[class.is-button]': 'true',
     },
+    standalone: true,
 })
-export class NxAvatarButtonDirective implements OnDestroy {
-    constructor(private readonly _elementRef: ElementRef, private readonly _focusMonitor: FocusMonitor) {
+export class NxAvatarButtonDirective implements OnDestroy, AfterViewInit {
+    constructor(private readonly _elementRef: ElementRef, private readonly _focusMonitor: FocusMonitor) {}
+
+    ngAfterViewInit(): void {
         this._focusMonitor.monitor(this._elementRef);
     }
 

@@ -6,6 +6,27 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { dispatchKeyboardEvent } from '../cdk-test-utils';
 import { NxFlatTreeControl, NxTreeComponent, NxTreeFlatDataSource, NxTreeModule } from './public-api';
 
+/**
+ * check the node and its children for absent tree aria attributes
+ *
+ * @param node The node and its children to check
+ */
+function checkChildrenIsTreeAriaAttributesAbsent(node: Node | null) {
+    if (!node || node.nodeType !== Node.ELEMENT_NODE) {
+        return;
+    }
+
+    const element = node as Element;
+
+    expect(element.getAttribute('role')).not.toBe('treeitem');
+    expect(element.getAttribute('aria-level')).toBeNull();
+    expect(element.getAttribute('aria-posinset')).toBeNull();
+    expect(element.getAttribute('aria-setsize')).toBeNull();
+    element.childNodes.forEach(child => {
+        checkChildrenIsTreeAriaAttributesAbsent(child);
+    });
+}
+
 describe(NxTreeComponent.name, () => {
     /** Represents an indent for expectNestedTreeToNxch */
     const _ = {};
@@ -15,8 +36,7 @@ describe(NxTreeComponent.name, () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [NxTreeModule],
-            declarations: [SimpleNxTreeApp, NxTreeAppWithToggle, WhenNodeNxTreeApp],
+            imports: [NxTreeModule, SimpleNxTreeApp, NxTreeAppWithToggle, WhenNodeNxTreeApp, NxTreeAppWithButton],
         }).compileComponents();
     }));
 
@@ -43,7 +63,7 @@ describe(NxTreeComponent.name, () => {
             });
 
             it('with the right accessibility roles', () => {
-                expect(treeElement.getAttribute('role')).toBe('application');
+                expect(treeElement.getAttribute('role')).toBe('tree');
                 getNodes(treeElement).forEach(node => {
                     expect(node.getAttribute('role')).toBe('treeitem');
                 });
@@ -74,6 +94,31 @@ describe(NxTreeComponent.name, () => {
                     ['topping_3 - cheese_3 + base_3'],
                     ['_, topping_4 - cheese_4 + base_4'],
                 );
+            });
+        });
+
+        describe('with button', () => {
+            let fixture: ComponentFixture<NxTreeAppWithButton>;
+            let component: NxTreeAppWithButton;
+
+            it('with the right accessibility roles', () => {
+                fixture = TestBed.createComponent(NxTreeAppWithButton);
+
+                component = fixture.componentInstance;
+                treeElement = fixture.nativeElement.querySelector('nx-tree');
+
+                fixture.detectChanges();
+
+                const nodes = getNodes(treeElement);
+                for (let index = 0; index < nodes.length; index++) {
+                    const node = nodes[index];
+                    const button = node.querySelector('button');
+                    expect(button).toBeDefined();
+                    expect(button!.getAttribute('role')).toBe('treeitem');
+                    expect(button!.getAttribute('aria-level')).toBe(`1`);
+                    expect(button!.getAttribute('aria-posinset')).toBe(`${index + 1}`);
+                    expect(button!.getAttribute('aria-setsize')).toBe(`3`);
+                }
             });
         });
 
@@ -283,6 +328,7 @@ describe(NxTreeComponent.name, () => {
                 const data = underlyingDataSource.data;
                 underlyingDataSource.addChild(data[0]);
                 underlyingDataSource.addChild(data[0]);
+
                 fixture.detectChanges();
 
                 // Focus first item
@@ -313,6 +359,127 @@ describe(NxTreeComponent.name, () => {
                 expect(component.tree.focusedData.pizzaTopping).toBe('topping_1');
 
                 expect(component.treeControl.expansionModel.selected).withContext('no node expanded').toHaveSize(0);
+
+                // Focus next parent
+                dispatchKeyboardEvent(treeElement, 'keydown', DOWN_ARROW);
+                fixture.detectChanges();
+                expect(component.tree.focusedData.pizzaTopping).toBe('topping_2');
+
+                // Focus previous parent
+                dispatchKeyboardEvent(treeElement, 'keydown', UP_ARROW);
+                fixture.detectChanges();
+                expect(component.tree.focusedData.pizzaTopping).toBe('topping_1');
+            });
+
+            it('should get nest level list', () => {
+                const data = [
+                    {
+                        label: '1',
+                        level: 0,
+                    },
+                    {
+                        label: '2',
+                        level: 0,
+                    },
+                    {
+                        label: '2.1',
+                        level: 1,
+                    },
+                    {
+                        label: '2.2',
+                        level: 1,
+                    },
+                    {
+                        label: '3',
+                        level: 0,
+                    },
+                    {
+                        label: '3.1',
+                        level: 1,
+                    },
+                    {
+                        label: '3.2',
+                        level: 2,
+                    },
+                    {
+                        label: '4',
+                        level: 0,
+                    },
+                ];
+                expect(component.tree._getNestLevels(data, 0)).toEqual([]);
+                expect(component.tree._getNestLevels(data, 1)).toEqual([
+                    {
+                        label: '2.1',
+                        level: 1,
+                    },
+                    {
+                        label: '2.2',
+                        level: 1,
+                    },
+                ]);
+                expect(component.tree._getNestLevels(data, 4)).toEqual([
+                    {
+                        label: '3.1',
+                        level: 1,
+                    },
+                    {
+                        label: '3.2',
+                        level: 2,
+                    },
+                ]);
+                expect(component.tree._getNestLevels(data, 5)).toEqual([
+                    {
+                        label: '3.2',
+                        level: 2,
+                    },
+                ]);
+            });
+
+            it('should assign aria attributes to tree nodes when no NxTreeNodeActionItems are present', () => {
+                // Focus first item
+                dispatchKeyboardEvent(treeElement, 'keydown', DOWN_ARROW);
+                expect(component.tree.focusedData.pizzaTopping).toBe('topping_1');
+                fixture.detectChanges();
+
+                // Expand the node
+                dispatchKeyboardEvent(treeElement, 'keydown', RIGHT_ARROW);
+                fixture.detectChanges();
+
+                treeElement = fixture.nativeElement.querySelector('nx-tree');
+
+                fixture.detectChanges();
+
+                const nodes = getNodes(treeElement);
+                expect(nodes.length).toBe(3);
+                nodes.forEach((node: any, index: number) => {
+                    expect(node.getAttribute('aria-level')).toBe(`1`);
+                    expect(node.getAttribute('aria-posinset')).toBe(`${index + 1}`);
+                    expect(node.getAttribute('aria-setsize')).toBe(`3`);
+                    expect(node.getAttribute('role')).toBe(`treeitem`);
+                });
+            });
+
+            it('should not assign aria tree attributes to child elements', () => {
+                // Focus first item
+                dispatchKeyboardEvent(treeElement, 'keydown', DOWN_ARROW);
+                expect(component.tree.focusedData.pizzaTopping).toBe('topping_1');
+                fixture.detectChanges();
+
+                // Expand the node
+                dispatchKeyboardEvent(treeElement, 'keydown', RIGHT_ARROW);
+                fixture.detectChanges();
+
+                treeElement = fixture.nativeElement.querySelector('nx-tree');
+
+                fixture.detectChanges();
+
+                const nodes = treeElement.querySelectorAll('.nx-tree__node');
+                expect(nodes.length).toBe(3);
+                nodes.forEach((node, index: number) => {
+                    node.childNodes.forEach(child => {
+                        checkChildrenIsTreeAriaAttributesAbsent(child);
+                    });
+                });
             });
         });
     });
@@ -477,6 +644,8 @@ function expectNestedTreeToNxch(treeElement: Element, ...expectedTree: any[]) {
             </nx-tree-node>
         </nx-tree>
     `,
+    standalone: true,
+    imports: [NxTreeModule],
 })
 class SimpleNxTreeApp {
     treeControl = new NxFlatTreeControl();
@@ -508,6 +677,8 @@ class SimpleNxTreeApp {
             </nx-tree-node>
         </nx-tree>
     `,
+    standalone: true,
+    imports: [NxTreeModule],
 })
 class NxTreeAppWithToggle {
     toggleRecursively = true;
@@ -537,6 +708,8 @@ class NxTreeAppWithToggle {
             </nx-tree-node>
         </nx-tree>
     `,
+    standalone: true,
+    imports: [NxTreeModule],
 })
 class WhenNodeNxTreeApp {
     treeControl = new NxFlatTreeControl();
@@ -546,6 +719,43 @@ class WhenNodeNxTreeApp {
     @ViewChild(NxTreeComponent) tree!: NxTreeComponent<TestData>;
 
     isSpecial = (_: number, node: TestData) => node.isSpecial;
+
+    constructor() {
+        this.underlyingDataSource.connect().subscribe(data => {
+            this.dataSource.data = data;
+        });
+    }
+}
+
+@Component({
+    template: `
+        <nx-tree [dataSource]="dataSource" [treeControl]="treeControl">
+            <nx-tree-node
+                *nxTreeNodeDef="let node"
+                class="customNodeClass"
+                nxTreeNodePadding
+                [nxTreeNodePaddingOffset]="32"
+                nxTreeNodeToggle
+                [nxTreeNodeToggleRecursive]="toggleRecursively"
+            >
+                <button nxTreeNodeActionItem>
+                    {{ node.label }}
+                </button>
+            </nx-tree-node>
+        </nx-tree>
+    `,
+    standalone: true,
+    imports: [NxTreeModule],
+})
+class NxTreeAppWithButton {
+    toggleRecursively = true;
+
+    treeControl = new NxFlatTreeControl();
+
+    dataSource = new NxTreeFlatDataSource(this.treeControl);
+    underlyingDataSource = new FakeDataSource();
+
+    @ViewChild(NxTreeComponent) tree!: NxTreeComponent<TestData>;
 
     constructor() {
         this.underlyingDataSource.connect().subscribe(data => {

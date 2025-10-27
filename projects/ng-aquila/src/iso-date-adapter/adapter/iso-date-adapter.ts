@@ -7,7 +7,7 @@ import localeData from 'dayjs/plugin/localeData';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import utc from 'dayjs/plugin/utc';
 
-import { convertToDayjsLocale, getDayjsLocaleData } from './dayjs-locale-utils';
+import { convertToDayjsLocale } from './dayjs-locale-utils';
 
 dayjs.extend(localeData);
 dayjs.extend(customParseFormat);
@@ -81,9 +81,10 @@ export class NxIsoDateAdapter extends NxDateAdapter<string> {
      * see https://github.com/iamkun/dayjs/issues/694#issuecomment-543209946.
      */
     normalizeFormat(format: string | string[]): string[] {
-        const availableLocalFormats: { [key: string]: any } = dayjs.Ls[this._dayjsLocale]?.formats;
+        let availableLocalFormats: { [key: string]: any } = dayjs.Ls[this._dayjsLocale]?.formats;
         if (!availableLocalFormats) {
-            throw new Error(
+            availableLocalFormats = dayjs.Ls[dayjs.locale()]?.formats;
+            console.warn(
                 `NxIsoDateAdapter: The used locale "${this._dayjsLocale}" is not available in this day.js instance. Please make sure the locale is imported.`,
             );
         }
@@ -227,9 +228,9 @@ export class NxIsoDateAdapter extends NxDateAdapter<string> {
         return this._localeData.narrowDaysOfWeek;
     }
 
-    async setLocale(locale: string) {
+    setLocale(locale: string) {
         this._dayjsLocale = convertToDayjsLocale(locale);
-        const data = await getDayjsLocaleData(this._dayjsLocale);
+        const data = dayjs().locale(this._dayjsLocale).localeData();
 
         this._localeData = {
             firstDayOfWeek: data.firstDayOfWeek(),

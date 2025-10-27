@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Directive, Type, ViewChild } from '@angular/core';
 import { ComponentFixture, fakeAsync, inject, TestBed, tick, waitForAsync } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule, UntypedFormGroup } from '@angular/forms';
+import { FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NxInputDirective, NxInputModule } from '@aposin/ng-aquila/input';
 
 import { NxFormfieldErrorDirective } from './error.directive';
@@ -14,7 +14,7 @@ const formfieldDefaultOptions: FormfieldDefaultOptions = {
 };
 
 // NxInputModule also imports NxFormfieldModule
-@Directive()
+@Directive({ standalone: true })
 abstract class FormfieldTest {
     @ViewChild(NxFormfieldComponent) textfieldInstance!: NxFormfieldComponent;
     @ViewChild(NxInputDirective) inputInstance!: NxInputDirective;
@@ -22,7 +22,7 @@ abstract class FormfieldTest {
     @ViewChild(NxFormfieldNoteDirective) formfieldNote!: NxFormfieldNoteDirective;
     @ViewChild(NxFormfieldHintDirective) formfieldHint!: NxFormfieldHintDirective;
 
-    testForm!: UntypedFormGroup;
+    testForm!: FormGroup;
     currentValue: any;
     appearance!: AppearanceType;
     floatLabel!: FloatLabelType;
@@ -67,8 +67,10 @@ describe('NxFormfieldComponent', () => {
     describe('basic', () => {
         beforeEach(waitForAsync(() => {
             TestBed.configureTestingModule({
-                imports: [ReactiveFormsModule, FormsModule, NxInputModule],
-                declarations: [
+                imports: [
+                    ReactiveFormsModule,
+                    FormsModule,
+                    NxInputModule,
                     BasicFormfield,
                     NoInputFormfield,
                     DirectivesFormfield,
@@ -217,6 +219,18 @@ describe('NxFormfieldComponent', () => {
             expect(formfieldElement).toHaveClass('has-error');
         }));
 
+        it('should reflect view when ngControl changed', fakeAsync(() => {
+            createTestComponent(NgModelFormfield);
+
+            expect(labelElement.querySelector('span')?.textContent).toContain('Optional');
+            fixture.detectChanges();
+            testInstance.inputInstance.ngControl!.control!.setValidators(Validators.required);
+            testInstance.inputInstance.ngControl!.control?.updateValueAndValidity();
+            fixture.detectChanges();
+
+            expect(labelElement.querySelector('span')?.textContent).not.toContain('Optional');
+        }));
+
         it('shows the error instead of a given note', fakeAsync(() => {
             createTestComponent(ErrorFormfield);
             fixture.detectChanges();
@@ -336,15 +350,6 @@ describe('NxFormfieldComponent', () => {
                 ariaDescribedBy = inputElement.attributes.getNamedItem('aria-describedby')!.value;
                 expect(ariaDescribedBy).toBe(testInstance.formfieldError.id);
             }));
-
-            it('updates aria-owns and attribute for to the control id', () => {
-                createTestComponent(BasicFormfield);
-                const ariaOwns = labelElement.attributes.getNamedItem('aria-owns')!.value;
-                const attrFor = labelElement.attributes.getNamedItem('for')!.value;
-
-                expect(ariaOwns).toBe(testInstance.inputInstance.id);
-                expect(attrFor).toBe(testInstance.inputInstance.id);
-            });
         });
 
         describe('Native Select', () => {
@@ -373,8 +378,7 @@ describe('NxFormfieldComponent', () => {
             formfieldDefaultOptions.nxFloatLabel = 'always';
             formfieldDefaultOptions.updateOn = 'blur';
             TestBed.configureTestingModule({
-                imports: [ReactiveFormsModule, FormsModule, NxInputModule],
-                declarations: [BasicFormfield, OutlineFormfield, FloatingFormfield],
+                imports: [ReactiveFormsModule, FormsModule, NxInputModule, BasicFormfield, OutlineFormfield, FloatingFormfield],
                 providers: [{ provide: FORMFIELD_DEFAULT_OPTIONS, useValue: formfieldDefaultOptions }],
             }).compileComponents();
         }));
@@ -471,14 +475,18 @@ describe('NxFormfieldComponent', () => {
 
 @Component({
     template: `
-        <nx-formfield nxLabel="Given Label">
+        <nx-formfield label="Given Label">
             <input nxInput [disabled]="disabled" [readonly]="readonly" />
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [ReactiveFormsModule, FormsModule, NxInputModule],
 })
 class BasicFormfield extends FormfieldTest {}
 @Component({
     template: `<nx-formfield></nx-formfield>`,
+    standalone: true,
+    imports: [ReactiveFormsModule, FormsModule, NxInputModule],
 })
 class NoInputFormfield extends FormfieldTest {}
 
@@ -489,6 +497,8 @@ class NoInputFormfield extends FormfieldTest {}
             <input nxInput />
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [ReactiveFormsModule, FormsModule, NxInputModule],
 })
 class CustomLabelFormfield extends FormfieldTest {}
 
@@ -505,6 +515,8 @@ class CustomLabelFormfield extends FormfieldTest {}
             <span nxFormfieldAppendix>content-appendix</span>
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [ReactiveFormsModule, FormsModule, NxInputModule],
 })
 class DirectivesFormfield extends FormfieldTest {}
 
@@ -516,6 +528,8 @@ class DirectivesFormfield extends FormfieldTest {}
             <span nxFormfieldError>content-error</span>
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [ReactiveFormsModule, FormsModule, NxInputModule],
 })
 class ErrorFormfield extends FormfieldTest {}
 
@@ -527,6 +541,8 @@ class ErrorFormfield extends FormfieldTest {}
             <span nxFormfieldError>content-error</span>
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [ReactiveFormsModule, FormsModule, NxInputModule],
 })
 class NoChangeDetectionFormfield extends FormfieldTest {}
 
@@ -537,23 +553,29 @@ class NoChangeDetectionFormfield extends FormfieldTest {}
             <span nxFormfieldNote>content-note</span>
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [ReactiveFormsModule, FormsModule, NxInputModule],
 })
 class NoteFormfield extends FormfieldTest {}
 @Component({
     template: `
-        <nx-formfield nxLabel="Given Label">
+        <nx-formfield label="Given Label" optionalLabel="Optional">
             <input nxInput [(ngModel)]="currentValue" />
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [ReactiveFormsModule, FormsModule, NxInputModule],
 })
 class NgModelFormfield extends FormfieldTest {}
 
 @Component({
     template: `
-        <nx-formfield [nxFloatLabel]="floatLabel">
+        <nx-formfield [floatLabel]="floatLabel">
             <input nxInput [(ngModel)]="currentValue" />
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [ReactiveFormsModule, FormsModule, NxInputModule],
 })
 class FloatingFormfield extends FormfieldTest {}
 
@@ -568,16 +590,20 @@ class FloatingFormfield extends FormfieldTest {}
             </select>
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [ReactiveFormsModule, FormsModule, NxInputModule],
 })
 class NativeSelectFormfield extends FormfieldTest {}
 
 @Component({
     template: `
-        <nx-formfield nxLabel="inputLabel">
+        <nx-formfield label="inputLabel">
             <nx-formfield-label>directiveLabel</nx-formfield-label>
             <input nxInput />
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [ReactiveFormsModule, FormsModule, NxInputModule],
 })
 class CustomLabelAndInputFormfield extends FormfieldTest {}
 
@@ -587,6 +613,8 @@ class CustomLabelAndInputFormfield extends FormfieldTest {}
             <input nxInput />
         </nx-formfield>
     `,
+    standalone: true,
+    imports: [ReactiveFormsModule, FormsModule, NxInputModule],
 })
 class OutlineFormfield extends FormfieldTest {}
 
@@ -595,13 +623,19 @@ class OutlineFormfield extends FormfieldTest {}
         <input nxInput />
     </nx-formfield>`,
     changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [ReactiveFormsModule, FormsModule, NxInputModule],
 })
 class OnPushFormfield extends FormfieldTest {}
 
 @Component({
-    template: `<nx-formfield nxLabel="IBAN">
-        <input *ngIf="true" nxInput />
+    template: `<nx-formfield label="IBAN">
+        @if (true) {
+        <input nxInput />
+        }
         <span nxFormfieldHint>my hint</span>
     </nx-formfield>`,
+    standalone: true,
+    imports: [ReactiveFormsModule, FormsModule, NxInputModule],
 })
 class ConditionalInputComponent extends FormfieldTest {}

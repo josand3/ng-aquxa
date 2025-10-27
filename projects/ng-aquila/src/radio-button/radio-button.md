@@ -4,6 +4,7 @@ category: components
 b2c: true
 expert: true
 stable: done
+a1: true
 ---
 
 Use a radio button when you want the user to choose from a relatively small (i.e. two to six) group of mutually exclusive options. If several options can be selected, consider checkboxes instead. Please note that the radio button has no margins.
@@ -60,6 +61,10 @@ The disabled-state for radio components contained in a group can be managed by t
 
 <!-- example(radio-button-event) -->
 
+
+### Radio error message retail
+<!-- example(radio-button-error-retail) -->
+
 <div class="docs-expert-container">
 
 ### Expert: Radio button group label
@@ -70,8 +75,20 @@ With `size` you can change the styling of the radio button group's label. The la
 
 ### Expert: validation and error message
 
-Please note that the `nx-error` is only for **Expert**.
-
 <!-- example(radio-button-group-validation) -->
 
+### Expert: Readonly
+
+<div class="docs-deprecation-warning">
+<strong>Expert only: </strong>
+  Please note that the readonly option is only for expert/internal applications because of accessibility restrictions. There is currently no solution for readonly states that is accepted for retail applications.
 </div>
+
+ <!-- example(radio-button-readonly) -->
+
+</div>
+
+### Accessibility
+If your radio button doesn't have any accompanying label text,
+it's recommended to use `ariaLabel` or `ariaLabelledBy`
+inputs to provide helpful information for users relying on screen readers or other assistive technologies."

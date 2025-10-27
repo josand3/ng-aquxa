@@ -3,34 +3,34 @@
 </span>
 
 <div class="nx-subprogress__items">
-    <ng-container *ngFor="let step of steps; let i = index">
-        <div
-            [class.nx-subprogress__item--inactive]="selectedIndex !== i && !step.completed"
-            [attr.aria-disabled]="selectedIndex !== i && !step.completed"
-            [class.nx-subprogress__item--selected]="selectedIndex === i"
-            class="nx-subprogress__item"
-        >
-            <div class="nx-subprogress__counter">
-                <div class="nx-subprogress__number">
-                    {{ i + 1 }}
-                </div>
-            </div>
-
-            <div class="nx-subprogress__label">{{ step.stepLabel || step.label }}</div>
-
-            <div class="nx-subprogress__progress" *ngIf="selectedIndex === i">
-                <nx-progressbar [value]="progress"></nx-progressbar>
+    @for (step of steps; track step; let i = $index) {
+    <div
+        [class.nx-subprogress__item--inactive]="selectedIndex !== i && !step.completed"
+        [attr.aria-disabled]="selectedIndex !== i && !step.completed"
+        [class.nx-subprogress__item--selected]="selectedIndex === i"
+        class="nx-subprogress__item"
+    >
+        <div class="nx-subprogress__counter">
+            <div class="nx-subprogress__number">
+                {{ i + 1 }}
             </div>
         </div>
-    </ng-container>
+        <div class="nx-subprogress__label">{{ step.stepLabel || step.label }}</div>
+        @if (selectedIndex === i) {
+        <div class="nx-subprogress__progress">
+            <nx-progressbar [value]="progress" [ariaLabel]="progressbarAriaLabel" [ariaLabelledBy]="progressbarAriaLabeledBy"></nx-progressbar>
+        </div>
+        }
+    </div>
+    }
 </div>
 
 <div class="nx-progress-stepper__mobile-label">
     {{ currentLabel }}
 </div>
 
+@for (step of steps; track step; let i = $index) {
 <div
-    *ngFor="let step of steps; let i = index"
     class="nx-progress-stepper__content"
     role="tabpanel"
     [id]="_getStepContentId(i)"
@@ -39,3 +39,4 @@
 >
     <ng-container [ngTemplateOutlet]="step.content"></ng-container>
 </div>
+}

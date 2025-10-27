@@ -9,7 +9,7 @@ import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 
 /** Datepicker data that requires internationalization. */
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class NxDatepickerIntl {
     /**
      * Stream that emits whenever the labels here are changed. Use this to notify
@@ -22,6 +22,9 @@ export class NxDatepickerIntl {
 
     /** A label for the button used to open the calendar popup (used by screen readers). */
     openCalendarLabel = 'Open calendar';
+
+    /** A label for the button used to close the calendar popup (used by screen readers). */
+    closeIconLabel = 'Close calendar';
 
     /** A label for the previous month button (used by screen readers). */
     prevMonthLabel = 'Previous month';

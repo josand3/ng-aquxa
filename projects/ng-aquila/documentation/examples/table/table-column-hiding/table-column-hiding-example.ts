@@ -1,4 +1,15 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { NxBadgeComponent } from '@aposin/ng-aquila/badge';
+import { NxButtonComponent } from '@aposin/ng-aquila/button';
+import {
+    NxCheckboxComponent,
+    NxCheckboxGroupComponent,
+} from '@aposin/ng-aquila/checkbox';
+import { NxContextMenuModule } from '@aposin/ng-aquila/context-menu';
+import { NxLinkComponent } from '@aposin/ng-aquila/link';
+import { NxTableModule } from '@aposin/ng-aquila/table';
 
 /**
  * @title Table Column Options
@@ -7,8 +18,21 @@ import { Component } from '@angular/core';
     selector: 'table-column-hiding-example',
     templateUrl: './table-column-hiding-example.html',
     styleUrls: ['./table-column-hiding-example.css'],
+    standalone: true,
+    imports: [
+        NxButtonComponent,
+        NxCheckboxGroupComponent,
+        FormsModule,
+        NxCheckboxComponent,
+        NxLinkComponent,
+        RouterLink,
+        NxBadgeComponent,
+        NxTableModule,
+        NxContextMenuModule,
+    ],
 })
-export class TableCoumnHidingExampleComponent {
+export class TableColumnHidingExampleComponent {
+    constructor(private readonly _cdr: ChangeDetectorRef) {}
     tableElements = [
         {
             product: 'Car',
@@ -57,5 +81,12 @@ export class TableCoumnHidingExampleComponent {
         { label: 'Status', value: 'statusText' },
     ];
 
-    selected = ['product', 'website', 'endingAt', 'statusText'];
+    selected = [
+        'product',
+        'website',
+        'endingAt',
+        'statusText',
+        'contractNumber',
+        'desc',
+    ];
 }

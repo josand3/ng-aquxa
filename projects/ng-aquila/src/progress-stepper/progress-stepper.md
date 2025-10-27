@@ -5,6 +5,7 @@ b2c: true
 expert: true
 stable: done
 alias: stepper
+a1: true
 ---
 
 An indicator is a wizard-like workflow that divides content into logical steps. You provide the content and distribute it in different steps. The indicator will ensure to show only the current content and inform the user about the overall progress.
@@ -98,3 +99,8 @@ There are two possible approaches. One is using a single form for the indicator,
 You can force the user to complete a form before continuing. To make a indicator aware of it you have to enable linear progress with the property `linear` on any indicator and you have to assign the involved form group to the step through the `[stepControl]` Input.
 
 <!-- example(progress-stepper-progress) -->
+
+### Accessibility
+
+In case of the Single Indicator also make sure to set the appropriate `progressbarAriaLabel` or `progressbarAriaLabeledBy` for your use case.
+This will set the associated aria attributes on the nested <a href="./documentation/progressbar/overview">NxProgressbarComponent</a>

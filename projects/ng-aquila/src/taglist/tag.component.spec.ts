@@ -1,13 +1,14 @@
-import { BACKSPACE, DELETE } from '@angular/cdk/keycodes';
-import { Component, Directive, Type, ViewChild } from '@angular/core';
+import { ENTER } from '@angular/cdk/keycodes';
+import { Component, Directive, Injectable, Type, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { dispatchKeyboardEvent } from '../cdk-test-utils';
 import { NxTagComponent } from './tag.component';
+import { NxTagIntl } from './tag-intl';
 import { NxTaglistModule } from './taglist.module';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class TagTest {
     @ViewChild(NxTagComponent) tagInstance!: NxTagComponent;
 }
@@ -28,8 +29,7 @@ describe('NxTagComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [BasicTag, RemovableTag],
-            imports: [NxTaglistModule],
+            imports: [NxTaglistModule, BasicTag, RemovableTag, IntlTag],
         }).compileComponents();
     }));
 
@@ -52,7 +52,7 @@ describe('NxTagComponent', () => {
         expect(closeIcon).toBeTruthy();
     });
 
-    it('should emit event when tag is clicked', () => {
+    it('should emit (clicked) event when tag is clicked', () => {
         createTestComponent(BasicTag);
         spyOn(tagInstance.clicked, 'emit');
         fixture.debugElement.nativeElement.querySelector('nx-tag').click();
@@ -60,7 +60,17 @@ describe('NxTagComponent', () => {
         expect(tagInstance.clicked.emit).toHaveBeenCalledWith('foo');
     });
 
-    it('should emit event when close icon is clicked', () => {
+    it('should emit a (clicked) event when the tag is keydown with ENTER', () => {
+        createTestComponent(BasicTag);
+        spyOn(tagInstance.clicked, 'emit');
+        const tagEl = fixture.nativeElement.querySelector('nx-tag');
+
+        dispatchKeyboardEvent(tagEl, 'keydown', ENTER);
+        fixture.detectChanges();
+        expect(tagInstance.clicked.emit).toHaveBeenCalledWith('foo');
+    });
+
+    it('should emit (removed) event when close icon is clicked', () => {
         createTestComponent(RemovableTag);
         spyOn(tagInstance.removed, 'emit');
         fixture.debugElement.nativeElement.querySelector('.nx-tag__close').click();
@@ -72,11 +82,7 @@ describe('NxTagComponent', () => {
         createTestComponent(BasicTag);
         spyOn(tagInstance.removed, 'emit');
         const tagEl = fixture.nativeElement.querySelector('nx-tag');
-        dispatchKeyboardEvent(tagEl, 'keydown', DELETE);
-        fixture.detectChanges();
-        expect(tagInstance.removed.emit).not.toHaveBeenCalledWith('foo');
-
-        dispatchKeyboardEvent(tagEl, 'keydown', BACKSPACE);
+        dispatchKeyboardEvent(tagEl, 'keydown', ENTER);
         fixture.detectChanges();
         expect(tagInstance.removed.emit).not.toHaveBeenCalledWith('foo');
 
@@ -108,37 +114,80 @@ describe('NxTagComponent', () => {
     });
 
     describe('a11y', () => {
-        it('should emit (removed) event when BACKSPACE is pressed', () => {
+        it('is a delete button for ensure a11y', () => {
             createTestComponent(RemovableTag);
-            spyOn(tagInstance.removed, 'emit');
-            const tagEl = fixture.nativeElement.querySelector('nx-tag');
-            dispatchKeyboardEvent(tagEl, 'keydown', BACKSPACE);
-            fixture.detectChanges();
-            expect(tagInstance.removed.emit).toHaveBeenCalledWith('bar');
+            const deleteButton = fixture.nativeElement.querySelector('.nx-tag__close');
+            expect(deleteButton.tagName.toLowerCase()).toBe('button');
         });
 
-        it('should emit (removed) event when DELETE is pressed', () => {
+        it('should emit (removed) event when delete', () => {
             createTestComponent(RemovableTag);
             spyOn(tagInstance.removed, 'emit');
-            const tagEl = fixture.nativeElement.querySelector('nx-tag');
-            dispatchKeyboardEvent(tagEl, 'keydown', DELETE);
+            spyOn(tagInstance.clicked, 'emit');
+
+            const deleteButton = fixture.nativeElement.querySelector('.nx-tag__close');
+            deleteButton.click();
+
             fixture.detectChanges();
             expect(tagInstance.removed.emit).toHaveBeenCalledWith('bar');
+            expect(tagInstance.clicked.emit).not.toHaveBeenCalled();
         });
 
         it('has no accessibility violations', async () => {
             createTestComponent(BasicTag);
             await expectAsync(fixture.nativeElement).toBeAccessible();
         });
+
+        it('should set aria-label of delete button', () => {
+            createTestComponent(RemovableTag);
+            spyOn(tagInstance.removed, 'emit');
+            const deleteButton = fixture.nativeElement.querySelector('.nx-tag__close');
+            expect(deleteButton.getAttribute('aria-label')).toBe('Delete tag');
+
+            (testInstance as RemovableTag).deleteAriaLabel = 'hello';
+
+            fixture.detectChanges();
+            expect(deleteButton.getAttribute('aria-label')).toBe('hello');
+        });
+
+        it('should override the default intl', () => {
+            createTestComponent(IntlTag);
+            const deleteButton = fixture.nativeElement.querySelector('.nx-tag__close');
+            expect(deleteButton.getAttribute('aria-label')).toBe('Custom delete aria-label');
+        });
     });
 });
 
 @Component({
     template: `<nx-tag value="foo"></nx-tag>`,
+    standalone: true,
+    imports: [NxTaglistModule],
 })
 class BasicTag extends TagTest {}
 
+@Injectable()
+class MyIntl extends NxTagIntl {
+    deleteAriaLabel = 'Custom delete aria-label';
+}
+
 @Component({
-    template: `<nx-tag value="bar" removable="true"></nx-tag>`,
+    template: `<nx-tag value="foo" removable="true"></nx-tag>`,
+    standalone: true,
+    imports: [NxTaglistModule],
+    providers: [
+        {
+            provide: NxTagIntl,
+            useClass: MyIntl,
+        },
+    ],
 })
-class RemovableTag extends TagTest {}
+class IntlTag extends TagTest {}
+
+@Component({
+    template: `<nx-tag value="bar" removable="true" [deleteAriaLabel]="deleteAriaLabel"></nx-tag>`,
+    standalone: true,
+    imports: [NxTaglistModule],
+})
+class RemovableTag extends TagTest {
+    deleteAriaLabel = '';
+}

@@ -6,7 +6,7 @@ import { BASIC_COMPARISON_TABLE_TEMPLATE } from './comparison-table.component.sp
 import { NxComparisonTableModule } from './comparison-table.module';
 import { NxComparisonTableRowDirective } from './comparison-table-row.directive';
 
-@Directive()
+@Directive({ standalone: true })
 abstract class RowTest {
     @ViewChildren(NxComparisonTableRowDirective) rowInstances!: QueryList<NxComparisonTableRowDirective>;
     @ViewChildren(NxComparisonTableCell) cellInstances!: QueryList<NxComparisonTableCell>;
@@ -30,8 +30,7 @@ describe('NxComparisonTableRowDirective', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [NxComparisonTableModule],
-            declarations: [BasicComponent, DynamicTypeComponent, NonStickyHeaderComponent],
+            imports: [NxComparisonTableModule, BasicComponent, DynamicTypeComponent, NonStickyHeaderComponent],
         });
         TestBed.compileComponents();
     }));
@@ -102,6 +101,8 @@ describe('NxComparisonTableRowDirective', () => {
 
 @Component({
     template: BASIC_COMPARISON_TABLE_TEMPLATE,
+    standalone: true,
+    imports: [NxComparisonTableModule],
 })
 class BasicComponent extends RowTest {
     data = [
@@ -134,6 +135,8 @@ class BasicComponent extends RowTest {
             </ng-container>
         </nx-comparison-table>
     `,
+    standalone: true,
+    imports: [NxComparisonTableModule],
 })
 class DynamicTypeComponent extends RowTest {}
 
@@ -150,6 +153,8 @@ class DynamicTypeComponent extends RowTest {}
             </ng-container>
         </nx-comparison-table>
     `,
+    standalone: true,
+    imports: [NxComparisonTableModule],
 })
 class NonStickyHeaderComponent extends RowTest {
     mayStick = false;

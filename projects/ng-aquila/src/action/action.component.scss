@@ -70,6 +70,7 @@
     transition: all 0.2s ease;
     transform: rotateZ(0);
     margin-right: nx-spacer(2xs);
+    margin-top: 3px;
     flex: 0 0 auto;
     font-size: v(action-expand-icon-size);
 
@@ -82,7 +83,7 @@
 
 .nx-action__wrapper {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     position: relative;
     overflow: hidden;
 
@@ -102,6 +103,7 @@
     position: relative;
     justify-content: center;
     display: flex;
+    margin-top: 2px;
 
     :host-context([dir='rtl']) & {
         padding-right: initial;
@@ -119,24 +121,23 @@
 }
 
 .nx-action__label {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
     flex: 1 1 50%;
     text-align: left;
+    word-break: break-word;
 
     :host-context([dir='rtl']) & {
         text-align: right;
     }
 }
 
-@media screen and (-ms-high-contrast: active) {
+@media screen and (forced-colors: active) {
     :host(.nx-action) {
         &.is-selected,
         &:hover {
-            -ms-high-contrast-adjust: none;
+            forced-colors-adjust: none;
             background-color: highlight;
             color: highlightText;
+            forced-color-adjust: preserve-parent-color;
             font-weight: nx-font-weight(regular);
         }
     }

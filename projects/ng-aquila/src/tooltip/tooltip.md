@@ -1,15 +1,11 @@
 ---
 title: Tooltip
 category: components
-b2c: false
+b2c: true
 expert: true
 stable: done
+a1: true
 ---
-
-<div class="docs-deprecation-warning">
-  <strong>Expert: </strong>
-  Please note that this is an Expert component. This means that it is intended for internal applications (B2B/B2E) and not for applications that are client facing (B2C).
-</div>
 
 The Tooltip component requires additional CSS files from the Angular CDK to work. Please add the following files to your global styles or into the styles option in the angular.json if not already present (learn [how to enable Angular CDK styles](./documentation/overlay/overview#angular-cdk)):
 
@@ -23,6 +19,8 @@ The Tooltip component requires additional CSS files from the Angular CDK to work
 The Tooltip provides a text label that is displayed when the user hovers over or focuses an element. It allows to display additional information for supporting the customer, and should **only be used for optional information**.
 
 Please note that according to our UX guidelines the Tooltip is only supposed to contain **short (1-2 sentences) plain text descriptions**. The Tooltip is not supposed to contain any formatting or control elements and thus does not support this. If you need to display a longer text (like manual instructions, explanations and so on) that needs to be formatted, or you need to insert control elements (buttons, links, etc.), then you have to [use the Popover component instead of the Tooltip](./documentation/popover/overview#ux-guidelines).
+
+For better accessibility, we recommend using tooltips with interactive elements such as `button`. If you need to use a tooltip with a non-interactive element, add tabindex="0" to make it accessible via keyboard.
 
 ### Basic tooltip
 
@@ -93,3 +91,7 @@ Alternatively, the `NX_TOOLTIP_SCROLL_STRATEGY` injection token can be provided 
 ### Accessibility
 
 Elements with the `nxTooltip` will add an `aria-describedby` label that provides a reference to a visually hidden element containing the tooltip's message. This provides screenreaders the information needed to read out the tooltip's contents when the end-user focuses on the element triggering the tooltip. The element referenced via `aria-describedby` is not the tooltip itself, but instead an invisible copy of the tooltip content that is always present in the DOM.
+
+ ### Truncating text
+Truncating text with CSS and displaying the full text in a tooltip on hover.
+ <!-- example(tooltip-trim-text) -->

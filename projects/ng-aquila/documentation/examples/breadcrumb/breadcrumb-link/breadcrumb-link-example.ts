@@ -1,4 +1,9 @@
 import { Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import {
+    NxBreadcrumbComponent,
+    NxBreadcrumbItemComponent,
+} from '@aposin/ng-aquila/breadcrumb';
 
 /**
  * @title Appearance link
@@ -7,11 +12,9 @@ import { Component } from '@angular/core';
     selector: 'breadcrumb-link-example',
     templateUrl: './breadcrumb-link-example.html',
     styleUrls: ['./breadcrumb-link-example.css'],
+    standalone: true,
+    imports: [NxBreadcrumbComponent, NxBreadcrumbItemComponent, RouterLink],
 })
 export class BreadcrumbLinkExampleComponent {
     items = ['Home', 'Insurance', 'Health Insurance'];
-
-    goToItem(i: number) {
-        this.items = this.items.slice(0, i + 1);
-    }
 }

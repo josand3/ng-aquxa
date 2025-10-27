@@ -12,8 +12,9 @@ import { NxButtonBase } from './button-base';
     inputs: ['classNames:nxButton'],
     providers: [{ provide: NxTriggerButton, useExisting: NxButtonComponent }],
     host: {
-        '[class.nx-button]': 'true',
+        class: 'nx-button',
     },
+    standalone: true,
 })
 export class NxButtonComponent extends NxButtonBase {
     constructor(_cdr: ChangeDetectorRef, elementRef: ElementRef, focusMonitor: FocusMonitor) {

@@ -1,29 +1,45 @@
 import { FocusMonitor } from '@angular/cdk/a11y';
+import { Direction } from '@angular/cdk/bidi';
+import { ENTER, ESCAPE, SPACE, TAB } from '@angular/cdk/keycodes';
 import { OverlayContainer, OverlayModule } from '@angular/cdk/overlay';
-import { Component, Directive, Type, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, Directive, Inject, signal, Type, ViewChild, ViewEncapsulation } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, inject, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { NxFormfieldModule } from '@aposin/ng-aquila/formfield';
+import { NxInputModule } from '@aposin/ng-aquila/input';
+import { NxTriggerButton } from '@aposin/ng-aquila/overlay';
+import { fakeScrollStrategyFunction } from '@aposin/ng-aquila/utils';
 import { Subject, Subscription } from 'rxjs';
 
-import { dispatchFakeEvent } from '../cdk-test-utils';
+import { dispatchFakeEvent, dispatchKeyboardEvent } from '../cdk-test-utils';
 import { NxPopoverComponent } from './popover.component';
 import { NxPopoverModule } from './popover.module';
 import { NxPopoverIntl } from './popover-intl';
-import { NxPopoverTriggerDirective } from './popover-trigger.directive';
+import { NX_POPOVER_SCROLL_STRATEGY, NxPopoverTriggerDirective, POPOVER_DEFAULT_OPTIONS, PopoverDefaultOptions } from './popover-trigger.directive';
+
+const popoverDefaultOptions: PopoverDefaultOptions = {
+    popoverWidth: '',
+    popoverMaxWidth: '',
+};
 
 @Component({
     selector: 'nx-test-component',
-    template: '<span>This is a test component</span>',
+    template: '<span class="my-test-component">This is a test component</span>',
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule],
 })
 class NxTestComponent {}
 
-@Directive()
+@Directive({ standalone: true })
 abstract class PopoverTest {
     @ViewChild(NxPopoverComponent) popoverInstance!: NxPopoverComponent;
     @ViewChild(NxPopoverTriggerDirective) triggerInstance!: NxPopoverTriggerDirective;
     @ViewChild(NxTestComponent) testComponentInstance!: NxTestComponent;
 
     closeable = false;
+    popoverWidth!: string;
+    popoverMaxWidth!: string;
 }
 
 describe('NxPopoverTriggerDirective', () => {
@@ -35,35 +51,21 @@ describe('NxPopoverTriggerDirective', () => {
     let overlayContainer: OverlayContainer;
     let focusMonitor: FocusMonitor;
 
-    function createTestComponent(component: Type<PopoverTest>) {
-        fixture = TestBed.createComponent(component);
+    function createTestComponent<T extends PopoverTest>(component: Type<T>): T {
+        const _fixture = TestBed.createComponent(component);
+        fixture = _fixture;
         fixture.detectChanges();
         testInstance = fixture.componentInstance;
         popoverInstance = testInstance.popoverInstance;
         triggerInstance = testInstance.triggerInstance;
-        buttonNativeElement = fixture.debugElement.query(By.css('button')).nativeElement as HTMLButtonElement;
+        buttonNativeElement = fixture.debugElement.query(By.css('button'))?.nativeElement as HTMLButtonElement;
+
+        return _fixture.componentInstance;
     }
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            imports: [OverlayModule, NxPopoverModule],
-            declarations: [
-                PopoverShowClose,
-                PopoverHideClose,
-                PopoverHoverComponent,
-                PopoverClickComponent,
-                PopoverHideCloseForClick,
-                ModalPopover,
-                LazyloadContent,
-                NxTestComponent,
-                PopoverFallBackComponent,
-                ManualTrigger,
-                ClickOnDocument,
-                ScrollablePopover,
-                PopoverWithinRTLContainer,
-                PopoverClickShadowDomComponent,
-                I18nTest,
-            ],
+            providers: [{ provide: POPOVER_DEFAULT_OPTIONS, useValue: popoverDefaultOptions }],
         });
 
         // Simple trick to simulate that the user is using `preserveWhitespaces: true`
@@ -112,6 +114,10 @@ describe('NxPopoverTriggerDirective', () => {
         return overlayContainer.getContainerElement().querySelector('.nx-popover__content') as HTMLDivElement;
     }
 
+    function getOverlayPane(): HTMLDivElement {
+        return overlayContainer.getContainerElement().querySelector('.cdk-overlay-pane') as HTMLDivElement;
+    }
+
     function hover() {
         buttonNativeElement.dispatchEvent(new Event('mouseenter'));
         fixture.detectChanges();
@@ -130,29 +136,95 @@ describe('NxPopoverTriggerDirective', () => {
         tick();
     }
 
-    function patchElementFocus(element: HTMLElement) {
-        element.focus = () => dispatchFakeEvent(element, 'focus');
-    }
-
     function getBackdrop(): HTMLElement {
         return overlayContainer.getContainerElement().querySelector('.cdk-overlay-backdrop') as HTMLElement;
     }
 
-    describe('basic', () => {
-        it('should display the close icon when nxPopoverCloseable is true', fakeAsync(() => {
+    describe('popover state', () => {
+        it('should ignore set tabIndex for triggerType "hover"', fakeAsync(() => {
             createTestComponent(PopoverShowClose);
+
+            popoverInstance.tabIndex = 42;
             hover();
-            expect(getCloseIcon()).toBeTruthy();
+            expect(getPopoverContent().getAttribute('tabindex')).toBeFalsy();
         }));
 
-        it('should hide the close icon when nxPopoverCloseable is false', fakeAsync(() => {
-            createTestComponent(PopoverHideClose);
-            hover();
-            expect(getCloseIcon()).toBeFalsy();
+        it('should ignore set tabIndex for triggerType "click" and use default', fakeAsync(() => {
+            createTestComponent(PopoverClickComponent);
+
+            popoverInstance.tabIndex = 42;
+            click();
+            expect(getPopoverContent().getAttribute('tabindex')).toEqual('0');
+        }));
+
+        it('should set tabIndex for triggerType "manual"', fakeAsync(() => {
+            createTestComponent(ManualTrigger);
+            popoverInstance.tabIndex = 42;
+            spyOn(fixture.componentInstance.triggerInstance.changeShow, 'emit');
+            click();
+
+            expect(getPopoverContent().getAttribute('tabindex')).toEqual('42');
+        }));
+
+        it('should use default tabIndex for triggerType "manual"', fakeAsync(() => {
+            createTestComponent(ManualTrigger);
+            spyOn(fixture.componentInstance.triggerInstance.changeShow, 'emit');
+            click();
+
+            expect(getPopoverContent().getAttribute('tabindex')).toEqual('0');
+        }));
+
+        it('should set active state for triggerType "manual" with implemented NxTriggerButton', fakeAsync(() => {
+            createTestComponent(ManualTrigger);
+
+            click();
+            expect(buttonNativeElement.classList.contains('is-trigger-test-active')).toBe(true);
+
+            click();
+            expect(buttonNativeElement.classList.contains('is-trigger-test-active')).toBe(false);
+        }));
+
+        it('should have correct boolean value in popoverShowChange event data', fakeAsync(() => {
+            const manualTrigger = createTestComponent(ManualTrigger);
+
+            click();
+            expect(manualTrigger.lastShowChangeEventData).toBe(true);
+
+            click();
+            expect(manualTrigger.lastShowChangeEventData).toBe(false);
         }));
     });
 
     describe('open by hover', () => {
+        beforeEach(waitForAsync(() => {
+            popoverDefaultOptions.popoverMaxWidth = '100px';
+        }));
+
+        it('should not display the close icon on hover when nxPopoverCloseable is true', fakeAsync(() => {
+            createTestComponent(PopoverShowClose);
+            hover();
+            expect(getCloseIcon()).toBeFalsy();
+        }));
+
+        it('should not set tabindex on content wrapper', fakeAsync(() => {
+            createTestComponent(PopoverShowClose);
+            hover();
+            expect(getPopoverContent().getAttribute('tabindex')).toBeFalsy();
+        }));
+
+        it('should not create focus trap', fakeAsync(() => {
+            createTestComponent(PopoverShowClose);
+            hover();
+            const focusTrapAnchors = overlayContainer.getContainerElement().querySelectorAll('.cdk-focus-trap-anchor');
+            expect(focusTrapAnchors.length).toBe(0);
+        }));
+
+        it('popover should not have focus', fakeAsync(() => {
+            createTestComponent(PopoverShowClose);
+            hover();
+            expect(overlayContainer.getContainerElement().contains(document.activeElement)).toBeFalse();
+        }));
+
         it('should support display to left', fakeAsync(() => {
             createTestComponent(PopoverHoverComponent);
             triggerInstance.direction = 'left';
@@ -204,6 +276,19 @@ describe('NxPopoverTriggerDirective', () => {
             mouseLeave();
             expect(spy).toHaveBeenCalled();
             subscription.unsubscribe();
+        }));
+
+        it('should listen to keyboard focus in child elements', fakeAsync(() => {
+            createTestComponent(PopoverHoverFormfieldComponent);
+            const inputElement = fixture.nativeElement.querySelector('input');
+            focusMonitor.focusVia(inputElement, 'keyboard');
+            fixture.detectChanges();
+            flush();
+            expect(getPopoverContent()).toBeTruthy();
+            dispatchKeyboardEvent(inputElement, 'keydown', TAB);
+            fixture.detectChanges();
+            flush();
+            expect(getPopoverContent()).toBeFalsy();
         }));
     });
 
@@ -273,6 +358,13 @@ describe('NxPopoverTriggerDirective', () => {
             fixture.detectChanges();
             flush();
             expect(getPopoverContent()).toBeFalsy();
+        }));
+
+        it('should create focus trap', fakeAsync(() => {
+            createTestComponent(PopoverClickComponent);
+            click();
+            const focusTrapAnchors = overlayContainer.getContainerElement().querySelectorAll('.cdk-focus-trap-anchor');
+            expect(focusTrapAnchors.length).toBeGreaterThan(0);
         }));
 
         it('should not close when clicked outside if closeOnClickOutside is set to false', fakeAsync(() => {
@@ -350,10 +442,9 @@ describe('NxPopoverTriggerDirective', () => {
         it('should close the popover by hitting Esc key', fakeAsync(() => {
             createTestComponent(PopoverClickComponent);
             click();
-            const event = new KeyboardEvent('keyup', {
-                key: 'Escape',
-            });
-            window.dispatchEvent(event);
+
+            dispatchKeyboardEvent(document.body, 'keydown', ESCAPE);
+
             expect(getPopoverContent()).toBeFalsy();
             flush();
         }));
@@ -364,6 +455,96 @@ describe('NxPopoverTriggerDirective', () => {
             getPopoverContent().click();
             fixture.detectChanges();
             checkPopoverOpen(true);
+        }));
+
+        it('should set trigger button active state with implemented NxTriggerButton', fakeAsync(() => {
+            createTestComponent(PopoverClickComponent);
+
+            click();
+            expect(buttonNativeElement.classList.contains('is-trigger-test-active')).toBe(true);
+
+            click();
+            expect(buttonNativeElement.classList.contains('is-trigger-test-active')).toBe(false);
+        }));
+    });
+
+    describe('keyboard', () => {
+        it('should open popover by space key', fakeAsync(() => {
+            createTestComponent(PopoverClickComponent);
+            buttonNativeElement.dispatchEvent(new KeyboardEvent('keydown', { keyCode: SPACE, which: SPACE }));
+
+            fixture.detectChanges();
+            flush();
+
+            checkPopoverOpen(true);
+        }));
+
+        it('should open popover by enter key', fakeAsync(() => {
+            createTestComponent(PopoverClickComponent);
+            buttonNativeElement.dispatchEvent(new KeyboardEvent('keydown', { keyCode: ENTER, which: ENTER }));
+
+            fixture.detectChanges();
+            flush();
+
+            checkPopoverOpen(true);
+        }));
+
+        it('should close popover when hit space key on close button', fakeAsync(() => {
+            createTestComponent(PopoverClickComponent);
+            click();
+            checkPopoverOpen(true);
+
+            getCloseIcon().dispatchEvent(new KeyboardEvent('keyup', { keyCode: SPACE, which: SPACE }));
+
+            fixture.detectChanges();
+            flush();
+
+            checkPopoverOpen(false);
+        }));
+
+        it('should close popover when hit enter on close button', fakeAsync(() => {
+            createTestComponent(PopoverClickComponent);
+            click();
+            checkPopoverOpen(true);
+
+            getCloseIcon().dispatchEvent(new KeyboardEvent('keyup', { keyCode: ENTER, which: ENTER }));
+
+            fixture.detectChanges();
+
+            flush();
+
+            checkPopoverOpen(false);
+        }));
+
+        it('should call preventDefault if trigger is not button element', fakeAsync(() => {
+            createTestComponent(PopoverDivTrigger);
+            fixture.detectChanges();
+
+            const triggerElement = fixture.debugElement.query(By.css('.trigger'));
+            const keydownEvent = new KeyboardEvent('keydown', { keyCode: SPACE, which: SPACE });
+            const spy = spyOn(keydownEvent, 'preventDefault');
+            triggerElement.nativeElement.dispatchEvent(keydownEvent);
+
+            fixture.detectChanges();
+            flush();
+
+            checkPopoverOpen(true);
+            expect(spy).toHaveBeenCalled();
+        }));
+
+        it('should not call preventDefault if trigger is button element', fakeAsync(() => {
+            createTestComponent(PopoverClickComponent);
+            fixture.detectChanges();
+
+            const keydownEvent = new KeyboardEvent('keydown', { keyCode: SPACE, which: SPACE });
+            const spy = spyOn(keydownEvent, 'preventDefault');
+            buttonNativeElement.dispatchEvent(keydownEvent);
+
+            fixture.detectChanges();
+            flush();
+
+            checkPopoverOpen(true);
+            expect(spy).not.toHaveBeenCalled();
         }));
     });
 
@@ -441,11 +622,8 @@ describe('NxPopoverTriggerDirective', () => {
             click();
             expect(fixture.componentInstance.triggerInstance.changeShow.emit).toHaveBeenCalledWith(true);
 
-            const event = new KeyboardEvent('keyup', {
-                key: 'Escape',
-            });
+            dispatchKeyboardEvent(document.body, 'keydown', ESCAPE);
 
-            window.dispatchEvent(event);
             expect(fixture.componentInstance.triggerInstance.changeShow.emit).toHaveBeenCalledWith(false);
             expect(fixture.componentInstance.triggerInstance.changeShow.emit).toHaveBeenCalledTimes(2);
             flush();
@@ -548,13 +726,6 @@ describe('NxPopoverTriggerDirective', () => {
     });
 
     describe('Focus states', () => {
-        it('Should initial focus on content', fakeAsync(() => {
-            createTestComponent(PopoverClickComponent);
-            click();
-            fixture.detectChanges();
-            expect(overlayContainer.getContainerElement().querySelector('.nx-popover__content:focus')).toBeTruthy();
-        }));
-
         it('Should return back focus after closing popover', fakeAsync(() => {
             createTestComponent(PopoverClickComponent);
             buttonNativeElement.focus();
@@ -562,18 +733,10 @@ describe('NxPopoverTriggerDirective', () => {
             fixture.detectChanges();
             spyOn(buttonNativeElement, 'focus').and.callThrough();
             getCloseIcon().click();
+            tick();
+
             expect(buttonNativeElement.focus).toHaveBeenCalled();
             flush();
-        }));
-
-        it('Should open on focus when the trigger type is hover', fakeAsync(() => {
-            createTestComponent(PopoverHoverComponent);
-            patchElementFocus(buttonNativeElement);
-            focusMonitor.focusVia(buttonNativeElement, 'keyboard');
-            tick(200);
-            fixture.detectChanges();
-            tick(500);
-            expect(overlayContainer.getContainerElement().querySelector('.nx-popover__content:focus')).toBeTruthy();
         }));
     });
 
@@ -583,6 +746,11 @@ describe('NxPopoverTriggerDirective', () => {
             buttonNativeElement.dispatchEvent(new Event('click'));
             fixture.detectChanges();
             await expectAsync(fixture.nativeElement).toBeAccessible();
+        });
+
+        it('has aria-haspopup', async () => {
+            createTestComponent(PopoverClickComponent);
+            expect(buttonNativeElement.getAttribute('aria-haspopup')).toBe('dialog');
         });
     });
 
@@ -641,7 +809,117 @@ describe('NxPopoverTriggerDirective', () => {
             flush();
         }));
     });
+
+    describe('popover default width', () => {
+        beforeEach(waitForAsync(() => {
+            popoverDefaultOptions.popoverWidth = '500px';
+            popoverDefaultOptions.popoverMaxWidth = '400px';
+        }));
+
+        it('popover should use default width', fakeAsync(() => {
+            createTestComponent(PopoverDefaultWidthComponent);
+            click();
+            expect(getOverlayPane().clientWidth).toBe(400);
+        }));
+
+        it('popover width should be less than or equal to default max-width', fakeAsync(() => {
+            createTestComponent(PopoverDefaultWidthComponent);
+            click();
+            expect(getOverlayPane().clientWidth).toBeLessThanOrEqual(400);
+        }));
+
+        it('popover width should be undefined when there are no default settings', fakeAsync(() => {
+            delete popoverDefaultOptions.popoverWidth;
+            createTestComponent(PopoverDefaultWidthComponent);
+            click();
+            expect(getOverlayPane().clientWidth).toBeLessThanOrEqual(400);
+            expect((testInstance as PopoverWidthComponent).popoverMaxWidth).toBeUndefined();
+        }));
+
+        it('popover max-width should be undefined when there are no default settings', fakeAsync(() => {
+            delete popoverDefaultOptions.popoverMaxWidth;
+            createTestComponent(PopoverDefaultWidthComponent);
+            click();
+            expect(getOverlayPane().clientWidth).toBe(500);
+            expect((testInstance as PopoverWidthComponent).popoverMaxWidth).toBeUndefined();
+        }));
+    });
+
+    describe('popover property width', () => {
+        beforeEach(waitForAsync(() => {
+            popoverDefaultOptions.popoverWidth = '500px';
+            popoverDefaultOptions.popoverMaxWidth = '400px';
+        }));
+
+        it('popover should use default max-width if the property popoverMaxWidth has not been set', fakeAsync(() => {
+            createTestComponent(PopoverWidthComponent);
+            (testInstance as PopoverWidthComponent).popoverWidth = '600px';
+            fixture.detectChanges();
+            click();
+            expect(getOverlayPane().clientWidth).toBe(400);
+            expect((testInstance as PopoverWidthComponent).popoverMaxWidth).toBeUndefined();
+        }));
+
+        it('popover should use default width if the property popoverWidth has not been set', fakeAsync(() => {
+            createTestComponent(PopoverWidthComponent);
+            (testInstance as PopoverWidthComponent).popoverMaxWidth = '600px';
+            fixture.detectChanges();
+            click();
+            expect(getOverlayPane().clientWidth).toBe(500);
+        }));
+
+        it('popover should use width if max-width > width', fakeAsync(() => {
+            createTestComponent(PopoverWidthComponent);
+            (testInstance as PopoverWidthComponent).popoverMaxWidth = '700px';
+            (testInstance as PopoverWidthComponent).popoverWidth = '500px';
+            fixture.detectChanges();
+            click();
+            expect(getOverlayPane().clientWidth).toBe(500);
+        }));
+
+        it('popover should use max-width if max-width < width', fakeAsync(() => {
+            createTestComponent(PopoverWidthComponent);
+            (testInstance as PopoverWidthComponent).popoverMaxWidth = '500px';
+            (testInstance as PopoverWidthComponent).popoverWidth = '700px';
+            fixture.detectChanges();
+            click();
+            expect(getOverlayPane().clientWidth).toBe(500);
+        }));
+    });
+
+    it('should be able to override the scroll strategy in parent injector', () => {
+        TestBed.resetTestingModule()
+            .configureTestingModule({
+                imports: [PopoverClickComponent, NxPopoverModule, NxInputModule, NoopAnimationsModule],
+                providers: [
+                    {
+                        provide: NX_POPOVER_SCROLL_STRATEGY,
+                        useFactory: () => fakeScrollStrategyFunction,
+                    },
+                ],
+            })
+            .compileComponents();
+        createTestComponent(PopoverClickComponent);
+        expect((testInstance as PopoverClickComponent).scrollStrategy).toBe(fakeScrollStrategyFunction);
+    });
 });
+
+@Directive({
+    selector: '[triggerTest]',
+    standalone: true,
+    providers: [{ provide: NxTriggerButton, useExisting: TriggerButtonTestDirective }],
+    host: { '[class.is-trigger-test-active]': 'active()' },
+})
+class TriggerButtonTestDirective extends NxTriggerButton {
+    active = signal(false);
+
+    setTriggerInactive() {
+        this.active.set(false);
+    }
+    setTriggerActive() {
+        this.active.set(true);
+    }
+}
 
 @Component({
     template: `<div style="width: 400px; height: 400px; display: flex; justify-content: center; align-items: center;">
@@ -651,19 +929,41 @@ describe('NxPopoverTriggerDirective', () => {
         <nx-popover #popoverHover>
             <span>Content</span>
         </nx-popover>`,
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule],
 })
 class PopoverHoverComponent extends PopoverTest {}
-
 @Component({
-    template: `<div>
-            <button [nxPopoverTriggerFor]="popoverHover" nxPopoverDirection="right" nxPopoverTrigger="click">Hover</button>
+    template: `<div style="width: 400px; height: 400px; display: flex; justify-content: center; align-items: center;">
+            <nx-formfield label="Label" [nxPopoverTriggerFor]="popoverHover" nxPopoverTrigger="hover">
+                <input nxInput />
+            </nx-formfield>
         </div>
 
         <nx-popover #popoverHover>
             <span>Content</span>
         </nx-popover>`,
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule],
 })
-class PopoverClickComponent extends PopoverTest {}
+class PopoverHoverFormfieldComponent extends PopoverTest {}
+
+@Component({
+    template: `<div>
+            <button [nxPopoverTriggerFor]="popoverHover" nxPopoverDirection="right" nxPopoverTrigger="click" triggerTest>Hover</button>
+        </div>
+
+        <nx-popover #popoverHover>
+            <span>Content</span>
+        </nx-popover>`,
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule, TriggerButtonTestDirective],
+})
+class PopoverClickComponent extends PopoverTest {
+    constructor(@Inject(NX_POPOVER_SCROLL_STRATEGY) public scrollStrategy: any) {
+        super();
+    }
+}
 
 @Component({
     template: `<div>
@@ -676,6 +976,8 @@ class PopoverClickComponent extends PopoverTest {}
             <span>Content</span>
         </nx-popover>`,
     encapsulation: ViewEncapsulation.ShadowDom,
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule],
 })
 class PopoverClickShadowDomComponent extends PopoverTest {}
 
@@ -687,6 +989,8 @@ class PopoverClickShadowDomComponent extends PopoverTest {}
         <nx-popover #popoverHover>
             <span>Content</span>
         </nx-popover>`,
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule],
 })
 class PopoverShowClose extends PopoverTest {}
 
@@ -698,6 +1002,8 @@ class PopoverShowClose extends PopoverTest {}
         <nx-popover #popoverHover>
             <span>Content</span>
         </nx-popover>`,
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule],
 })
 class PopoverHideClose extends PopoverTest {}
 
@@ -709,6 +1015,8 @@ class PopoverHideClose extends PopoverTest {}
         <nx-popover #popoverHover>
             <span>Content</span>
         </nx-popover>`,
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule],
 })
 class PopoverHideCloseForClick extends PopoverTest {}
 
@@ -721,6 +1029,8 @@ class PopoverHideCloseForClick extends PopoverTest {}
             Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the
             1500s.
         </nx-popover>`,
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule],
 })
 class PopoverFallBackComponent extends PopoverTest {}
 
@@ -741,6 +1051,8 @@ class PopoverFallBackComponent extends PopoverTest {}
         <nx-popover #popoverHover>
             <span>Content</span>
         </nx-popover>`,
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule],
 })
 class ModalPopover extends PopoverTest {
     closable = true;
@@ -756,6 +1068,8 @@ class ModalPopover extends PopoverTest {
             </ng-template>
         </nx-popover>
     `,
+    standalone: true,
+    imports: [OverlayModule, NxTestComponent, NxPopoverModule, NxFormfieldModule, NxInputModule],
 })
 class LazyloadContent extends PopoverTest {}
 
@@ -763,13 +1077,13 @@ class LazyloadContent extends PopoverTest {}
     template: `
         <button
             #popoverTrigger="nxPopoverTrigger"
-            nxButton="primary small"
             [nxPopoverTriggerFor]="popoverManual"
-            [nxPopoverShow]="popoverManualOpenFlag"
+            [nxPopoverShow]="popoverManualOpenFlag()"
             (nxPopoverShowChange)="popoverOnShowChange($event)"
             nxPopoverDirection="top"
-            (click)="popoverManualOpenFlag = !popoverManualOpenFlag"
+            (click)="onTrigger()"
             nxPopoverTrigger="manual"
+            triggerTest
         >
             Manual
         </button>
@@ -778,12 +1092,20 @@ class LazyloadContent extends PopoverTest {}
             <div><span>Trigger manually</span></div>
         </nx-popover>
     `,
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule, TriggerButtonTestDirective],
 })
 class ManualTrigger extends PopoverTest {
-    popoverManualOpenFlag = false;
+    popoverManualOpenFlag = signal(false);
+
+    onTrigger = () => {
+        this.popoverManualOpenFlag.update(flag => !flag);
+    };
+
+    lastShowChangeEventData: any;
 
     popoverOnShowChange(current: any) {
-        setTimeout(() => (this.popoverManualOpenFlag = !current));
+        setTimeout(() => (this.lastShowChangeEventData = current));
     }
 }
 
@@ -793,6 +1115,8 @@ class ManualTrigger extends PopoverTest {
         </div>
 
         <nx-popover #popoverHover> </nx-popover>`,
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule],
 })
 class ClickOnDocument extends PopoverTest {
     closable = true;
@@ -804,20 +1128,24 @@ class ClickOnDocument extends PopoverTest {
         </div>
 
         <nx-popover #popoverInScrollableContainer> </nx-popover>`,
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule],
 })
 class ScrollablePopover extends PopoverTest {}
 
 @Component({
     template: `<div [dir]="direction">
-            <button [nxPopoverTriggerFor]="popoverHover" nxPopoverDirection="right" nxPopoverTrigger="click" [closeOnClickOutside]="closable">
+            <button [nxPopoverTriggerFor]="popoverHover" nxPopoverDirection="right" nxPopoverTrigger="click" [closeOnClickOutside]="closeable">
                 Directionality
             </button>
         </div>
 
         <nx-popover #popoverHover> </nx-popover>`,
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule],
 })
 class PopoverWithinRTLContainer extends PopoverTest {
-    direction = 'rtl';
+    direction: Direction = 'rtl';
 }
 
 @Component({
@@ -828,5 +1156,40 @@ class PopoverWithinRTLContainer extends PopoverTest {
             useValue: { closeIconLabel: 'custom close label', changes: new Subject() },
         },
     ],
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule],
 })
 class I18nTest extends PopoverTest {}
+
+@Component({
+    template: `<div [nxPopoverTriggerFor]="popoverClick" nxPopoverTrigger="click" tabindex="1" class="trigger">Div</div>
+        <nx-popover #popoverClick>Content</nx-popover><button></button>`,
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule],
+})
+class PopoverDivTrigger extends PopoverTest {}
+
+@Component({
+    template: `<button
+            [nxPopoverTriggerFor]="popoverPropertyWidth"
+            nxPopoverTrigger="click"
+            [nxPopoverWidth]="popoverWidth"
+            [nxPopoverMaxWidth]="popoverMaxWidth"
+        >
+            Click
+        </button>
+
+        <nx-popover #popoverPropertyWidth></nx-popover>`,
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule],
+})
+class PopoverWidthComponent extends PopoverTest {}
+
+@Component({
+    template: `<button [nxPopoverTriggerFor]="popoverDefaultWidth" nxPopoverTrigger="click">Click</button>
+
+        <nx-popover #popoverDefaultWidth></nx-popover>`,
+    standalone: true,
+    imports: [OverlayModule, NxPopoverModule, NxFormfieldModule, NxInputModule],
+})
+class PopoverDefaultWidthComponent extends PopoverTest {}
