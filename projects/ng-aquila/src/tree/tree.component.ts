@@ -82,14 +82,17 @@ export class NxTreeComponent<T> extends CdkTree<T> implements OnDestroy, OnInit 
     /** Subject that emits when the component has been destroyed. */
     private readonly _wrapperOnDestroy = new Subject<void>();
 
+    private readonly _nxElementRef: ElementRef;
+
     constructor(
         _wrapperDiffers: IterableDiffers,
         private readonly _cdr: ChangeDetectorRef,
         @Optional() private readonly dir: Directionality | null,
-        protected readonly _elementRef: ElementRef,
+        _elementRef: ElementRef,
         protected readonly _focusMonitor: FocusMonitor,
     ) {
         super(_wrapperDiffers, _cdr);
+        this._nxElementRef = _elementRef;
     }
 
     ngOnInit(): void {
@@ -319,7 +322,7 @@ export class NxTreeComponent<T> extends CdkTree<T> implements OnDestroy, OnInit 
         if (this.parentMap.has(this._focusedData)) {
             // For nested tree
             this._changeFocusedData(this.parentMap.get(this._focusedData));
-        } else if (this.treeControl.getLevel) {
+        } else if (this.treeControl?.getLevel) {
             // For flat tree
             const nodeList = this._getChildrenList();
             const index = nodeList.indexOf(this._focusedData);
@@ -409,7 +412,7 @@ export class NxTreeComponent<T> extends CdkTree<T> implements OnDestroy, OnInit 
      */
     _monitorTreeFocus() {
         this._focusMonitor
-            .monitor(this._elementRef.nativeElement, true)
+            .monitor(this._nxElementRef.nativeElement, true)
             .pipe(takeUntil(this._wrapperOnDestroy))
             .subscribe(origin => {
                 const newTabIndex = origin ? -1 : this._userTabIndex || 0;

@@ -20,7 +20,7 @@ import {
     ViewContainerRef,
 } from '@angular/core';
 import { NxTriggerButton } from '@aposin/ng-aquila/overlay';
-import { asapScheduler, fromEvent, merge, Observable, of as observableOf, Subject, Subscription } from 'rxjs';
+import { asapScheduler, EMPTY, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs';
 import { delay, filter, map, take, takeUntil } from 'rxjs/operators';
 
 import { NxContextMenuComponent } from './context-menu.component';
@@ -480,14 +480,14 @@ export class NxContextMenuTriggerDirective implements AfterContentInit, OnDestro
             detachments = this._overlayRef.detachments();
         }
 
-        const parentClose = this._parentMenu ? this._parentMenu.closed : observableOf();
+        const parentClose = this._parentMenu ? this._parentMenu.closed : (EMPTY as any);
 
         const hover = this._parentMenu
             ? this._parentMenu._hovered().pipe(
                   filter(active => active !== this._contextMenuItemInstance),
                   filter(() => this._contextMenuOpen),
               )
-            : observableOf();
+            : (EMPTY as any);
 
         return merge(backdrop!, parentClose, hover, detachments!);
     }

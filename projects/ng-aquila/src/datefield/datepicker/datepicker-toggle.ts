@@ -17,7 +17,7 @@ import {
     SimpleChanges,
     ViewChild,
 } from '@angular/core';
-import { merge, of as observableOf, Subject, Subscription } from 'rxjs';
+import { EMPTY, merge, Subject, Subscription } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { DATEPICKER_DEFAULT_OPTIONS, DatepickerDefaultOptions, NxDatepickerComponent } from './datepicker.component';
@@ -136,10 +136,10 @@ export class NxDatepickerToggleComponent<D> implements AfterContentInit, AfterVi
     }
 
     private _watchStateChanges() {
-        const datepickerDisabled = this.datepicker ? this.datepicker._disabledChange : observableOf();
-        const inputDisabled = this.datepicker?._datepickerInput ? this.datepicker._datepickerInput._disabledChange : observableOf();
-        const inputReadonly = this.datepicker?._datepickerInput ? this.datepicker._datepickerInput._readonlyChange : observableOf();
-        const datepickerToggled = this.datepicker ? merge(this.datepicker.openedStream, this.datepicker.closedStream) : observableOf();
+        const datepickerDisabled = this.datepicker ? this.datepicker._disabledChange : (EMPTY as any);
+        const inputDisabled = this.datepicker?._datepickerInput ? this.datepicker._datepickerInput._disabledChange : (EMPTY as any);
+        const inputReadonly = this.datepicker?._datepickerInput ? this.datepicker._datepickerInput._readonlyChange : (EMPTY as any);
+        const datepickerToggled = this.datepicker ? merge(this.datepicker.openedStream, this.datepicker.closedStream) : (EMPTY as any);
 
         this._stateChanges.unsubscribe();
         this._stateChanges = merge(this._intl.changes, datepickerDisabled, inputDisabled, inputReadonly, datepickerToggled)

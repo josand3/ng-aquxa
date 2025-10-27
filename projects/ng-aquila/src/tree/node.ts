@@ -38,7 +38,7 @@ export class NxTreeNodeComponent<T> extends CdkTreeNode<T> implements OnDestroy 
 
     /** Update the focused data in tree keyboard interaction */
     _focus(): void {
-        (this._tree as NxTreeComponent<T>).updateFocusedData(this._data);
+        (this._tree as any as NxTreeComponent<T>).updateFocusedData(this._data);
     }
 
     focus(): void {

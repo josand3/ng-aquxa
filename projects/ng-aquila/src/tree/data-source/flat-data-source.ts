@@ -154,7 +154,7 @@ export class NxTreeFlatDataSource<T extends NxTreeNode, F extends NxFlatTreeNode
     }
 
     connect(collectionViewer: CollectionViewer): Observable<F[]> {
-        const changes = [collectionViewer.viewChange, this.treeControl.expansionModel.changed, this._flattenedData];
+        const changes = [collectionViewer.viewChange, this.treeControl.expansionModel.changed, this._flattenedData as any];
         return merge(...changes).pipe(
             map(() => {
                 this._expandedData.next(this._treeFlattener.expandFlattenedNodes(this._flattenedData.value, this.treeControl));

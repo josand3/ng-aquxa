@@ -130,11 +130,13 @@ export class NxModalComponent implements OnInit, AfterViewInit, OnDestroy {
     ngOnInit(): void {
         this.modalService.close$.pipe(takeUntil(this._destroyed)).subscribe(() => this.closeEvent.emit());
 
-        this.removeEventListener = this.eventManager.addGlobalEventListener('window', 'keyup.esc', () => {
-            if (this.hideOnEsc) {
+        const escapeHandler = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && this.hideOnEsc) {
                 this.modalService.close();
             }
-        }) as () => void;
+        };
+        window.addEventListener('keyup', escapeHandler);
+        this.removeEventListener = () => window.removeEventListener('keyup', escapeHandler);
     }
 
     ngAfterViewInit(): void {

@@ -187,7 +187,7 @@ export class NxDropdownComponent implements NxDropdownControl, ControlValueAcces
      *
      * @docs-private
      */
-    readonly stateChanges = new Subject<any>();
+    readonly stateChanges = new Subject<void>();
 
     /** @docs-private */
     ariaDescribedby?: string;
